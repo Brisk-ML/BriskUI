@@ -1,10 +1,10 @@
 import PropTypes from "prop-types";
 import React from "react";
 import { useReducer } from "react";
-import { Algorithms, Database, Edit, Experiments, Files, Home, IconComponentNode, Metrics, Results, Save } from "./icons";
-import divider from "./icons/divider.svg";
-import image from "./icons/image.svg";
-import { useModal } from "../contexts/ModalContext";
+import { Algorithms, Database, Edit, Experiments, Files, Home, IconComponentNode, Metrics, Results, Save } from "../icons";
+import divider from "../icons/divider.svg";
+import image from "../icons/image.svg";
+import { useModal } from "../../contexts/ModalContext";
 import "./Sidebar.css";
 
 export const Sidebar = ({ stateProp, className }) => {
