@@ -1,0 +1,283 @@
+.hi-fi-home {
+    background: linear-gradient(
+        360deg,
+        rgba(18, 18, 18, 1) 0%,
+        rgba(40, 40, 40, 1) 100%
+    );
+    min-height: 1024px;
+    min-width: 1440px;
+    position: relative;
+    width: 100%;
+    color: #ffffff;
+    overflow-x: auto;
+}
+
+.hi-fi-home .dashboard {
+    align-items: center;
+    background-color: #282828;
+    border: 2px solid;
+    border-color: var(--border);
+    display: flex;
+    gap: 35px;
+    height: 800px;
+    left: 101px;
+    padding: 29px 26px;
+    position: absolute;
+    top: 220px;
+    width: 1320px;
+}
+
+.hi-fi-home .result-summary {
+    background-color: var(--background);
+    border: 2px solid;
+    border-color: var(--border-muted);
+    height: 775px;
+    margin-bottom: -16.50px;
+    margin-top: -16.50px;
+    position: relative;
+    width: 904px;
+}
+
+.hi-fi-home .text-wrapper-3 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 34px;
+    justify-content: center;
+    left: 348px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    position: absolute;
+    text-align: center;
+    top: 370px;
+}
+
+.hi-fi-home .line-2 {
+    height: 1px;
+    left: 18px;
+    object-fit: cover;
+    position: absolute;
+    top: 64px;
+    width: 325px;
+}
+
+.hi-fi-home .text-wrapper-4 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-2-font-family);
+    font-size: var(--heading-2-font-size);
+    font-style: var(--heading-2-font-style);
+    font-weight: var(--heading-2-font-weight);
+    height: 43px;
+    justify-content: center;
+    left: 11px;
+    letter-spacing: var(--heading-2-letter-spacing);
+    line-height: var(--heading-2-line-height);
+    position: absolute;
+    text-align: center;
+    top: 12px;
+    white-space: nowrap;
+    width: 329px;
+}
+
+.hi-fi-home .recent-runs {
+    background-color: var(--background);
+    border: 2px solid;
+    border-color: var(--border-muted);
+    height: 775px;
+    margin-bottom: -16.50px;
+    margin-top: -16.50px;
+    position: relative;
+    width: 309px;
+}
+
+.hi-fi-home .line-3 {
+    height: 1px;
+    left: 42px;
+    object-fit: cover;
+    position: absolute;
+    top: 50px;
+    width: 225px;
+}
+
+.hi-fi-home .text-wrapper-5 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 43px;
+    justify-content: center;
+    left: 9px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    position: absolute;
+    text-align: center;
+    top: 6px;
+    width: 291px;
+}
+
+.hi-fi-home .text-wrapper-6 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 34px;
+    justify-content: center;
+    left: 50px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    position: absolute;
+    text-align: center;
+    top: 370px;
+}
+
+.hi-fi-home .project-header {
+    background-color: var(--background);
+    height: 214px;
+    left: 86px;
+    position: absolute;
+    top: 0;
+    width: 1354px;
+}
+
+.hi-fi-home .proect-name {
+    align-items: center;
+    color: var(--text);
+    display: flex;
+    font-family: var(--heading-1-font-family);
+    font-size: var(--heading-1-font-size);
+    font-style: var(--heading-1-font-style);
+    font-weight: var(--heading-1-font-weight);
+    height: 81px;
+    justify-content: center;
+    left: 0;
+    letter-spacing: var(--heading-1-letter-spacing);
+    line-height: var(--heading-1-line-height);
+    position: absolute;
+    text-align: center;
+    top: 0;
+    width: 331px;
+}
+
+.hi-fi-home .project-stats {
+    align-items: center;
+    display: inline-flex;
+    gap: 32px;
+    left: 311px;
+    padding: 20px;
+    position: absolute;
+    top: -1px;
+}
+
+.hi-fi-home .stat-card-instance {
+    left: unset !important;
+    top: unset !important;
+}
+
+.hi-fi-home .design-component-instance-node {
+    font-size: 24px !important;
+    white-space: unset !important;
+}
+
+.hi-fi-home .stat-card-2 {
+    height: 175px;
+    position: relative;
+    width: 175px;
+}
+
+.hi-fi-home .background {
+    background-color: var(--background-dark);
+    border: 1px solid;
+    border-color: var(--border-muted);
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+
+.hi-fi-home .text-wrapper-7 {
+    align-items: center;
+    color: var(--text);
+    display: flex;
+    font-family: "Inconsolata", Helvetica;
+    font-size: 56px;
+    font-weight: 400;
+    height: 33.71%;
+    justify-content: center;
+    left: 6.67%;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    text-align: center;
+    top: 61.71%;
+    white-space: nowrap;
+    width: 44.00%;
+}
+
+.hi-fi-home .name-2 {
+    color: #ffffff;
+    font-family: "Montserrat", Helvetica;
+    font-size: 25.3px;
+    font-weight: 400;
+    height: 16.67%;
+    left: 12px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 6.00%;
+    white-space: nowrap;
+    width: 166px;
+}
+
+.hi-fi-home .line-4 {
+    height: 0;
+    left: 8.00%;
+    position: absolute;
+    top: 68.00%;
+    width: 21.33%;
+}
+
+.hi-fi-home .links {
+    align-items: center;
+    display: inline-flex;
+    gap: 75px;
+    justify-content: center;
+    left: 51px;
+    padding: 11px 13px;
+    position: absolute;
+    top: 85px;
+}
+
+.hi-fi-home .icon-instance-node {
+    aspect-ratio: 1 !important;
+    height: 64px !important;
+    position: relative !important;
+    width: 64px !important;
+}
+
+.hi-fi-home .sidebar-instance {
+    height: 1024px !important;
+    left: 0 !important;
+    position: absolute !important;
+    top: 0 !important;
+}
+
+.hi-fi-home .icon-instance-node-2 {
+    aspect-ratio: 1 !important;
+    height: 48px !important;
+    position: relative !important;
+    width: 48px !important;
+}
+

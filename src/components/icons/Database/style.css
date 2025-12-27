@@ -1,0 +1,15 @@
+.database-screen {
+    aspect-ratio: 1;
+    height: 48px;
+    position: relative;
+    width: 48px;
+}
+
+.database-screen .vector {
+    height: 78.12%;
+    left: 14.06%;
+    position: absolute;
+    top: 10.94%;
+    width: 71.88%;
+}
+

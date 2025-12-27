@@ -1,0 +1,230 @@
+.project-header {
+    background-color: var(--background);
+    height: 214px;
+    left: 10px;
+    position: relative;
+    width: 1354px;
+    min-width: 1354px;
+}
+
+.project-header .proect-name {
+    align-items: center;
+    color: var(--text);
+    display: flex;
+    font-family: var(--heading-1-font-family);
+    font-size: var(--heading-1-font-size);
+    font-style: var(--heading-1-font-style);
+    font-weight: var(--heading-1-font-weight);
+    height: 81px;
+    justify-content: center;
+    left: 0;
+    letter-spacing: var(--heading-1-letter-spacing);
+    line-height: var(--heading-1-line-height);
+    position: absolute;
+    text-align: center;
+    top: 0;
+    width: 331px;
+}
+
+.project-header .project-stats {
+    align-items: center;
+    display: inline-flex;
+    gap: 32px;
+    left: 311px;
+    padding: 20px;
+    position: absolute;
+    top: -1px;
+}
+
+.project-header .stat-card-instance {
+    left: unset !important;
+    top: unset !important;
+}
+
+.project-header .instance-node {
+    font-size: 24px !important;
+    white-space: unset !important;
+}
+
+.project-header .documentation-instance {
+    aspect-ratio: 1 !important;
+    height: 77px !important;
+    left: 188px !important;
+    position: absolute !important;
+    top: 91px !important;
+    width: 77px !important;
+}
+
+.project-header .links {
+    align-items: center;
+    display: inline-flex;
+    gap: 75px;
+    justify-content: center;
+    left: 51px;
+    padding: 11px 13px;
+    position: absolute;
+    top: 85px;
+}
+
+.project-header .instance-node-2 {
+    aspect-ratio: 1 !important;
+    height: 64px !important;
+    position: relative !important;
+    width: 64px !important;
+}
+
+.project-header .github-tooltip {
+    position: absolute;
+}
+
+.project-header .tooltip {
+    background-color: var(--background-dark);
+    border: 1.54px solid;
+    border-color: var(--border);
+    height: 38px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 92px;
+}
+
+.project-header .div {
+    color: #ffffff;
+    font-family: "Montserrat", Helvetica;
+    font-size: 18.5px;
+    font-weight: 400;
+    left: 22px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 8px;
+    white-space: nowrap;
+}
+
+.project-header .github-tooltip-2 {
+    height: 38px;
+    left: 45px;
+    position: absolute;
+    top: 167px;
+    width: 94px;
+}
+
+.project-header .text-wrapper-2 {
+    color: #ffffff;
+    font-family: "Montserrat", Helvetica;
+    font-size: 18.5px;
+    font-weight: 400;
+    left: 14px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 8px;
+    white-space: nowrap;
+}
+
+.project-header .github-instance {
+    aspect-ratio: 1 !important;
+    height: 79px !important;
+    left: 51px !important;
+    position: absolute !important;
+    top: 88px !important;
+    width: 79px !important;
+}
+
+.project-header .documentation-2 {
+    aspect-ratio: 1 !important;
+    height: 64px !important;
+    left: 203px !important;
+    position: absolute !important;
+    top: 96px !important;
+    width: 64px !important;
+}
+
+.project-header.state-1-experiment-hover {
+    top: 244px;
+}
+
+.project-header.state-1-documentation {
+    top: 1588px;
+}
+
+.project-header.state-1-default {
+    top: 20px;
+}
+
+.project-header.state-1-metric-hover {
+    top: 1140px;
+}
+
+.project-header.state-1-groups-hover {
+    top: 468px;
+}
+
+.project-header.state-1-algorithm-hover {
+    top: 916px;
+}
+
+.project-header.state-1-dataset-hover {
+    top: 692px;
+}
+
+.project-header.state-1-github {
+    top: 1364px;
+}
+
+.project-header.state-1-experiment-hover .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-documentation .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-default .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-metric-hover .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-groups-hover .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-algorithm-hover .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-dataset-hover .github-tooltip {
+    height: 38px;
+    left: 180px;
+    top: 168px;
+    width: 94px;
+}
+
+.project-header.state-1-github .github-tooltip {
+    height: 86px;
+    left: 51px;
+    top: 85px;
+    width: 229px;
+}
+

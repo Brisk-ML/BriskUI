@@ -1,0 +1,15 @@
+.documentation-screen {
+    aspect-ratio: 1;
+    height: 64px;
+    position: relative;
+    width: 64px;
+}
+
+.documentation-screen .vector {
+    height: 78.12%;
+    left: 17.19%;
+    position: absolute;
+    top: 10.94%;
+    width: 65.62%;
+}
+

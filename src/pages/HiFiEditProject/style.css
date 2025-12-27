@@ -1,0 +1,465 @@
+.hi-fi-edit-project {
+    background: linear-gradient(
+        360deg,
+        rgba(18, 18, 18, 1) 0%,
+        rgba(40, 40, 40, 1) 100%
+    );
+    min-height: 1024px;
+    min-width: 1440px;
+    position: relative;
+    width: 100%;
+}
+
+.hi-fi-edit-project .div-2 {
+    height: 1024px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 1440px;
+}
+
+.hi-fi-edit-project .dashboard {
+    align-items: center;
+    background-color: #282828;
+    border: 2px solid;
+    border-color: var(--border);
+    display: flex;
+    gap: 35px;
+    height: 800px;
+    left: 101px;
+    padding: 29px 26px;
+    position: absolute;
+    top: 220px;
+    width: 1320px;
+}
+
+.hi-fi-edit-project .result-summary {
+    background-image: url(./background.svg);
+    background-size: 100% 100%;
+    height: 775px;
+    margin-bottom: -16.50px;
+    margin-top: -16.50px;
+    position: relative;
+    width: 904px;
+}
+
+.hi-fi-edit-project .text-wrapper-2 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 34px;
+    justify-content: center;
+    left: 348px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    position: absolute;
+    text-align: center;
+    top: 370px;
+}
+
+.hi-fi-edit-project .img {
+    height: 1px;
+    left: 18px;
+    object-fit: cover;
+    position: absolute;
+    top: 64px;
+    width: 325px;
+}
+
+.hi-fi-edit-project .text-wrapper-3 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-2-font-family);
+    font-size: var(--heading-2-font-size);
+    font-style: var(--heading-2-font-style);
+    font-weight: var(--heading-2-font-weight);
+    height: 43px;
+    justify-content: center;
+    left: 11px;
+    letter-spacing: var(--heading-2-letter-spacing);
+    line-height: var(--heading-2-line-height);
+    position: absolute;
+    text-align: center;
+    top: 12px;
+    white-space: nowrap;
+    width: 329px;
+}
+
+.hi-fi-edit-project .recent-runs {
+    background-color: var(--background);
+    border: 2px solid;
+    border-color: var(--border-muted);
+    height: 775px;
+    margin-bottom: -16.50px;
+    margin-top: -16.50px;
+    position: relative;
+    width: 309px;
+}
+
+.hi-fi-edit-project .line-2 {
+    height: 1px;
+    left: 42px;
+    object-fit: cover;
+    position: absolute;
+    top: 50px;
+    width: 225px;
+}
+
+.hi-fi-edit-project .text-wrapper-4 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 43px;
+    justify-content: center;
+    left: 9px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    position: absolute;
+    text-align: center;
+    top: 6px;
+    width: 291px;
+}
+
+.hi-fi-edit-project .text-wrapper-5 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 34px;
+    justify-content: center;
+    left: 50px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    position: absolute;
+    text-align: center;
+    top: 370px;
+}
+
+.hi-fi-edit-project .project-header {
+    background-color: var(--background);
+    height: 214px;
+    left: 86px;
+    position: absolute;
+    top: 0;
+    width: 1354px;
+}
+
+.hi-fi-edit-project .proect-name {
+    align-items: center;
+    color: var(--text);
+    display: flex;
+    font-family: var(--heading-1-font-family);
+    font-size: var(--heading-1-font-size);
+    font-style: var(--heading-1-font-style);
+    font-weight: var(--heading-1-font-weight);
+    height: 81px;
+    justify-content: center;
+    left: 0;
+    letter-spacing: var(--heading-1-letter-spacing);
+    line-height: var(--heading-1-line-height);
+    position: absolute;
+    text-align: center;
+    top: 0;
+    width: 331px;
+}
+
+.hi-fi-edit-project .project-stats {
+    align-items: center;
+    display: inline-flex;
+    gap: 32px;
+    left: 311px;
+    padding: 20px;
+    position: absolute;
+    top: -1px;
+}
+
+.hi-fi-edit-project .stat-card-instance {
+    left: unset !important;
+    top: unset !important;
+}
+
+.hi-fi-edit-project .design-component-instance-node {
+    font-size: 24px !important;
+    white-space: unset !important;
+}
+
+.hi-fi-edit-project .links {
+    align-items: center;
+    display: inline-flex;
+    gap: 75px;
+    justify-content: center;
+    left: 51px;
+    padding: 11px 13px;
+    position: absolute;
+    top: 85px;
+}
+
+.hi-fi-edit-project .icon-instance-node {
+    aspect-ratio: 1 !important;
+    height: 64px !important;
+    position: relative !important;
+    width: 64px !important;
+}
+
+.hi-fi-edit-project .sidebar {
+    display: flex;
+    height: 1024px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 86px;
+}
+
+.hi-fi-edit-project .icons {
+    -webkit-backdrop-filter: blur(10px) brightness(100%);
+    align-items: center;
+    backdrop-filter: blur(10px) brightness(100%);
+    background-color: #181818e6;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 1024px;
+    padding: 10px;
+    position: relative;
+    width: 86px;
+}
+
+.hi-fi-edit-project .text-wrapper-6 {
+    align-items: center;
+    color: #ffffff;
+    display: flex;
+    font-family: "Space Grotesk-Bold", "Space Grotesk", Helvetica, sans-serif;
+    font-size: 27.5px;
+    font-weight: 700;
+    justify-content: center;
+    letter-spacing: -0.52px;
+    line-height: 41.2px;
+    margin-top: -1.00px;
+    position: relative;
+    text-align: center;
+    white-space: nowrap;
+    width: fit-content;
+}
+
+.hi-fi-edit-project .div-3 {
+    align-items: center;
+    align-self: stretch;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 32px;
+    padding: 8px;
+    position: relative;
+    width: 100%;
+}
+
+.hi-fi-edit-project .divider {
+    height: 1px;
+    margin-top: -1.00px;
+    object-fit: cover;
+    position: relative;
+    width: 50px;
+}
+
+.hi-fi-edit-project .icon-instance-node-2 {
+    aspect-ratio: 1 !important;
+    height: 48px !important;
+    position: relative !important;
+    width: 48px !important;
+}
+
+.hi-fi-edit-project .divider-2 {
+    align-self: stretch;
+    height: 1px;
+    margin-top: -1.00px;
+    object-fit: cover;
+    position: relative;
+    width: 100%;
+}
+
+.hi-fi-edit-project .files-2 {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 32px;
+    padding: 8px;
+    position: relative;
+}
+
+.hi-fi-edit-project .blur {
+    -webkit-backdrop-filter: blur(20px) brightness(100%);
+    backdrop-filter: blur(20px) brightness(100%);
+    background-color: #000000;
+    height: 1024px;
+    left: 0;
+    opacity: 0.6;
+    position: absolute;
+    top: 0;
+    width: 1440px;
+}
+
+.hi-fi-edit-project .background {
+    background-color: var(--background);
+    border: 2.42px solid;
+    border-color: var(--border);
+    height: 599px;
+    left: 326px;
+    position: absolute;
+    top: 212px;
+    width: 787px;
+}
+
+.hi-fi-edit-project .description-input {
+    display: flex;
+    flex-direction: column;
+    height: 289px;
+    left: 344px;
+    position: absolute;
+    top: 415px;
+    width: 400px;
+}
+
+.hi-fi-edit-project .text-wrapper-7 {
+    color: #ffffff;
+    font-family: var(--heading-3-font-family);
+    font-size: var(--heading-3-font-size);
+    font-style: var(--heading-3-font-style);
+    font-weight: var(--heading-3-font-weight);
+    height: 39px;
+    letter-spacing: var(--heading-3-letter-spacing);
+    line-height: var(--heading-3-line-height);
+    width: 249px;
+}
+
+.hi-fi-edit-project .input {
+    background-color: #282828;
+    border: 1px solid;
+    border-color: var(--border);
+    display: flex;
+    height: 250px;
+    width: 400px;
+}
+
+.hi-fi-edit-project .p {
+    color: #ffffff;
+    font-family: var(--parapgraph-font-family);
+    font-size: var(--parapgraph-font-size);
+    font-style: var(--parapgraph-font-style);
+    font-weight: var(--parapgraph-font-weight);
+    height: 22px;
+    letter-spacing: var(--parapgraph-letter-spacing);
+    line-height: var(--parapgraph-line-height);
+    margin-left: 6px;
+    margin-top: 9px;
+    width: 378px;
+}
+
+.hi-fi-edit-project .path-input {
+    display: flex;
+    flex-direction: column;
+    height: 79px;
+    left: 344px;
+    position: absolute;
+    top: 312px;
+    width: 400px;
+}
+
+.hi-fi-edit-project .input-2 {
+    height: 40px;
+    position: relative;
+    width: 249px;
+}
+
+.hi-fi-edit-project .input-3 {
+    background-color: #282828;
+    border: 1px solid;
+    border-color: var(--border);
+    height: 40px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 400px;
+}
+
+.hi-fi-edit-project .text-wrapper-8 {
+    color: #ffffff;
+    font-family: var(--parapgraph-font-family);
+    font-size: var(--parapgraph-font-size);
+    font-style: var(--parapgraph-font-style);
+    font-weight: var(--parapgraph-font-weight);
+    left: 6px;
+    letter-spacing: var(--parapgraph-letter-spacing);
+    line-height: var(--parapgraph-line-height);
+    position: absolute;
+    top: 9px;
+}
+
+.hi-fi-edit-project .header {
+    background-color: transparent;
+    height: 61px;
+    left: 344px;
+    position: absolute;
+    top: 220px;
+    width: 764px;
+}
+
+.hi-fi-edit-project .cross-instance {
+    aspect-ratio: 1 !important;
+    height: 48px !important;
+    left: 716px !important;
+    position: absolute !important;
+    top: 2px !important;
+    width: 48px !important;
+}
+
+.hi-fi-edit-project .line-3 {
+    height: 2px;
+    left: 0;
+    position: absolute;
+    top: 53px;
+    width: 225px;
+}
+
+.hi-fi-edit-project .text-wrapper-9 {
+    color: #ebebeb;
+    font-family: var(--heading-2-font-family);
+    font-size: var(--heading-2-font-size);
+    font-style: var(--heading-2-font-style);
+    font-weight: var(--heading-2-font-weight);
+    left: 0;
+    letter-spacing: var(--heading-2-letter-spacing);
+    line-height: var(--heading-2-line-height);
+    position: absolute;
+    top: 2px;
+    width: 235px;
+}
+
+.hi-fi-edit-project .delete-button-instance {
+    display: flex !important;
+    left: 952px !important;
+    position: absolute !important;
+    top: 749px !important;
+}
+
+.hi-fi-edit-project .delete-button-2 {
+    left: unset !important;
+    margin-left: 14.7px !important;
+    margin-top: 3.7px !important;
+    position: unset !important;
+    top: unset !important;
+    width: 113px !important;
+}
+

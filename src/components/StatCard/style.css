@@ -1,0 +1,87 @@
+.stat-card {
+    border: 1px solid;
+    border-color: var(--border-muted);
+    height: 175px;
+    position: relative;
+    top: 20px;
+    width: 175px;
+}
+
+.stat-card .text-wrapper {
+    align-items: center;
+    color: var(--text);
+    display: flex;
+    font-family: "Inconsolata-Regular", Helvetica;
+    font-weight: 400;
+    justify-content: center;
+    left: 6.67%;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.stat-card .div {
+    color: #ffffff;
+    font-family: var(--heading-3-font-family);
+    font-size: 25.3px;
+    font-weight: 400;
+    height: 16.67%;
+    left: 12px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 6.00%;
+    white-space: nowrap;
+    width: 166px;
+}
+
+.stat-card .line {
+    height: 38px;
+    position: absolute;
+    width: 2px;
+}
+
+.stat-card.default {
+    background-color: var(--background-dark);
+    left: 20px;
+}
+
+.stat-card.hover {
+    background: linear-gradient(
+        180deg,
+        rgba(17, 117, 213, 0.5) 0%,
+        rgba(24, 24, 24, 1) 40%,
+        rgba(18, 18, 18, 1) 100%
+    );
+    left: 224px;
+}
+
+.stat-card.default .text-wrapper {
+    font-size: 56px;
+    height: 33.71%;
+    top: 61.71%;
+    width: 44.00%;
+}
+
+.stat-card.hover .text-wrapper {
+    font-size: 86.5px;
+    height: 51.43%;
+    top: 44.00%;
+    width: 68.57%;
+}
+
+.stat-card.default .line {
+    height: 38px;
+    left: 8.00%;
+    top: 68.00%;
+    width: 2px;
+}
+
+.stat-card.hover .line {
+    height: 58px;
+    left: 8.73%;
+    top: 53.12%;
+    width: 2px;
+}

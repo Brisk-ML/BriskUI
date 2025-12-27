@@ -1,0 +1,16 @@
+.files-screen {
+    aspect-ratio: 1;
+    height: 48px;
+    position: relative;
+    width: 48px;
+}
+
+.files-screen .vector {
+    aspect-ratio: 0.84;
+    height: 38px;
+    left: 17.19%;
+    position: absolute;
+    top: calc(50.00% - 19px);
+    width: 65.62%;
+}
+

@@ -1,0 +1,15 @@
+.github-screen {
+    aspect-ratio: 1;
+    height: 64px;
+    position: relative;
+    width: 64px;
+}
+
+.github-screen .vector {
+    height: 81.25%;
+    left: 0;
+    position: absolute;
+    top: 10.94%;
+    width: 81.25%;
+}
+

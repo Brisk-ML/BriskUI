@@ -1,0 +1,14 @@
+.home-screen {
+    aspect-ratio: 1;
+    height: 48px;
+    position: relative;
+    width: 48px;
+}
+
+.home-screen .vector {
+    height: 75.01%;
+    left: 14.06%;
+    position: absolute;
+    top: 10.93%;
+    width: 71.88%;
+}
