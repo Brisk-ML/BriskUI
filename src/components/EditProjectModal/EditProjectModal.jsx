@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Cross } from "../Cross";
 import DeleteButton from "../DeleteButton";
 import { useModal } from "../../contexts/ModalContext";
@@ -7,6 +7,8 @@ import "./EditProjectModal.css";
 
 export const EditProjectModal = ({ isOpen, onClose }) => {
     const { openDeleteProjectModal } = useModal();
+    const [description, setDescription] = useState("Project description...");
+    const [projectPath, setProjectPath] = useState("path/to/project");
     
     if (!isOpen) return null;
 
@@ -18,16 +20,25 @@ export const EditProjectModal = ({ isOpen, onClose }) => {
                 <div className="edit-modal-description-input">
                     <div className="edit-modal-text-wrapper-7">Description</div>
                     <div className="edit-modal-input">
-                        <p className="edit-modal-p">
-                            Project description...
-                        </p>
+                        <textarea
+                            className="edit-modal-textarea"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Project description..."
+                        />
                     </div>
                 </div>
                 <div className="edit-modal-path-input">
                     <div className="edit-modal-text-wrapper-7">Project Path</div>
                     <div className="edit-modal-input-2">
                         <div className="edit-modal-input-3" />
-                        <div className="edit-modal-text-wrapper-8">path/to/project</div>
+                        <input
+                            type="text"
+                            className="edit-modal-input-field"
+                            value={projectPath}
+                            onChange={(e) => setProjectPath(e.target.value)}
+                            placeholder="path/to/project"
+                        />
                     </div>
                 </div>
                 <header className="edit-modal-header">

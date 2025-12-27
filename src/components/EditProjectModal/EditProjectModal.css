@@ -63,18 +63,27 @@
     width: 400px;
 }
 
-.edit-modal-p {
+.edit-modal-textarea {
+    background-color: transparent;
+    border: none;
     color: #ffffff;
     font-family: var(--parapgraph-font-family);
     font-size: var(--parapgraph-font-size);
     font-style: var(--parapgraph-font-style);
     font-weight: var(--parapgraph-font-weight);
-    height: 22px;
     letter-spacing: var(--parapgraph-letter-spacing);
     line-height: var(--parapgraph-line-height);
     margin-left: 6px;
     margin-top: 9px;
+    padding: 0;
+    resize: none;
     width: 378px;
+    height: 232px;
+    outline: none;
+}
+
+.edit-modal-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .edit-modal-path-input {
@@ -104,17 +113,27 @@
     width: 400px;
 }
 
-.edit-modal-text-wrapper-8 {
+.edit-modal-input-field {
+    background-color: transparent;
+    border: none;
     color: #ffffff;
     font-family: var(--parapgraph-font-family);
     font-size: var(--parapgraph-font-size);
     font-style: var(--parapgraph-font-style);
     font-weight: var(--parapgraph-font-weight);
+    height: 100%;
     left: 6px;
     letter-spacing: var(--parapgraph-letter-spacing);
     line-height: var(--parapgraph-line-height);
+    outline: none;
+    padding: 0;
     position: absolute;
-    top: 9px;
+    top: 0;
+    width: 388px;
+}
+
+.edit-modal-input-field::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .edit-modal-header {

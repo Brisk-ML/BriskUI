@@ -11,10 +11,10 @@
     align-items: center;
     color: var(--text);
     display: flex;
-    font-family: "Inconsolata-Regular", Helvetica;
+    font-family: var(--heading-3-font-family);
     font-weight: 400;
     justify-content: center;
-    left: 6.67%;
+    left: 10.00%;
     letter-spacing: 0;
     line-height: normal;
     position: absolute;
@@ -39,6 +39,7 @@
 
 .stat-card .line {
     height: 38px;
+    left: 8.00%;
     position: absolute;
     width: 2px;
 }
@@ -61,6 +62,7 @@
 .stat-card.default .text-wrapper {
     font-size: 56px;
     height: 33.71%;
+    left: 10.00%;
     top: 61.71%;
     width: 44.00%;
 }
@@ -68,6 +70,7 @@
 .stat-card.hover .text-wrapper {
     font-size: 86.5px;
     height: 51.43%;
+    left: 10.00%;
     top: 44.00%;
     width: 68.57%;
 }
@@ -81,7 +84,7 @@
 
 .stat-card.hover .line {
     height: 58px;
-    left: 8.73%;
+    left: 8.00%;
     top: 53.12%;
     width: 2px;
 }
