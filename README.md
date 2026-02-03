@@ -1,63 +1,115 @@
-# Brisk UI
+# Brisk - Web UI
 
-Local web interface for the Brisk.
+## Tech Stack
 
-## Prerequisites
-
-You need Node.js and npm installed. Here's how to set them up:
-
-### Arch Linux
-
-```bash
-sudo pacman -S nodejs npm
-```
-
-### macOS
-
-```bash
-brew install node
-```
-
-### Verify installation
-
-```bash
-node --version   # Should show v18+ or v20+
-npm --version    # Should show 9+ or 10+
-```
+- Vite 7.3.0
+- React 19.2.3
+- React Router v7.11.0
+- Tailwind CSS 4.1.18
+- Zustand 5.0.9
+- shadcn/ui + Radix UI
+- TypeScript 5.9.3
+- Biome 2.3.10
 
 ## Getting Started
 
-1. **Install dependencies**
+### Prerequisites
 
-   ```bash
-   npm install
-   ```
+- Node.js 18+ and npm
 
-2. **Start the development server**
+### Installation
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm install
+npm run dev
+```
 
-   This opens your browser to `http://localhost:5173` with hot reloading enabled.
-
-3. **Build for production**
-
-   ```bash
-   npm run build
-   ```
-
-   Creates optimized static files in `dist/` that can be served by the Python backend.
+Dev server runs at http://localhost:3000
 
 ## Project Structure
 
 ```
-brisk-ui/
-├── index.html          # Entry HTML file
-├── package.json        # Dependencies and scripts
-├── vite.config.js      # Vite configuration
-└── src/
-    ├── main.jsx        # React entry point
-    ├── App.jsx         # Main application component
-    └── index.css       # Global styles
+brisk/
+├── index.html
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── app/
+│   │   └── globals.css
+│   ├── features/
+│   │   ├── dashboard/
+│   │   │   ├── components/
+│   │   │   ├── stores/
+│   │   │   └── page.tsx
+│   │   ├── algorithms/
+│   │   │   ├── components/
+│   │   │   ├── constants/
+│   │   │   ├── stores/
+│   │   │   ├── types.ts
+│   │   │   ├── utils/
+│   │   │   └── page.tsx
+│   │   ├── datasets/
+│   │   │   ├── components/
+│   │   │   ├── stores/
+│   │   │   └── page.tsx
+│   │   ├── experiments/
+│   │   │   └── page.tsx
+│   │   ├── files/
+│   │   │   ├── components/
+│   │   │   ├── stores/
+│   │   │   ├── types/
+│   │   │   ├── utils/
+│   │   │   └── page.tsx
+│   │   ├── metrics/
+│   │   │   └── page.tsx
+│   │   ├── project/
+│   │   │   ├── components/
+│   │   │   │   ├── algorithms/
+│   │   │   │   ├── data-processing/
+│   │   │   │   ├── datasets/
+│   │   │   │   ├── experiments/
+│   │   │   │   ├── project-setup/
+│   │   │   │   ├── report/
+│   │   │   │   ├── sync/
+│   │   │   │   └── workflow/
+│   │   │   ├── stores/
+│   │   │   └── page.tsx
+│   │   ├── results/
+│   │   │   └── page.tsx
+│   │   ├── save/
+│   │   │   └── page.tsx
+│   │   └── settings/
+│   │       └── page.tsx
+│   ├── shared/
+│   │   ├── components/
+│   │   │   ├── algorithms/
+│   │   │   ├── layout/
+│   │   │   ├── modals/
+│   │   │   ├── ui/
+│   │   │   └── ProgressTracker.tsx
+│   │   └── stores/
+│   ├── lib/
+│   │   └── utils.ts
+│   └── types/
+│       └── index.ts
+├── public/
+├── vite.config.ts
+├── tsconfig.json
+├── tsconfig.node.json
+└── biome.json
 ```
+
+## Features
+
+- Dashboard with stats and project overview
+- Project setup wizard
+- Experiments, datasets, and algorithms management
+- File browser and metrics viewer
+
+## Path Aliases
+
+`@/*` → `./src/*`
+
+## License
+
+MIT
