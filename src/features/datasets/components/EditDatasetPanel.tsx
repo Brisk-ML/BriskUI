@@ -59,10 +59,9 @@ export function EditDatasetPanel({ className }: EditDatasetPanelProps) {
     >
       {/* Header */}
       <div className="px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-white text-[20px] sm:text-[24px] font-display">
+        <h2 className="h1-underline text-white text-[20px] sm:text-[24px] font-display">
           Edit Dataset
         </h2>
-        <div className="h-[2px] bg-[#404040] mt-2" />
       </div>
 
       {/* Form Fields */}

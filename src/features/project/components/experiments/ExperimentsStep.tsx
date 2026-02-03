@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { STYLES } from "@/shared/constants/colors";
 
 // Mock algorithms - in real app, would come from store
 const MOCK_ALGORITHMS = Array.from({ length: 14 }, (_, i) => ({
@@ -37,9 +38,7 @@ export function ExperimentsStep() {
   const [groupName, setGroupName] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>(
-    [],
-  );
+  const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>([]);
 
   const [groups, setGroups] = useState<ExperimentGroup[]>([]);
 
@@ -76,12 +75,11 @@ export function ExperimentsStep() {
   return (
     <div className="w-full max-w-[1055px] px-4 xl:px-0 flex flex-col gap-4 sm:gap-6 mx-auto">
       {/* Add Experiments Form */}
-      <div className="bg-[#181818] border-2 border-[#404040] p-4 sm:p-6">
+      <div className={`${STYLES.bgCard} border-2 ${STYLES.border} p-4 sm:p-6`}>
         {/* Header */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-white font-display relative inline-block">
+          <h1 className="h1-underline text-2xl sm:text-3xl lg:text-[36px] font-bold text-white font-display">
             Add Experiments
-            <div className="absolute bottom-0 left-0 w-full h-[4px] bg-white" />
           </h1>
         </div>
 
@@ -96,7 +94,7 @@ export function ExperimentsStep() {
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Group name"
-              className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
+              className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60`}
             />
           </div>
 
@@ -106,10 +104,12 @@ export function ExperimentsStep() {
               Datasets
             </Label>
             <Select value={selectedDataset} onValueChange={setSelectedDataset}>
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px]">
+              <SelectTrigger
+                className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-10 sm:h-[40px] text-base sm:text-[18px]`}
+              >
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
+              <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
                 {MOCK_DATASETS.map((dataset) => (
                   <SelectItem
                     key={dataset.id}
@@ -132,7 +132,7 @@ export function ExperimentsStep() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional"
-              className="bg-[#282828] border-[#404040] text-white text-base sm:text-[18px] placeholder:text-white/60 min-h-[80px] resize-none"
+              className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-base sm:text-[18px] placeholder:text-white/60 min-h-[80px] resize-none`}
             />
           </div>
         </div>
@@ -146,12 +146,14 @@ export function ExperimentsStep() {
             {MOCK_ALGORITHMS.map((algorithm) => (
               <label
                 key={algorithm.id}
+                htmlFor={`algorithm-${algorithm.id}`}
                 className="flex items-center gap-2 cursor-pointer"
               >
                 <Checkbox
+                  id={`algorithm-${algorithm.id}`}
                   checked={selectedAlgorithms.includes(algorithm.id)}
                   onCheckedChange={() => handleAlgorithmToggle(algorithm.id)}
-                  className="border-[#404040] data-[state=checked]:bg-[#00a878] data-[state=checked]:border-[#00a878]"
+                  className={`${STYLES.border} ${STYLES.dataCheckedBgPrimaryLight} ${STYLES.dataCheckedBorderPrimaryLight}`}
                 />
                 <span className="text-white text-sm sm:text-base lg:text-[18px] font-display">
                   {algorithm.name}
@@ -166,13 +168,13 @@ export function ExperimentsStep() {
           <Button
             onClick={handleReset}
             variant="outline"
-            className="border-[#404040] bg-[#121212] text-white hover:bg-[#121212]/80 h-[44px] sm:h-[50px] px-6 sm:px-8 text-xl sm:text-2xl lg:text-[28px] font-display"
+            className={`btn-reset-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-[44px] sm:h-[50px] px-6 sm:px-8 text-xl sm:text-2xl lg:text-[28px] font-display`}
           >
             Reset
           </Button>
           <Button
             onClick={handleAddGroup}
-            className="bg-[#006b4c] hover:bg-[#005a3f] text-white h-[44px] sm:h-[50px] px-6 sm:px-8 text-xl sm:text-2xl lg:text-[28px] font-display"
+            className={`btn-add-hover ${STYLES.bgPrimary} text-white h-[44px] sm:h-[50px] px-6 sm:px-8 text-xl sm:text-2xl lg:text-[28px] font-display`}
           >
             Add Group
           </Button>
@@ -180,7 +182,9 @@ export function ExperimentsStep() {
       </div>
 
       {/* Groups List */}
-      <div className="bg-[#282828] border-2 border-[#363636] h-[200px] sm:h-[250px] overflow-hidden">
+      <div
+        className={`${STYLES.bgCardAlt} border-2 ${STYLES.borderSecondary} h-[200px] sm:h-[250px] overflow-hidden`}
+      >
         {groups.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-white text-[24px] sm:text-[28px] font-display">
@@ -194,7 +198,7 @@ export function ExperimentsStep() {
                 key={group.id}
                 className={cn(
                   "flex-shrink-0 w-[200px] sm:w-[250px] h-[160px] sm:h-[200px] p-3 sm:p-4 flex flex-col gap-2",
-                  "bg-[#121212] border border-[#363636]",
+                  `${STYLES.bgDark} border ${STYLES.borderSecondary}`,
                 )}
               >
                 <div className="text-white text-lg sm:text-[24px] font-display font-bold truncate">

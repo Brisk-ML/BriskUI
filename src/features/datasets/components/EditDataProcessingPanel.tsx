@@ -145,7 +145,7 @@ export function EditDataProcessingPanel() {
             <div className="flex justify-end">
               <Button
                 onClick={handleAddConfig}
-                className="bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display hover:bg-[#005a3f] transition-colors"
+                className="btn-add-hover bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display"
               >
                 Add
               </Button>
@@ -193,7 +193,7 @@ export function EditDataProcessingPanel() {
             <div className="flex justify-end">
               <Button
                 onClick={handleAddConfig}
-                className="bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display hover:bg-[#005a3f] transition-colors"
+                className="btn-add-hover bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display"
               >
                 Add
               </Button>
@@ -258,7 +258,7 @@ export function EditDataProcessingPanel() {
             <div className="flex justify-end">
               <Button
                 onClick={handleAddConfig}
-                className="bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display hover:bg-[#005a3f] transition-colors"
+                className="btn-add-hover bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display"
               >
                 Add
               </Button>
@@ -373,7 +373,7 @@ export function EditDataProcessingPanel() {
             <div className="flex justify-end">
               <Button
                 onClick={handleAddConfig}
-                className="bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display hover:bg-[#005a3f] transition-colors"
+                className="btn-add-hover bg-[#006b4c] text-white h-[50px] px-8 text-[20px] font-display"
               >
                 Add
               </Button>
@@ -531,12 +531,14 @@ export function EditDataProcessingPanel() {
                   type="button"
                   onClick={() => setActivePreprocessor(preprocessor.id)}
                   className={cn(
-                    "w-[100px] h-[100px] border-2 flex items-center justify-center",
+                    "card-hover-fade w-[100px] h-[100px] border-2 flex items-center justify-center relative",
                     "text-white text-[16px] sm:text-[18px] font-display text-center leading-tight",
-                    "hover:opacity-90 transition-all cursor-pointer whitespace-pre-line",
-                    isActive || isConfigured
-                      ? "bg-[#006b4c] border-[#00a878]"
-                      : "bg-[#121212] border-[#363636]",
+                    "transition-all duration-300 cursor-pointer whitespace-pre-line",
+                    isActive
+                      ? "bg-[#006b4c] border-[#00a878] ring-2 ring-white ring-offset-2 ring-offset-[#282828]"
+                      : isConfigured
+                        ? "bg-[#006b4c] border-[#00a878]"
+                        : "bg-[#121212] border-[#363636]",
                   )}
                 >
                   {preprocessor.label}
@@ -545,8 +547,17 @@ export function EditDataProcessingPanel() {
             })}
           </div>
 
-          {/* Configuration Area */}
-          <div className="bg-[#121212] border border-[#363636] p-4 min-h-[200px]">
+          {activePreprocessor && (
+            <p className="text-white/80 text-sm font-display">
+              Configuring:{" "}
+              <span className="font-semibold text-white">
+                {PREPROCESSORS.find(
+                  (p) => p.id === activePreprocessor,
+                )?.label.replace("\n", " ") ?? activePreprocessor}
+              </span>
+            </p>
+          )}
+          <div className="bg-[#121212] border border-[#363636] p-4 h-[360px] overflow-y-auto">
             {renderConfigForm()}
           </div>
         </div>

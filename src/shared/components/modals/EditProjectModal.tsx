@@ -11,6 +11,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { STYLES } from "@/shared/constants/colors";
 import { useProjectModalStore } from "@/shared/stores/useProjectModalStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
@@ -21,8 +22,7 @@ export function EditProjectModal() {
   const { editModal, closeEditModal, openDeleteModal } = useProjectModalStore();
 
   const [localPath, setLocalPath] = useState(projectPath);
-  const [localDescription, setLocalDescription] =
-    useState(projectDescription);
+  const [localDescription, setLocalDescription] = useState(projectDescription);
 
   useEffect(() => {
     if (editModal) {
@@ -43,11 +43,13 @@ export function EditProjectModal() {
         open={editModal}
         onOpenChange={(open) => !open && closeEditModal()}
       >
-        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] 2xl:max-w-[900px] border-[#404040] border-[2px] bg-[#181818] p-4 sm:p-6 md:p-8 lg:p-10">
+        <DialogContent
+          showCloseButton={false}
+          className={`max-w-[95vw] sm:max-w-[90vw] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] 2xl:max-w-[900px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 md:p-8 lg:p-10 rounded-none`}
+        >
           <DialogHeader className="mb-4 sm:mb-6 md:mb-8">
-            <DialogTitle className="text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-[#ebebeb] font-display text-left relative inline-block w-fit">
+            <DialogTitle className="h1-underline text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-[#ebebeb] font-display text-left w-fit">
               Edit Project
-              <div className="absolute -bottom-1 sm:-bottom-2 left-0 w-full h-[2px] bg-white opacity-80" />
             </DialogTitle>
           </DialogHeader>
 
@@ -60,7 +62,7 @@ export function EditProjectModal() {
                 value={localPath}
                 onChange={(e) => setLocalPath(e.target.value)}
                 placeholder="path/to/project"
-                className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-lg lg:text-[18px] h-9 sm:h-10 md:h-11 lg:h-[40px] placeholder:text-white/60"
+                className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base md:text-lg lg:text-[18px] h-9 sm:h-10 md:h-11 lg:h-[40px] placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50 rounded-none`}
               />
             </div>
 
@@ -72,7 +74,7 @@ export function EditProjectModal() {
                 value={localDescription}
                 onChange={(e) => setLocalDescription(e.target.value)}
                 placeholder="This is a classification project training on ..."
-                className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-lg lg:text-[18px] min-h-[100px] sm:min-h-[140px] md:min-h-[180px] lg:min-h-[250px] resize-none placeholder:text-white/60"
+                className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base md:text-lg lg:text-[18px] min-h-[100px] sm:min-h-[140px] md:min-h-[180px] lg:min-h-[250px] resize-none placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50 rounded-none`}
               />
             </div>
           </div>
@@ -81,7 +83,7 @@ export function EditProjectModal() {
             <Button
               variant="outline"
               onClick={() => closeEditModal()}
-              className="border-[#404040] bg-[#121212] text-white hover:text-white hover:bg-[#121212]/80 h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] order-2 sm:order-1"
+              className={`btn-cancel-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] order-2 sm:order-1`}
             >
               Cancel
             </Button>
@@ -89,13 +91,13 @@ export function EditProjectModal() {
               <Button
                 variant="outline"
                 onClick={() => openDeleteModal()}
-                className="border-[#404040] bg-[#121212] text-white hover:text-white hover:bg-[#121212]/80 h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] w-full sm:w-auto"
+                className={`btn-delete-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] w-full sm:w-auto`}
               >
                 Delete
               </Button>
               <Button
                 onClick={handleSave}
-                className="bg-accent-500 hover:bg-accent-600 text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] px-4 sm:px-6 md:px-8 w-full sm:w-auto"
+                className={`btn-add-hover ${STYLES.bgPrimary} text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] px-4 sm:px-6 md:px-8 w-full sm:w-auto`}
               >
                 Save Changes
               </Button>

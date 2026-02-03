@@ -13,9 +13,7 @@ import { useDataProcessingStore } from "../../stores/useDataProcessingStore";
 export function ScalingConfig() {
   const { addScalingConfig, loading } = useDataProcessingStore();
 
-  const [method, setMethod] = useState<ScalingConfigType["method"] | "">(
-    "",
-  );
+  const [method, setMethod] = useState<ScalingConfigType["method"] | "">("");
 
   const handleAdd = async () => {
     if (!method) return;
@@ -77,7 +75,7 @@ export function ScalingConfig() {
           type="button"
           onClick={handleAdd}
           disabled={loading}
-          className="bg-[#006b4c] text-white h-10 sm:h-11 md:h-[50px] px-6 sm:px-8 text-base sm:text-lg md:text-[20px] font-display hover:bg-[#005a3f] transition-colors disabled:opacity-50"
+          className="btn-add-hover bg-[#006b4c] text-white h-10 sm:h-11 md:h-[50px] px-6 sm:px-8 text-base sm:text-lg md:text-[20px] font-display disabled:opacity-50"
         >
           {loading ? "Adding..." : "Add"}
         </button>

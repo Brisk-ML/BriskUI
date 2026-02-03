@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
+import { STYLES } from "@/shared/constants/colors";
 import { useDatasetsModalStore } from "../stores/useDatasetsModalStore";
 import { useDatasetsStore } from "../stores/useDatasetsStore";
 
@@ -28,12 +29,14 @@ export function DatasetCardsBar() {
   };
 
   return (
-    <div className="w-full bg-[#282828] border-2 border-[#363636] p-4 flex items-center gap-3">
+    <div
+      className={`w-full ${STYLES.bgCardAlt} border-2 ${STYLES.borderSecondary} p-4 flex items-center gap-3`}
+    >
       {/* Left Arrow Button */}
       <button
         type="button"
         onClick={scrollLeft}
-        className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-[#282828] border border-[#404040] hover:bg-[#383838] transition-colors flex items-center justify-center"
+        className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 ${STYLES.bgCardAlt} border ${STYLES.border} ${STYLES.bgHover} transition-colors flex items-center justify-center`}
         aria-label="Scroll left"
       >
         <img
@@ -60,12 +63,12 @@ export function DatasetCardsBar() {
               type="button"
               onClick={() => selectDataset(dataset.id)}
               className={cn(
-                "flex-shrink-0 w-[130px] md:w-[150px] h-[80px] md:h-[100px] p-3 border-2 transition-colors",
+                "card-hover-fade flex-shrink-0 w-[130px] md:w-[150px] h-[80px] md:h-[100px] p-3 border-2 transition-colors duration-300 relative",
                 "flex flex-col items-start justify-center",
-                "cursor-pointer hover:opacity-90",
+                "cursor-pointer",
                 isSelected
-                  ? "bg-[#006b4c] border-[#00a878]"
-                  : "bg-[#121212] border-[#363636] hover:border-[#404040]",
+                  ? `${STYLES.bgPrimary} ${STYLES.borderPrimaryLight}`
+                  : `${STYLES.bgDark} ${STYLES.borderSecondary} ${STYLES.hoverBorder} ${STYLES.hoverBgCard}`,
               )}
             >
               <span className="text-white text-sm md:text-base font-display truncate w-full text-left">
@@ -83,7 +86,7 @@ export function DatasetCardsBar() {
       <button
         type="button"
         onClick={scrollRight}
-        className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-[#282828] border border-[#404040] hover:bg-[#383838] transition-colors flex items-center justify-center"
+        className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 ${STYLES.bgCardAlt} border ${STYLES.border} ${STYLES.bgHover} transition-colors flex items-center justify-center`}
         aria-label="Scroll right"
       >
         <img
@@ -97,7 +100,7 @@ export function DatasetCardsBar() {
       <button
         type="button"
         onClick={openAddDatasetModal}
-        className="flex-shrink-0 h-10 md:h-12 px-4 bg-[#006b4c] hover:bg-[#008b5c] border border-[#00a878] transition-colors flex items-center justify-center gap-2"
+        className={`btn-add-hover flex-shrink-0 h-10 md:h-12 px-4 ${STYLES.bgPrimary} border ${STYLES.borderPrimaryLight} flex items-center justify-center gap-2`}
       >
         <svg
           width="20"
@@ -107,6 +110,7 @@ export function DatasetCardsBar() {
           xmlns="http://www.w3.org/2000/svg"
           className="w-4 h-4 md:w-5 md:h-5"
         >
+          <title>Add</title>
           <path
             d="M10 4V16M4 10H16"
             stroke="white"

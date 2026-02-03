@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { COLORS } from "@/shared/constants/colors";
 
 export interface PlotSettings {
   fileFormat: string;
@@ -42,8 +43,8 @@ const DEFAULT_PLOT_SETTINGS: PlotSettings = {
 };
 
 const DEFAULT_COLORS: ColorOption[] = [
-  { id: "primary", name: "Primary", color: "#1175d5" },
-  { id: "secondary", name: "Secondary", color: "#00a878" },
+  { id: "primary", name: "Primary", color: COLORS.accent },
+  { id: "secondary", name: "Secondary", color: COLORS.primaryLight },
   { id: "accent", name: "Accent", color: "#ff6b6b" },
 ];
 

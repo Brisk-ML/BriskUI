@@ -31,7 +31,6 @@ export interface Dataset {
   selected?: boolean;
 }
 
-
 export type SplitMethod = "random" | "shuffle" | "stratified";
 
 export interface DataManagerConfig {
@@ -45,7 +44,6 @@ export interface DataManagerConfig {
   stratified: boolean;
   randomState: number;
 }
-
 
 export type PreprocessorType =
   | "missing-data"
@@ -131,7 +129,6 @@ export interface WizardData {
   sync?: SyncConfig;
 }
 
-
 export interface ExperimentGroup {
   id: string;
   name: string;
@@ -139,7 +136,6 @@ export interface ExperimentGroup {
   algorithmIds: string[];
   metrics: string[];
 }
-
 
 export interface WorkflowStep {
   id: string;
@@ -153,7 +149,6 @@ export interface WorkflowConfig {
   connections: Array<{ from: string; to: string }>;
 }
 
-
 export interface ReportConfig {
   plots: PlotConfig[];
   colorScheme?: string;
@@ -165,7 +160,6 @@ export interface PlotConfig {
   title: string;
   metrics: string[];
 }
-
 
 export interface SyncConfig {
   destination: "local" | "cloud" | "api";

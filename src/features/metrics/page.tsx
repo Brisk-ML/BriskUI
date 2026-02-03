@@ -46,8 +46,8 @@ function MetricCard({ metric, isSelected, onClick }: MetricCardProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "w-[100px] sm:w-[110px] lg:w-[120px] h-[70px] sm:h-[75px] lg:h-[80px] flex items-center justify-center p-2 sm:p-3",
-        "border transition-all duration-200 text-center",
+        "card-hover-fade w-[100px] sm:w-[110px] lg:w-[120px] h-[70px] sm:h-[75px] lg:h-[80px] flex items-center justify-center p-2 sm:p-3 relative",
+        "border transition-all duration-300 text-center",
         isSelected
           ? "bg-[#282828] border-white"
           : "bg-[#181818] border-[#404040] hover:bg-[#282828] hover:border-[#606060]",

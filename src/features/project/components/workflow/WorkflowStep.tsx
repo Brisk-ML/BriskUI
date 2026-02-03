@@ -46,9 +46,7 @@ interface WorkflowNode {
 export function WorkflowStep() {
   const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(
-    null,
-  );
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const [modalModel, setModalModel] = useState("Model");
   const [modalX, setModalX] = useState("");
@@ -114,7 +112,7 @@ export function WorkflowStep() {
             type="button"
             onClick={() => handleMethodClick(method.id)}
             className={cn(
-              "border border-[#404040] bg-[#181818] hover:bg-[#282828] transition-colors",
+              "card-hover-fade border border-[#404040] bg-[#181818] hover:bg-[#282828] transition-colors duration-300 relative",
               "p-3 sm:p-4 flex items-center justify-center text-center",
               "min-h-[60px] sm:min-h-[80px]",
             )}
@@ -130,7 +128,7 @@ export function WorkflowStep() {
       <div className="bg-[#181818] border-2 border-[#404040] p-4 sm:p-6 min-h-[300px]">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
-          <h2 className="text-xl sm:text-2xl lg:text-[28px] font-bold text-white font-display">
+          <h2 className="h1-underline text-xl sm:text-2xl lg:text-[28px] font-bold text-white font-display">
             Workflow
           </h2>
         </div>
@@ -147,7 +145,7 @@ export function WorkflowStep() {
             {workflowNodes.map((node, index) => (
               <Fragment key={node.id}>
                 {/* Node Card */}
-                <div className="relative border border-[#404040] bg-[#282828] p-3 sm:p-4 w-[140px] sm:w-[160px]">
+                <div className="card-hover-fade relative border border-[#404040] bg-[#282828] p-3 sm:p-4 w-[140px] sm:w-[160px]">
                   {/* Remove button */}
                   <button
                     type="button"
@@ -191,9 +189,9 @@ export function WorkflowStep() {
 
       {/* Add Method Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="bg-[#181818] border-[#404040] text-white max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl font-display">
+        <DialogContent className="bg-[#181818] border-[#404040] text-white max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6">
+          <DialogHeader className="mb-2 sm:mb-4">
+            <DialogTitle className="text-lg sm:text-xl md:text-2xl font-display">
               Add{" "}
               {selectedMethod
                 ? WORKFLOW_METHODS.find((m) => m.id === selectedMethod)?.name
@@ -201,14 +199,14 @@ export function WorkflowStep() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
             {/* Model */}
             <div>
-              <Label className="text-white text-base font-display mb-2 block">
+              <Label className="text-white text-sm sm:text-base font-display mb-2 block">
                 Model
               </Label>
               <Select value={modalModel} onValueChange={setModalModel}>
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white">
+                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#282828] border-[#404040]">
@@ -227,11 +225,11 @@ export function WorkflowStep() {
 
             {/* X */}
             <div>
-              <Label className="text-white text-base font-display mb-2 block">
+              <Label className="text-white text-sm sm:text-base font-display mb-2 block">
                 X
               </Label>
               <Select value={modalX} onValueChange={setModalX}>
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white">
+                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#282828] border-[#404040]">
@@ -247,11 +245,11 @@ export function WorkflowStep() {
 
             {/* Y */}
             <div>
-              <Label className="text-white text-base font-display mb-2 block">
+              <Label className="text-white text-sm sm:text-base font-display mb-2 block">
                 Y
               </Label>
               <Select value={modalY} onValueChange={setModalY}>
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white">
+                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#282828] border-[#404040]">
@@ -267,11 +265,11 @@ export function WorkflowStep() {
 
             {/* Metrics */}
             <div>
-              <Label className="text-white text-base font-display mb-2 block">
+              <Label className="text-white text-sm sm:text-base font-display mb-2 block">
                 Metrics
               </Label>
               <Select value={modalMetrics} onValueChange={setModalMetrics}>
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white">
+                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#282828] border-[#404040]">
@@ -290,34 +288,34 @@ export function WorkflowStep() {
 
             {/* Filename */}
             <div>
-              <Label className="text-white text-base font-display mb-2 block">
+              <Label className="text-white text-sm sm:text-base font-display mb-2 block">
                 Filename
               </Label>
               <Input
                 value={modalFilename}
                 onChange={(e) => setModalFilename(e.target.value)}
                 placeholder="eval_model_cv"
-                className="bg-[#282828] border-[#404040] text-white"
+                className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 text-sm sm:text-base"
               />
             </div>
 
             {/* CV */}
             <div>
-              <Label className="text-white text-base font-display mb-2 block">
+              <Label className="text-white text-sm sm:text-base font-display mb-2 block">
                 CV
               </Label>
               <Input
                 value={modalCV}
                 onChange={(e) => setModalCV(e.target.value)}
                 placeholder="5"
-                className="bg-[#282828] border-[#404040] text-white"
+                className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 text-sm sm:text-base"
               />
             </div>
           </div>
 
           <Button
             onClick={handleAddToWorkflow}
-            className="w-full mt-4 bg-[#006b4c] hover:bg-[#005a3f] text-white h-[44px] text-lg font-display"
+            className="btn-add-hover w-full mt-4 bg-[#006b4c] text-white h-10 sm:h-11 md:h-12 text-base sm:text-lg font-display"
           >
             Add
           </Button>

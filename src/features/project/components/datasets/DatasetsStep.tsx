@@ -28,9 +28,7 @@ export function DatasetsStep() {
   const [observationsCount, setObservationsCount] = useState("");
 
   const [featureName, setFeatureName] = useState("");
-  const [dataType, setDataType] = useState<"str" | "int" | "float">(
-    "str",
-  );
+  const [dataType, setDataType] = useState<"str" | "int" | "float">("str");
   const [features, setFeatures] = useState<Feature[]>([
     { id: "1", name: "Feature 1", type: "str" },
     { id: "2", name: "Feature 2", type: "int" },
@@ -41,6 +39,7 @@ export function DatasetsStep() {
     { id: "7", name: "Feature 7", type: "int" },
   ]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [resetHovered, setResetHovered] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,9 +139,8 @@ export function DatasetsStep() {
       <div className="bg-[#181818] border-2 border-[#404040] px-4 sm:px-6 py-4 max-h-[550px] overflow-y-auto">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white font-display relative inline-block">
+          <h1 className="h1-underline text-2xl sm:text-3xl lg:text-4xl font-bold text-white font-display">
             Add Datasets
-            <div className="absolute bottom-0 left-0 w-[200px] sm:w-[260px] h-[4px] bg-white" />
           </h1>
         </div>
 
@@ -394,16 +392,25 @@ export function DatasetsStep() {
 
         {/* Action Buttons */}
         <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6 justify-end flex-wrap">
-          <Button
+          <button
+            type="button"
             onClick={handleReset}
-            variant="outline"
-            className="border-[#404040] bg-[#121212] text-white hover:bg-[#121212]/80 h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display"
+            onMouseEnter={() => setResetHovered(true)}
+            onMouseLeave={() => setResetHovered(false)}
+            className="border-2 h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display rounded-md transition-colors"
+            style={{
+              borderColor: resetHovered ? "#FF3D29" : "#404040",
+              backgroundColor: resetHovered
+                ? "rgba(255, 61, 41, 0.2)"
+                : "#121212",
+              color: "white",
+            }}
           >
             Reset
-          </Button>
+          </button>
           <Button
             onClick={handleAddDataset}
-            className="bg-[#006b4c] hover:bg-[#005a3f] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display border border-[#363636]"
+            className="btn-add-hover bg-[#006b4c] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display border border-[#363636]"
           >
             Add Dataset
           </Button>
@@ -428,11 +435,11 @@ export function DatasetsStep() {
                   type="button"
                   onClick={() => handleSelectDataset(dataset.id)}
                   className={cn(
-                    "flex-shrink-0 w-full sm:w-[250px] h-auto min-h-[180px] sm:h-[250px] p-3 sm:p-2 flex flex-col gap-2 sm:gap-4 cursor-pointer transition-all border",
-                    "hover:bg-gradient-to-b hover:from-[#1175d5] hover:via-[#181818] hover:via-[40%] hover:to-[#121212] hover:border-[#404040]",
+                    "card-hover-fade flex-shrink-0 w-full sm:w-[250px] h-auto min-h-[180px] sm:h-[250px] p-3 sm:p-2 flex flex-col gap-2 sm:gap-4 cursor-pointer transition-all duration-300 border relative",
+                    "hover:border-[#404040]",
                     isSelected
                       ? "bg-gradient-to-b from-[#1175d5] via-[#181818] via-[40%] to-[#121212] border-[#404040]"
-                      : "bg-[#121212] border-[#363636]",
+                      : "bg-[#121212] border-[#363636] hover:bg-[#181818]",
                   )}
                 >
                   <div className="text-white text-xl sm:text-[28px] font-display leading-normal min-h-[30px] sm:h-[40px] flex items-center text-left truncate">

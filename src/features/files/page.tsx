@@ -23,7 +23,6 @@ export default function FilesPage() {
     >
       <ProjectHeader />
 
-      {/* Two-panel layout */}
       <div className="flex-1 flex flex-col lg:flex-row px-4 sm:px-6 md:px-8 lg:px-[16px] pb-4 sm:pb-6 md:pb-8 overflow-hidden">
         <div className="h-[300px] sm:h-[350px] md:h-[400px] lg:h-full w-full lg:w-[260px] xl:w-[300px] 2xl:w-[320px] flex-shrink-0">
           <FileList />

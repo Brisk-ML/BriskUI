@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { STYLES } from "@/shared/constants/colors";
 import type { AlgorithmCatalogItem } from "../types";
 
 interface AlgorithmCardProps {
@@ -14,19 +15,19 @@ export function AlgorithmCard({
 }: AlgorithmCardProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
-        // Responsive sizing: smaller on mobile, full size on lg+
         "aspect-square w-full max-w-[150px] mx-auto",
         "min-h-[120px] sm:min-h-[140px] lg:h-[150px]",
-        "bg-[#181818] border border-[#404040]",
-        "hover:bg-[#282828] hover:border-[#606060] transition-all duration-200",
+        `${STYLES.bgCard} border ${STYLES.border} relative`,
+        `${STYLES.hoverBgCardAlt} ${STYLES.borderHover} transition-all duration-300`,
         "flex items-center justify-center p-3 sm:p-4",
-        "cursor-pointer",
+        "cursor-pointer card-hover-fade",
         className,
       )}
     >
-      <p className="text-white text-[20px] sm:text-[22px] lg:text-[24px] font-['Montserrat'] text-center leading-normal">
+      <p className="text-white text-[20px] sm:text-[22px] lg:text-[24px] font-display text-center leading-normal">
         {algorithm.name}
       </p>
     </button>

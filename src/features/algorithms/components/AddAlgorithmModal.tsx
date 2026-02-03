@@ -9,6 +9,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { STYLES } from "@/shared/constants/colors";
 import { useAlgorithmWrapperStore } from "../stores/useAlgorithmWrapperStore";
 import type {
   AlgorithmCatalogItem,
@@ -37,8 +38,9 @@ export function AddAlgorithmModal({
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [useDefaults, setUseDefaults] = useState(true);
-  const [hyperparameters, setHyperparameters] =
-    useState<HyperparameterValues>({});
+  const [hyperparameters, setHyperparameters] = useState<HyperparameterValues>(
+    {},
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -113,30 +115,26 @@ export function AddAlgorithmModal({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-[95vw] sm:max-w-[500px] lg:max-w-[550px] border-[#404040] border-2 bg-[#181818] p-0 gap-0"
+        className={`max-w-[95vw] sm:max-w-[500px] lg:max-w-[550px] border-2 ${STYLES.border} ${STYLES.bgCard} p-0 gap-0`}
       >
-        {/* Close Button - Responsive size */}
         <button
+          type="button"
           onClick={onClose}
           className="absolute right-[8px] top-[8px] sm:right-[10px] sm:top-[10px] size-[40px] sm:size-[48px] flex items-center justify-center text-white hover:opacity-80 transition-opacity z-10"
         >
           <X className="size-5 sm:size-6" />
         </button>
 
-        {/* Header - Responsive text */}
         <div className="px-3 sm:px-[18px] pt-[8px] pb-3 sm:pb-4">
-          <DialogTitle className="text-[24px] sm:text-[30px] lg:text-[36px] font-bold text-[#ebebeb] font-['Montserrat'] relative inline-block">
+          <DialogTitle className="h1-underline text-[24px] sm:text-[30px] lg:text-[36px] font-bold text-[#ebebeb] font-display">
             Add {algorithm.name}
-            <div className="absolute -bottom-1 left-0 w-full h-[2px] bg-white" />
           </DialogTitle>
         </div>
 
-        {/* Form Content - Responsive spacing and sizing */}
         <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3 sm:space-y-4">
-          {/* Name and Display Name - Stack on mobile, side-by-side on larger screens */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
-              <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-['Montserrat'] mb-2 block">
+              <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block">
                 Name
               </Label>
               <Input
@@ -152,7 +150,7 @@ export function AddAlgorithmModal({
                   }
                 }}
                 placeholder={`Ex. ${algorithm.shortName}`}
-                className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px] placeholder:text-white/60"
+                className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px] placeholder:text-white/60`}
               />
               {errors.name && (
                 <p className="text-red-500 text-[12px] sm:text-[14px] mt-1">
@@ -161,7 +159,7 @@ export function AddAlgorithmModal({
               )}
             </div>
             <div className="flex-1">
-              <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-['Montserrat'] mb-2 block">
+              <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block">
                 Display Name
               </Label>
               <Input
@@ -177,7 +175,7 @@ export function AddAlgorithmModal({
                   }
                 }}
                 placeholder={`Ex. ${algorithm.name}`}
-                className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px] placeholder:text-white/60"
+                className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px] placeholder:text-white/60`}
               />
               {errors.displayName && (
                 <p className="text-red-500 text-[12px] sm:text-[14px] mt-1">
@@ -187,34 +185,73 @@ export function AddAlgorithmModal({
             </div>
           </div>
 
-          {/* Divider */}
           <div className="h-[1px] bg-white/40" />
 
-          {/* Defaults / Hyperparameters Toggle - Responsive text */}
-          <div className="flex items-center border border-[#404040]">
+          <div className="flex items-center gap-1 sm:gap-2 border border-[#404040] p-1 sm:p-2">
             <button
+              type="button"
               onClick={() => setUseDefaults(true)}
               className={cn(
-                "flex-1 h-[32px] sm:h-[35px] flex items-center justify-center text-[14px] sm:text-[16px] lg:text-[18px] font-['Montserrat'] text-white transition-colors",
-                useDefaults ? "bg-[#121212]" : "bg-[#282828]",
+                "flex-1 h-[32px] sm:h-[35px] lg:h-[38px] flex items-center justify-center text-[13px] sm:text-[16px] lg:text-[18px] font-display text-white transition-colors shrink-0 px-2",
+                useDefaults
+                  ? `${STYLES.bgDark} ring-2 ring-white ring-offset-1 sm:ring-offset-2 ${STYLES.ringOffset}`
+                  : STYLES.bgCardAlt,
               )}
             >
               Defaults
             </button>
             <button
+              type="button"
               onClick={() => setUseDefaults(false)}
               className={cn(
-                "flex-[2] h-[32px] sm:h-[35px] flex items-center justify-center text-[14px] sm:text-[16px] lg:text-[18px] font-['Montserrat'] text-white transition-colors",
-                !useDefaults ? "bg-[#121212]" : "bg-[#282828]",
+                "flex-[2] h-[32px] sm:h-[35px] lg:h-[38px] flex items-center justify-center text-[13px] sm:text-[16px] lg:text-[18px] font-display text-white transition-colors shrink-0 px-2",
+                !useDefaults
+                  ? `${STYLES.bgDark} ring-2 ring-white ring-offset-1 sm:ring-offset-2 ${STYLES.ringOffset}`
+                  : STYLES.bgCardAlt,
               )}
             >
               Hyperparameters
             </button>
           </div>
 
-          {/* Hyperparameter Form (only shown when not using defaults) */}
+          {useDefaults && algorithm.hyperparameters.length > 0 && (
+            <div className="pt-2 sm:pt-3">
+              <p className="text-white/60 text-[12px] sm:text-sm font-display mb-2">
+                Default values:
+              </p>
+              <div className="bg-[#121212] border border-[#404040] p-2 sm:p-3 rounded space-y-1.5 max-h-[120px] sm:max-h-[140px] lg:max-h-[160px] overflow-y-auto text-[12px] sm:text-sm">
+                {algorithm.hyperparameters.map((field) => {
+                  const def =
+                    getDefaultHyperparameters(algorithm.id)[field.name] ??
+                    field.defaultValue;
+                  const display =
+                    def !== null && def !== undefined && def !== ""
+                      ? typeof def === "boolean"
+                        ? def
+                          ? "True"
+                          : "False"
+                        : String(def)
+                      : (field.placeholder ?? "—");
+                  return (
+                    <div
+                      key={field.name}
+                      className="flex flex-nowrap justify-between items-center gap-4 text-[12px] sm:text-sm font-display"
+                    >
+                      <span className="text-white/80 capitalize whitespace-nowrap shrink-0">
+                        {field.label.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-white truncate text-right min-w-0">
+                        {display}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {!useDefaults && (
-            <div className="pt-2">
+            <div className="pt-2 sm:pt-3">
               <HyperparameterForm
                 fields={algorithm.hyperparameters}
                 values={hyperparameters}
@@ -225,11 +262,10 @@ export function AddAlgorithmModal({
           )}
         </div>
 
-        {/* Footer - Responsive button */}
         <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex justify-end">
           <Button
             onClick={handleAdd}
-            className="bg-[#006b4c] hover:bg-[#005a3f] text-white h-[42px] sm:h-[50px] px-6 sm:px-8 text-[20px] sm:text-[24px] lg:text-[28px] font-['Montserrat'] border border-[#363636]"
+            className={`btn-add-hover ${STYLES.bgPrimary} text-white h-[42px] sm:h-[50px] px-6 sm:px-8 text-[20px] sm:text-[24px] lg:text-[28px] font-display border ${STYLES.borderSecondary}`}
           >
             Add
           </Button>

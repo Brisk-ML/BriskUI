@@ -8,9 +8,8 @@ export function SyncStep() {
       <div className="bg-[#181818] border-2 border-[#404040] p-6 sm:p-8">
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
-          <h1 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-white font-display relative inline-block">
+          <h1 className="h1-underline text-2xl sm:text-3xl lg:text-[36px] font-bold text-white font-display">
             Sync Project
-            <div className="absolute bottom-0 left-0 w-full h-[4px] bg-white" />
           </h1>
         </div>
 
@@ -48,12 +47,12 @@ export function SyncStep() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             variant="outline"
-            className="border-[#404040] bg-[#282828] text-white hover:bg-[#383838] h-[50px] px-8 text-lg font-display"
+            className="btn-cancel-hover border border-[#404040] bg-[#121212] text-white h-[50px] px-8 text-lg font-display"
           >
             <RefreshCw className="w-5 h-5 mr-2" />
             Review Settings
           </Button>
-          <Button className="bg-[#006b4c] hover:bg-[#005a3f] text-white h-[50px] px-8 text-lg font-display">
+          <Button className="btn-add-hover bg-[#006b4c] text-white h-[50px] px-8 text-lg font-display">
             <Upload className="w-5 h-5 mr-2" />
             Sync Now
           </Button>

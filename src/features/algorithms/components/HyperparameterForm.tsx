@@ -29,14 +29,23 @@ export function HyperparameterForm({
   const renderField = (field: HyperparameterField) => {
     const value = values[field.name] ?? field.defaultValue;
     const error = errors[field.name];
+    const defaultLabel =
+      field.defaultValue != null && field.defaultValue !== ""
+        ? ` (default: ${field.defaultValue})`
+        : "";
 
     switch (field.type) {
       case "text":
       case "number":
         return (
-          <div key={field.name} className="w-full sm:w-[180px] lg:w-[200px]">
-            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-['Montserrat'] mb-2 block">
+          <div key={field.name} className="w-full sm:w-[220px] lg:w-[240px]">
+            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block whitespace-nowrap">
               {field.label}
+              {defaultLabel && (
+                <span className="text-white/60 font-normal text-sm ml-1">
+                  {defaultLabel}
+                </span>
+              )}
             </Label>
             <Input
               type={field.type}
@@ -58,7 +67,11 @@ export function HyperparameterForm({
                   onChange(field.name, inputValue);
                 }
               }}
-              placeholder={field.placeholder}
+              placeholder={
+                field.defaultValue != null && field.defaultValue !== ""
+                  ? `Default: ${field.defaultValue}`
+                  : field.placeholder
+              }
               className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px] placeholder:text-white/60"
             />
             {error && (
@@ -71,9 +84,14 @@ export function HyperparameterForm({
 
       case "select":
         return (
-          <div key={field.name} className="w-full sm:w-[180px] lg:w-[200px]">
-            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-['Montserrat'] mb-2 block">
+          <div key={field.name} className="w-full sm:w-[220px] lg:w-[240px]">
+            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block whitespace-nowrap">
               {field.label}
+              {defaultLabel && (
+                <span className="text-white/60 font-normal text-sm ml-1">
+                  {defaultLabel}
+                </span>
+              )}
             </Label>
             <Select
               value={String(value)}
@@ -112,9 +130,14 @@ export function HyperparameterForm({
 
       case "boolean":
         return (
-          <div key={field.name} className="w-full sm:w-[180px] lg:w-[200px]">
-            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-['Montserrat'] mb-2 block">
+          <div key={field.name} className="w-full sm:w-[220px] lg:w-[240px]">
+            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block whitespace-nowrap">
               {field.label}
+              {defaultLabel && (
+                <span className="text-white/60 font-normal text-sm ml-1">
+                  {defaultLabel}
+                </span>
+              )}
             </Label>
             <Select
               value={String(value)}

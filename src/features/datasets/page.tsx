@@ -53,8 +53,7 @@ export default function DatasetsPage() {
   ]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [activeTab, setActiveTab] =
-    useState<PreprocessingTab>("Missing Data");
+  const [activeTab, setActiveTab] = useState<PreprocessingTab>("Missing Data");
 
   const handleAddFeature = () => {
     if (featureName.trim()) {
@@ -105,19 +104,16 @@ export default function DatasetsPage() {
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
         <div className="mx-auto w-full max-w-[1400px]">
-          {/* Two Panel Layout - Stack on mobile/tablet, side-by-side on desktop */}
           <div className="flex flex-col xl:flex-row gap-3 sm:gap-4">
             {/* Left Panel - Edit Dataset */}
             <div className="flex-1 bg-[#181818] border-2 border-[#404040] p-4 sm:p-6">
               {/* Header */}
               <div className="mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white font-display relative inline-block">
+                <h2 className="h1-underline text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white font-display">
                   Edit Dataset
-                  <div className="absolute -bottom-1 sm:-bottom-2 left-0 w-full h-[2px] bg-white" />
                 </h2>
               </div>
 
-              {/* Form Fields - 1 col mobile, 2 cols tablet, 3 cols desktop */}
               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {/* File Name */}
                 <div>
@@ -320,9 +316,8 @@ export default function DatasetsPage() {
             <div className="flex-1 bg-[#181818] border-2 border-[#404040] p-3 sm:p-4 lg:p-6">
               {/* Header */}
               <div className="mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white font-display relative inline-block">
+                <h2 className="h1-underline text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white font-display">
                   Edit Data Processing
-                  <div className="absolute -bottom-1 sm:-bottom-2 left-0 w-full h-[2px] bg-white" />
                 </h2>
               </div>
 
@@ -334,7 +329,7 @@ export default function DatasetsPage() {
                     type="button"
                     onClick={() => setActiveTab(tab)}
                     className={cn(
-                      "px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border text-white font-display text-xs sm:text-sm lg:text-base transition-colors whitespace-nowrap",
+                      "card-hover-fade px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border text-white font-display text-xs sm:text-sm lg:text-base transition-all duration-300 whitespace-nowrap relative",
                       activeTab === tab
                         ? "bg-[#282828] border-white"
                         : "bg-[#121212] border-[#404040] hover:bg-[#282828]",
@@ -385,7 +380,7 @@ export default function DatasetsPage() {
                       type="button"
                       onClick={() => handleSelectDataset(dataset.id)}
                       className={cn(
-                        "shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] p-2 sm:p-3 flex flex-col gap-1 sm:gap-2 border transition-all text-left",
+                        "card-hover-fade shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] p-2 sm:p-3 flex flex-col gap-1 sm:gap-2 border transition-colors duration-300 text-left relative",
                         isSelected
                           ? "bg-gradient-to-b from-[#1175d5] via-[#181818] via-[40%] to-[#121212] border-[#404040]"
                           : "bg-[#121212] border-[#363636] hover:bg-[#181818]",

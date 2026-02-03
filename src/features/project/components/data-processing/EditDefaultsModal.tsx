@@ -74,9 +74,8 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
       <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-[600px] lg:max-w-[700px] border-2 border-[#404040] bg-[#181818] p-4 sm:p-6 md:p-8 md:max-h-[85vh]">
         {/* Header */}
         <DialogHeader className="mb-3 sm:mb-4 md:mb-6">
-          <DialogTitle className="text-xl sm:text-2xl md:text-[28px] font-bold text-white font-display relative inline-block w-fit">
+          <DialogTitle className="h1-underline text-xl sm:text-2xl md:text-[28px] font-bold text-white font-display w-fit">
             Edit Default Data Manager
-            <div className="absolute -bottom-1 left-0 w-full h-[2px] bg-white" />
           </DialogTitle>
         </DialogHeader>
 
@@ -235,14 +234,14 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="bg-[#121212] border border-[#404040] text-white h-10 sm:h-11 md:h-[40px] px-4 sm:px-6 text-sm sm:text-base md:text-[18px] font-display hover:bg-[#1a1a1a] transition-colors w-full sm:w-auto"
+            className="btn-cancel-hover border border-[#404040] bg-[#121212] text-white h-10 sm:h-11 md:h-[40px] px-4 sm:px-6 text-sm sm:text-base md:text-[18px] font-display w-full sm:w-auto"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="bg-[#006b4c] text-white h-10 sm:h-11 md:h-[40px] px-4 sm:px-6 text-sm sm:text-base md:text-[18px] font-display hover:bg-[#005a3f] transition-colors w-full sm:w-auto"
+            className="btn-add-hover bg-[#006b4c] text-white h-10 sm:h-11 md:h-[40px] px-4 sm:px-6 text-sm sm:text-base md:text-[18px] font-display w-full sm:w-auto"
           >
             Save
           </button>

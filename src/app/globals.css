@@ -97,6 +97,29 @@
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #404040 #1a1a1a;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #505050;
+  }
 }
 
 @layer utilities {
@@ -124,6 +147,44 @@
       rgba(17, 117, 213, 0.5) 50%,
       rgba(24, 24, 24, 0.1) 100%
     );
+  }
+
+  .h1-underline {
+    position: relative;
+    display: inline-block;
+  }
+
+  .h1-underline::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: white;
+    opacity: 0.8;
+  }
+
+  .card-hover-fade {
+    position: relative;
+  }
+  .card-hover-fade::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(17, 117, 213, 0.5) 0%,
+      rgba(17, 117, 213, 0.1) 40%,
+      #121212 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .card-hover-fade:hover::before {
+    opacity: 1;
   }
 }
 
@@ -195,4 +256,26 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+.btn-reset-hover:hover {
+  border-color: #ff3d29 !important;
+  background-color: #ff3d29 !important;
+  color: white !important;
+}
+
+.btn-delete-hover:hover {
+  border-color: #ff3d29 !important;
+  background-color: rgba(255, 61, 41, 0.2) !important;
+  color: white !important;
+}
+
+.btn-cancel-hover:hover {
+  border-color: #1175d5 !important;
+  background-color: rgba(17, 117, 213, 0.2) !important;
+  color: white !important;
+}
+
+.btn-add-hover:hover {
+  background-color: #005a3f !important;
 }

@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { STYLES } from "@/shared/constants/colors";
 import type { Feature } from "@/types";
 import { useDatasetsModalStore } from "../stores/useDatasetsModalStore";
 import { useDatasetsStore } from "../stores/useDatasetsStore";
@@ -137,7 +138,7 @@ export function AddDatasetModal() {
     >
       <DialogContent
         showCloseButton={false}
-        className="max-w-[95vw] md:max-w-[min(90vw,1060px)] border-2 border-[#404040] bg-[#181818] p-4 sm:p-6 md:max-h-[85vh]"
+        className={`max-w-[95vw] md:max-w-[min(90vw,1060px)] border-2 ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 md:max-h-[85vh]`}
       >
         {/* Close Button */}
         <button
@@ -150,9 +151,8 @@ export function AddDatasetModal() {
 
         {/* Header */}
         <div className="mb-5">
-          <h2 className="text-2xl font-bold text-white font-display relative inline-block">
+          <h2 className="h1-underline text-2xl font-bold text-white font-display">
             Add Datasets
-            <div className="absolute -bottom-1 left-0 w-full h-[2px] bg-white" />
           </h2>
         </div>
 
@@ -171,7 +171,7 @@ export function AddDatasetModal() {
                     setForm((prev) => ({ ...prev, fileName: e.target.value }))
                   }
                   placeholder="File name"
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
                 />
               </div>
 
@@ -186,7 +186,7 @@ export function AddDatasetModal() {
                     setForm((prev) => ({ ...prev, tableName: e.target.value }))
                   }
                   placeholder="Optional"
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
                 />
               </div>
 
@@ -201,10 +201,14 @@ export function AddDatasetModal() {
                     setForm((prev) => ({ ...prev, fileType: v }))
                   }
                 >
-                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 text-sm">
+                  <SelectTrigger
+                    className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
+                  >
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#282828] border-[#404040]">
+                  <SelectContent
+                    className={`${STYLES.bgCardAlt} ${STYLES.border}`}
+                  >
                     <SelectItem value="csv" className="text-white">
                       CSV
                     </SelectItem>
@@ -235,7 +239,7 @@ export function AddDatasetModal() {
                     }))
                   }
                   placeholder="Optional"
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
                 />
               </div>
 
@@ -253,7 +257,7 @@ export function AddDatasetModal() {
                     }))
                   }
                   placeholder="Name"
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
                 />
               </div>
 
@@ -271,7 +275,7 @@ export function AddDatasetModal() {
                     }))
                   }
                   placeholder="Ex. 10"
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
                 />
               </div>
 
@@ -289,16 +293,20 @@ export function AddDatasetModal() {
                     }))
                   }
                   placeholder="Ex. 500"
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm w-1/2"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm w-1/2`}
                 />
               </div>
             </div>
           </div>
 
           {/* Right Side - Features Section */}
-          <div className="flex-1 min-w-0 border-2 border-[#404040] flex flex-col sm:flex-row h-auto sm:h-[300px] overflow-hidden">
+          <div
+            className={`flex-1 min-w-0 border-2 ${STYLES.border} flex flex-col sm:flex-row h-auto sm:h-[300px] overflow-hidden`}
+          >
             {/* Feature Input */}
-            <div className="flex flex-row sm:flex-col gap-2 sm:gap-3 p-3 sm:p-4 w-full sm:w-[160px] lg:w-[180px] shrink-0 border-b sm:border-b-0 sm:border-r border-[#404040]">
+            <div
+              className={`flex flex-row sm:flex-col gap-2 sm:gap-3 p-3 sm:p-4 w-full sm:w-[160px] lg:w-[180px] shrink-0 border-b sm:border-b-0 sm:border-r ${STYLES.border}`}
+            >
               <div className="flex flex-col gap-1 flex-1 sm:flex-none">
                 <Label className="text-white text-xs sm:text-sm font-display">
                   Feature Name
@@ -313,7 +321,7 @@ export function AddDatasetModal() {
                   }
                   placeholder="Name"
                   onKeyDown={(e) => e.key === "Enter" && addFeature()}
-                  className="bg-[#282828] border-[#404040] text-white h-8 sm:h-9 text-sm"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-8 sm:h-9 text-sm`}
                 />
               </div>
               <div className="flex flex-col gap-1 w-[90px] sm:w-auto shrink-0">
@@ -326,10 +334,14 @@ export function AddDatasetModal() {
                     setForm((prev) => ({ ...prev, newFeatureType: v }))
                   }
                 >
-                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-8 sm:h-9 text-sm">
+                  <SelectTrigger
+                    className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-8 sm:h-9 text-sm`}
+                  >
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#282828] border-[#404040]">
+                  <SelectContent
+                    className={`${STYLES.bgCardAlt} ${STYLES.border}`}
+                  >
                     <SelectItem value="str" className="text-white">
                       str
                     </SelectItem>
@@ -352,9 +364,13 @@ export function AddDatasetModal() {
             </div>
 
             {/* Features Table */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#181818]">
+            <div
+              className={`flex-1 flex flex-col min-w-0 overflow-hidden ${STYLES.bgCard}`}
+            >
               {/* Header */}
-              <div className="flex items-center justify-center gap-6 px-3 py-2 bg-[#121212] shrink-0">
+              <div
+                className={`flex items-center justify-center gap-6 px-3 py-2 ${STYLES.bgDark} shrink-0`}
+              >
                 <span className="text-white text-sm font-display">Name</span>
                 <div className="w-px h-4 bg-white/50" />
                 <span className="text-white text-sm font-display">Type</span>
@@ -367,7 +383,7 @@ export function AddDatasetModal() {
                     key={feature.id}
                     className={cn(
                       "flex items-center px-3 py-2",
-                      index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]",
+                      index % 2 === 0 ? STYLES.bgCard : STYLES.bgCardAlt,
                     )}
                   >
                     <span className="flex-1 text-white text-sm truncate min-w-0">
@@ -388,34 +404,19 @@ export function AddDatasetModal() {
               </div>
 
               {/* Search */}
-              <div className="relative px-3 py-2 bg-[#282828] shrink-0">
+              <div
+                className={`relative px-3 py-2 ${STYLES.bgCardAlt} shrink-0`}
+              >
                 <Input
                   value={featureSearch}
                   onChange={(e) => setFeatureSearch(e.target.value)}
                   placeholder="Search"
-                  className="bg-[#282828] border-[#404040] text-white h-8 text-sm pr-8"
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-8 text-sm pr-8`}
                 />
                 <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 mt-5">
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            className="border-[#404040] bg-[#121212] text-white hover:text-white hover:bg-[#1a1a1a] h-10 px-6 font-display"
-          >
-            Reset
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            className="bg-[#006b4c] hover:bg-[#005a3f] text-white h-10 px-6 font-display"
-          >
-            Add Dataset
-          </Button>
         </div>
 
         {/* Divider */}
@@ -430,7 +431,7 @@ export function AddDatasetModal() {
           <Button
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="border-[#404040] bg-[#121212] text-white hover:text-white hover:bg-[#1a1a1a] h-10 w-[180px] font-display"
+            className={`border ${STYLES.border} ${STYLES.bgDark} text-white hover:text-white hover:bg-[#121212]/80 h-10 w-[180px] font-display`}
           >
             Upload
           </Button>
@@ -444,6 +445,22 @@ export function AddDatasetModal() {
             onChange={handleFileInputChange}
             className="hidden"
           />
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-5">
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            className={`btn-reset-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 sm:h-10 md:h-11 px-4 sm:px-6 text-sm sm:text-base font-display w-full sm:w-auto`}
+          >
+            Reset
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            className={`btn-add-hover ${STYLES.bgPrimary} text-white h-9 sm:h-10 md:h-11 px-4 sm:px-6 text-sm sm:text-base font-display w-full sm:w-auto`}
+          >
+            Add Dataset
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

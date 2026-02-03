@@ -368,15 +368,11 @@ export const useFileStore = create<FileStoreState>()(
 
         if (filter.dateFrom) {
           const dateFrom = new Date(filter.dateFrom);
-          filtered = filtered.filter(
-            (f) => new Date(f.modifiedAt) >= dateFrom,
-          );
+          filtered = filtered.filter((f) => new Date(f.modifiedAt) >= dateFrom);
         }
         if (filter.dateTo) {
           const dateTo = new Date(filter.dateTo);
-          filtered = filtered.filter(
-            (f) => new Date(f.modifiedAt) <= dateTo,
-          );
+          filtered = filtered.filter((f) => new Date(f.modifiedAt) <= dateTo);
         }
 
         return sortFiles(filtered);

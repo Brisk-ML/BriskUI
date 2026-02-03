@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ProjectHeader } from "@/shared/components/layout/ProjectHeader";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
@@ -11,7 +12,6 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { ProjectHeader } from "@/shared/components/layout/ProjectHeader";
 
 const ALGORITHMS = [
   "Algorithm 1",
@@ -43,9 +43,7 @@ export default function ExperimentsPage() {
   const [name, setName] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>(
-    [],
-  );
+  const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>([]);
   const [groups, setGroups] = useState<ExperimentGroup[]>([
     {
       id: "1",
@@ -203,13 +201,13 @@ export default function ExperimentsPage() {
             <Button
               variant="outline"
               onClick={handleReset}
-              className="border-[#404040] bg-[#121212] text-white hover:text-white hover:bg-[#121212]/80 h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[24px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[120px] lg:min-w-[150px]"
+              className="btn-reset-hover border border-[#404040] bg-[#121212] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[24px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[120px] lg:min-w-[150px]"
             >
               Reset
             </Button>
             <Button
               onClick={handleAddGroup}
-              className="bg-[#006b4c] hover:bg-[#005a3f] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[28px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px]"
+              className="btn-add-hover bg-[#006b4c] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[28px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px]"
             >
               Add Group
             </Button>
