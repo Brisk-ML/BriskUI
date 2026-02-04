@@ -1,115 +1,161 @@
-# Brisk - Web UI
+# brisk-ui
 
-## Tech Stack
+Web-based GUI for the brisk ML framework, distributed as a separate Python package with a FastAPI backend and React frontend.
 
-- Vite 7.3.0
-- React 19.2.3
-- React Router v7.11.0
-- Tailwind CSS 4.1.18
-- Zustand 5.0.9
-- shadcn/ui + Radix UI
-- TypeScript 5.9.3
-- Biome 2.3.10
+## Architecture
 
-## Getting Started
+```
+User runs: brisk ui
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  brisk CLI (main package)           │
+│  - Validates project directory      │
+│  - Checks brisk-ui is installed     │
+│  - Starts uvicorn server            │
+│  - Opens browser                    │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  brisk-ui (this package)            │
+│  ┌─────────────────────────────────┐│
+│  │ FastAPI Backend                 ││
+│  │ - /api/* routes                 ││
+│  │ - Reads SQLite via brisk        ││
+│  │ - Reads/writes Python configs   ││
+│  └─────────────────────────────────┘│
+│  ┌─────────────────────────────────┐│
+│  │ Static Files (React build)      ││
+│  │ - Served at /                   ││
+│  └─────────────────────────────────┘│
+└─────────────────────────────────────┘
+```
+
+## Development
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Python 3.11+
+- Node.js 18+
+- Poetry
 
-### Installation
+### Setup
 
 ```bash
-npm install
-npm run dev
+# Install Python dependencies
+poetry install
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
 ```
 
-Dev server runs at http://localhost:3000
+### Development Mode (Hot Reload)
+
+Development mode runs the backend and frontend separately, allowing for hot reloading of both.
+
+**Terminal 1: Backend**
+
+```bash
+poetry run brisk-ui-dev
+```
+
+This starts the FastAPI backend on port 8050 with:
+- API routes at http://localhost:8050/api
+- OpenAPI docs at http://localhost:8050/docs
+- CORS enabled for the frontend dev server
+
+**Terminal 2: Frontend**
+
+```bash
+cd frontend && npm run dev
+```
+
+This starts the Vite dev server on port 3000 with hot module replacement.
+
+Open http://localhost:3000 to view the app.
+
+### Test Mode (Static Files)
+
+Test mode serves the pre-built frontend from `brisk_ui/static/`, simulating production deployment.
+
+**Step 1: Build the frontend**
+
+```bash
+poetry run build-frontend
+```
+
+This compiles the React app and copies it to `brisk_ui/static/`.
+
+**Step 2: Run in test mode**
+
+```bash
+poetry run brisk-ui-dev --mode test
+```
+
+Open http://localhost:8050 to view the app.
+
+### Command Options
+
+```bash
+# Run with a specific project directory
+poetry run brisk-ui-dev /path/to/brisk/project
+
+# Run on a different port
+poetry run brisk-ui-dev --port 9000
+
+# Run in test mode with custom project
+poetry run brisk-ui-dev /path/to/project --mode test --port 8080
+```
 
 ## Project Structure
 
 ```
-brisk/
-├── index.html
-├── src/
-│   ├── main.tsx
-│   ├── App.tsx
-│   ├── app/
-│   │   └── globals.css
-│   ├── features/
-│   │   ├── dashboard/
-│   │   │   ├── components/
-│   │   │   ├── stores/
-│   │   │   └── page.tsx
-│   │   ├── algorithms/
-│   │   │   ├── components/
-│   │   │   ├── constants/
-│   │   │   ├── stores/
-│   │   │   ├── types.ts
-│   │   │   ├── utils/
-│   │   │   └── page.tsx
-│   │   ├── datasets/
-│   │   │   ├── components/
-│   │   │   ├── stores/
-│   │   │   └── page.tsx
-│   │   ├── experiments/
-│   │   │   └── page.tsx
-│   │   ├── files/
-│   │   │   ├── components/
-│   │   │   ├── stores/
-│   │   │   ├── types/
-│   │   │   ├── utils/
-│   │   │   └── page.tsx
-│   │   ├── metrics/
-│   │   │   └── page.tsx
-│   │   ├── project/
-│   │   │   ├── components/
-│   │   │   │   ├── algorithms/
-│   │   │   │   ├── data-processing/
-│   │   │   │   ├── datasets/
-│   │   │   │   ├── experiments/
-│   │   │   │   ├── project-setup/
-│   │   │   │   ├── report/
-│   │   │   │   ├── sync/
-│   │   │   │   └── workflow/
-│   │   │   ├── stores/
-│   │   │   └── page.tsx
-│   │   ├── results/
-│   │   │   └── page.tsx
-│   │   ├── save/
-│   │   │   └── page.tsx
-│   │   └── settings/
-│   │       └── page.tsx
-│   ├── shared/
-│   │   ├── components/
-│   │   │   ├── algorithms/
-│   │   │   ├── layout/
-│   │   │   ├── modals/
-│   │   │   ├── ui/
-│   │   │   └── ProgressTracker.tsx
-│   │   └── stores/
-│   ├── lib/
-│   │   └── utils.ts
-│   └── types/
-│       └── index.ts
-├── public/
-├── vite.config.ts
-├── tsconfig.json
-├── tsconfig.node.json
-└── biome.json
+brisk-ui/
+├── pyproject.toml
+├── brisk_ui/
+│   ├── __init__.py
+│   ├── server.py              # FastAPI app factory
+│   ├── config.py              # Dev/prod configuration
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── dependencies.py    # DI for settings/services
+│   │   └── routes/
+│   │       ├── __init__.py
+│   │       ├── health.py
+│   │       ├── test.py        # Test integration endpoints
+│   │       └── configs.py
+│   ├── services/
+│   │   └── database.py
+│   └── static/                # React build output (generated)
+├── frontend/                  # React source (not distributed)
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── src/
+│       ├── api/               # API client
+│       │   ├── client.ts
+│       │   └── test.ts
+│       └── features/
+├── dev/
+│   ├── run_dev.py             # Dev entrypoint
+│   ├── build_frontend.py      # Frontend build script
+│   └── backend-dev/           # Test project directory
+└── tests/
 ```
 
-## Features
+## Testing the Integration
 
-- Dashboard with stats and project overview
-- Project setup wizard
-- Experiments, datasets, and algorithms management
-- File browser and metrics viewer
+The dashboard includes a test integration component that demonstrates frontend-backend communication:
 
-## Path Aliases
+1. Start the app in either dev or test mode
+2. Navigate to the dashboard (home page)
+3. In the "Result Summary" section, enter text in the input field
+4. Click "Transform" to send the text to the backend
+5. The backend splits the text into individual characters, capitalizes each, and returns them
+6. The frontend displays each letter in a styled badge
 
-`@/*` → `./src/*`
-
-## License
-
-MIT
+This test confirms:
+- Frontend can reach the backend API
+- CORS is configured correctly (in dev mode)
+- Request/response serialization works
+- The build process works (in test mode)

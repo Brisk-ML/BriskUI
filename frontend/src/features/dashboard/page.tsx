@@ -1,10 +1,41 @@
+import { useState } from "react";
 import { StatsCard } from "@/features/dashboard/components/StatsCard";
 import { useProjectModalStore } from "@/shared/stores/useProjectModalStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { transformText, type TransformResponse } from "@/api";
 
 export default function Home() {
   const { projectName } = useProjectStore();
   const { openEditModal } = useProjectModalStore();
+
+
+  
+  // Test integration state
+  const [inputText, setInputText] = useState("");
+  const [result, setResult] = useState<TransformResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleTransform = async () => {
+    if (!inputText.trim()) return;
+
+    setIsLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await transformText(inputText);
+      setResult(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to connect to backend");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   const statsCards = [
     { label: "Experiments", value: 40, href: "/experiments" },
@@ -103,10 +134,56 @@ export default function Home() {
                 </h2>
               </div>
 
-              <div className="flex-1 flex items-center justify-center">
-                <p className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] font-normal text-white font-display leading-none text-center">
-                  Coming Soon...
-                </p>
+              <div className="flex-1 flex flex-col items-center justify-center gap-6">
+                {/* Test Integration UI */}
+                <div className="w-full max-w-md flex flex-col gap-4">
+                  <p className="text-sm text-white/60 font-display text-center">
+                    Backend Integration Test
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter text to transform..."
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleTransform()}
+                      className="flex-1 bg-bg-primary border-border-primary text-white placeholder:text-white/40"
+                    />
+                    <Button
+                      onClick={handleTransform}
+                      disabled={isLoading || !inputText.trim()}
+                      className="bg-[#1175d5] hover:bg-[#0d5aa8] text-white font-display"
+                    >
+                      {isLoading ? "..." : "Transform"}
+                    </Button>
+                  </div>
+
+                  {/* Error Display */}
+                  {error && (
+                    <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-md">
+                      <p className="text-red-400 text-sm font-display">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Result Display */}
+                  {result && (
+                    <div className="p-4 bg-bg-primary border-2 border-border-primary rounded-md">
+                      <p className="text-white/60 text-xs font-display mb-2">
+                        Original: "{result.original}"
+                      </p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {result.letters.map((letter, index) => (
+                          <span
+                            key={`${letter}-${index}`}
+                            className="inline-flex items-center justify-center w-10 h-10 bg-[#1175d5]/20 border border-[#1175d5]/50 rounded text-white font-bold font-display text-lg"
+                          >
+                            {letter}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
