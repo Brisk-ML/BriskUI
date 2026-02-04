@@ -23,18 +23,29 @@ export function EditProjectModal() {
 
   const [localPath, setLocalPath] = useState(projectPath);
   const [localDescription, setLocalDescription] = useState(projectDescription);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (editModal) {
       setLocalPath(projectPath);
       setLocalDescription(projectDescription);
+      setSaveError(null);
     }
   }, [editModal, projectPath, projectDescription]);
 
-  const handleSave = () => {
-    setProjectInfo({ path: localPath, description: localDescription });
-    closeEditModal();
-    navigate("/project");
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await setProjectInfo({ path: localPath, description: localDescription });
+      closeEditModal();
+      navigate("/project");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -79,10 +90,17 @@ export function EditProjectModal() {
             </div>
           </div>
 
+          {saveError && (
+            <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-md">
+              <p className="text-red-400 text-sm font-display">{saveError}</p>
+            </div>
+          )}
+
           <DialogFooter className="mt-6 sm:mt-8 md:mt-10 lg:mt-12 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 md:gap-4">
             <Button
               variant="outline"
               onClick={() => closeEditModal()}
+              disabled={isSaving}
               className={`btn-cancel-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] order-2 sm:order-1`}
             >
               Cancel
@@ -91,15 +109,17 @@ export function EditProjectModal() {
               <Button
                 variant="outline"
                 onClick={() => openDeleteModal()}
+                disabled={isSaving}
                 className={`btn-delete-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] w-full sm:w-auto`}
               >
                 Delete
               </Button>
               <Button
                 onClick={handleSave}
+                disabled={isSaving}
                 className={`btn-add-hover ${STYLES.bgPrimary} text-white h-9 sm:h-10 md:h-11 lg:h-[50px] text-sm sm:text-base md:text-lg lg:text-[20px] px-4 sm:px-6 md:px-8 w-full sm:w-auto`}
               >
-                Save Changes
+                {isSaving ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </DialogFooter>

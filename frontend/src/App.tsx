@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import AlgorithmsPage from "./features/algorithms/page";
 import HomePage from "./features/dashboard/page";
@@ -10,8 +11,17 @@ import ResultsPage from "./features/results/page";
 import SavePage from "./features/save/page";
 import SettingsPage from "./features/settings/page";
 import { AppLayout } from "./shared/components/layout/AppLayout";
+import { useProjectStore } from "./shared/stores/useProjectStore";
 
 export default function App() {
+  const fetchProjectSettings = useProjectStore(
+    (state) => state.fetchProjectSettings
+  );
+
+  useEffect(() => {
+    fetchProjectSettings();
+  }, [fetchProjectSettings]);
+
   return (
     <AppLayout>
       <Routes>

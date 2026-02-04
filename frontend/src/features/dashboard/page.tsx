@@ -1,41 +1,10 @@
-import { useState } from "react";
 import { StatsCard } from "@/features/dashboard/components/StatsCard";
 import { useProjectModalStore } from "@/shared/stores/useProjectModalStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { transformText, type TransformResponse } from "@/api";
 
 export default function Home() {
   const { projectName } = useProjectStore();
   const { openEditModal } = useProjectModalStore();
-
-
-  
-  // Test integration state
-  const [inputText, setInputText] = useState("");
-  const [result, setResult] = useState<TransformResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleTransform = async () => {
-    if (!inputText.trim()) return;
-
-    setIsLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const response = await transformText(inputText);
-      setResult(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect to backend");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
 
   const statsCards = [
     { label: "Experiments", value: 40, href: "/experiments" },
@@ -124,7 +93,7 @@ export default function Home() {
 
       {/* Dashboard Container */}
       <main className="flex-1 flex flex-col overflow-y-auto px-4 sm:px-6 md:px-8 lg:pl-[15px] lg:pr-[19px] pt-1 sm:pt-1.5 lg:pt-[6px] pb-1 sm:pb-1.5 lg:pb-[6px]">
-        <div className="flex-1 border-2 border-border-primary px-4 sm:px-5 md:px-6 lg:px-[26px] py-4 sm:py-5 md:py-6 lg:py-[29px] flex flex-col bg-bg-dashboard">
+      <div className="flex-1 border-2 border-border-primary px-4 sm:px-5 md:px-6 lg:px-[26px] py-4 sm:py-5 md:py-6 lg:py-[29px] flex flex-col bg-bg-dashboard">
           <div className="flex-1 flex flex-col xl:flex-row gap-4 sm:gap-5 md:gap-6 lg:gap-[35px]">
             {/* Result Summary */}
             <div className="flex-1 xl:flex-[2.5] 2xl:flex-[2.93] border-2 border-border-secondary p-4 sm:p-5 md:p-4 lg:p-[18px] flex flex-col bg-bg-secondary">
@@ -134,56 +103,10 @@ export default function Home() {
                 </h2>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center gap-6">
-                {/* Test Integration UI */}
-                <div className="w-full max-w-md flex flex-col gap-4">
-                  <p className="text-sm text-white/60 font-display text-center">
-                    Backend Integration Test
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      placeholder="Enter text to transform..."
-                      value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleTransform()}
-                      className="flex-1 bg-bg-primary border-border-primary text-white placeholder:text-white/40"
-                    />
-                    <Button
-                      onClick={handleTransform}
-                      disabled={isLoading || !inputText.trim()}
-                      className="bg-[#1175d5] hover:bg-[#0d5aa8] text-white font-display"
-                    >
-                      {isLoading ? "..." : "Transform"}
-                    </Button>
-                  </div>
-
-                  {/* Error Display */}
-                  {error && (
-                    <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-md">
-                      <p className="text-red-400 text-sm font-display">{error}</p>
-                    </div>
-                  )}
-
-                  {/* Result Display */}
-                  {result && (
-                    <div className="p-4 bg-bg-primary border-2 border-border-primary rounded-md">
-                      <p className="text-white/60 text-xs font-display mb-2">
-                        Original: "{result.original}"
-                      </p>
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        {result.letters.map((letter, index) => (
-                          <span
-                            key={`${letter}-${index}`}
-                            className="inline-flex items-center justify-center w-10 h-10 bg-[#1175d5]/20 border border-[#1175d5]/50 rounded text-white font-bold font-display text-lg"
-                          >
-                            {letter}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] font-normal text-white font-display leading-none text-center">
+                  Coming Soon...
+                </p>
               </div>
             </div>
 

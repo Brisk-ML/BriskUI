@@ -5,5 +5,5 @@
 export { apiClient } from "./client";
 export type { ApiError } from "./client";
 
-export { transformText } from "./test";
-export type { TransformRequest, TransformResponse } from "./test";
+export { getProjectSettings, updateProjectSettings } from "./project";
+export type { ProjectSettings, ProjectSettingsUpdate } from "./project";
