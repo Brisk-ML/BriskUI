@@ -1,207 +1,131 @@
 import { create } from "zustand";
+import type { HyperparameterValues } from "@/features/algorithms/types";
 
-export interface Algorithm {
+/**
+ * Algorithm wrapper configuration for the wizard.
+ * Maps to Python AlgorithmWrapper class.
+ */
+export interface WizardAlgorithmWrapper {
   id: string;
-  name: string;
-  category: "model" | "method";
-  description?: string;
-  selected: boolean;
+  algorithmId: string; // Reference to catalog algorithm
+  name: string; // Unique identifier (required, must be unique)
+  displayName: string; // Human-readable name
+  className: string; // Python class name (e.g., "Ridge")
+  classModule: string; // Python module (e.g., "sklearn.linear_model")
+  defaultParams: HyperparameterValues; // Default parameters
+  useDefaults: boolean; // Whether using catalog defaults
 }
 
 export interface AlgorithmsStepState {
-  algorithms: Algorithm[];
-  selectedModels: string[];
-  selectedMethods: string[];
-  loading: boolean;
-  setAlgorithms: (algorithms: Algorithm[]) => void;
-  toggleAlgorithm: (id: string) => void;
-  selectAlgorithm: (id: string) => void;
-  deselectAlgorithm: (id: string) => void;
-  selectAllModels: () => void;
-  selectAllMethods: () => void;
-  deselectAll: () => void;
-  setLoading: (loading: boolean) => void;
+  // List of algorithm wrappers configured in wizard
+  wrappers: WizardAlgorithmWrapper[];
+
+  // Actions
+  addWrapper: (wrapper: Omit<WizardAlgorithmWrapper, "id">) => { success: boolean; error?: string };
+  updateWrapper: (id: string, updates: Partial<WizardAlgorithmWrapper>) => { success: boolean; error?: string };
+  deleteWrapper: (id: string) => void;
+
+  // Validation
+  isNameUnique: (name: string, excludeId?: string) => boolean;
+  getWrapperByName: (name: string) => WizardAlgorithmWrapper | undefined;
+
+  // Reset
   reset: () => void;
 }
 
-const DEFAULT_ALGORITHMS: Algorithm[] = [
-  {
-    id: "linear-regression",
-    name: "Linear Regression",
-    category: "model",
-    selected: false,
-  },
-  {
-    id: "random-forest",
-    name: "Random Forest",
-    category: "model",
-    selected: false,
-  },
-  { id: "xgboost", name: "XGBoost", category: "model", selected: false },
-  { id: "svm", name: "SVM", category: "model", selected: false },
-  {
-    id: "neural-network",
-    name: "Neural Network",
-    category: "model",
-    selected: false,
-  },
-  {
-    id: "cross-validation",
-    name: "Cross-Validation",
-    category: "method",
-    selected: false,
-  },
-  {
-    id: "grid-search",
-    name: "Grid Search",
-    category: "method",
-    selected: false,
-  },
-  {
-    id: "feature-importance",
-    name: "Feature Importance",
-    category: "method",
-    selected: false,
-  },
-  {
-    id: "hyperparameter-tuning",
-    name: "Hyperparameter Tuning",
-    category: "method",
-    selected: false,
-  },
-];
+/**
+ * Mapping of sklearn class names to their modules.
+ * Used to generate correct import statements in algorithms.py
+ */
+export const SKLEARN_CLASS_MODULES: Record<string, string> = {
+  // Regression
+  LinearRegression: "sklearn.linear_model",
+  Ridge: "sklearn.linear_model",
+  Lasso: "sklearn.linear_model",
+  BayesianRidge: "sklearn.linear_model",
+  ElasticNet: "sklearn.linear_model",
+  DecisionTreeRegressor: "sklearn.tree",
+  RandomForestRegressor: "sklearn.ensemble",
+  SVR: "sklearn.svm",
+  MLPRegressor: "sklearn.neural_network",
+  KNeighborsRegressor: "sklearn.neighbors",
+  // Classification
+  LogisticRegression: "sklearn.linear_model",
+  SVC: "sklearn.svm",
+  KNeighborsClassifier: "sklearn.neighbors",
+  DecisionTreeClassifier: "sklearn.tree",
+  RandomForestClassifier: "sklearn.ensemble",
+  GaussianNB: "sklearn.naive_bayes",
+  RidgeClassifier: "sklearn.linear_model",
+};
 
-export const useAlgorithmsStepStore = create<AlgorithmsStepState>((set) => ({
-  algorithms: DEFAULT_ALGORITHMS,
-  selectedModels: [],
-  selectedMethods: [],
-  loading: false,
+export const useAlgorithmsStepStore = create<AlgorithmsStepState>((set, get) => ({
+  wrappers: [],
 
-  setAlgorithms: (algorithms) => {
-    set({ algorithms });
-  },
+  addWrapper: (wrapper) => {
+    const { isNameUnique } = get();
 
-  toggleAlgorithm: (id) => {
-    set((state) => {
-      const algorithm = state.algorithms.find((a) => a.id === id);
-      if (!algorithm) return state;
-
-      const newAlgorithms = state.algorithms.map((a) =>
-        a.id === id ? { ...a, selected: !a.selected } : a,
-      );
-
-      const selected = newAlgorithms.filter((a) => a.selected);
-      const selectedModels = selected
-        .filter((a) => a.category === "model")
-        .map((a) => a.id);
-      const selectedMethods = selected
-        .filter((a) => a.category === "method")
-        .map((a) => a.id);
-
+    // Validate unique name
+    if (!isNameUnique(wrapper.name)) {
       return {
-        algorithms: newAlgorithms,
-        selectedModels,
-        selectedMethods,
+        success: false,
+        error: `An algorithm with name "${wrapper.name}" already exists. Each algorithm must have a unique name.`,
       };
-    });
-  },
+    }
 
-  selectAlgorithm: (id) => {
-    set((state) => {
-      const newAlgorithms = state.algorithms.map((a) =>
-        a.id === id ? { ...a, selected: true } : a,
-      );
+    const newWrapper: WizardAlgorithmWrapper = {
+      ...wrapper,
+      id: `wrapper-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
 
-      const selected = newAlgorithms.filter((a) => a.selected);
-      const selectedModels = selected
-        .filter((a) => a.category === "model")
-        .map((a) => a.id);
-      const selectedMethods = selected
-        .filter((a) => a.category === "method")
-        .map((a) => a.id);
-
-      return {
-        algorithms: newAlgorithms,
-        selectedModels,
-        selectedMethods,
-      };
-    });
-  },
-
-  deselectAlgorithm: (id) => {
-    set((state) => {
-      const newAlgorithms = state.algorithms.map((a) =>
-        a.id === id ? { ...a, selected: false } : a,
-      );
-
-      const selected = newAlgorithms.filter((a) => a.selected);
-      const selectedModels = selected
-        .filter((a) => a.category === "model")
-        .map((a) => a.id);
-      const selectedMethods = selected
-        .filter((a) => a.category === "method")
-        .map((a) => a.id);
-
-      return {
-        algorithms: newAlgorithms,
-        selectedModels,
-        selectedMethods,
-      };
-    });
-  },
-
-  selectAllModels: () => {
-    set((state) => {
-      const newAlgorithms = state.algorithms.map((a) =>
-        a.category === "model" ? { ...a, selected: true } : a,
-      );
-
-      const selectedModels = newAlgorithms
-        .filter((a) => a.category === "model")
-        .map((a) => a.id);
-
-      return {
-        algorithms: newAlgorithms,
-        selectedModels,
-      };
-    });
-  },
-
-  selectAllMethods: () => {
-    set((state) => {
-      const newAlgorithms = state.algorithms.map((a) =>
-        a.category === "method" ? { ...a, selected: true } : a,
-      );
-
-      const selectedMethods = newAlgorithms
-        .filter((a) => a.category === "method")
-        .map((a) => a.id);
-
-      return {
-        algorithms: newAlgorithms,
-        selectedMethods,
-      };
-    });
-  },
-
-  deselectAll: () => {
     set((state) => ({
-      algorithms: state.algorithms.map((a) => ({ ...a, selected: false })),
-      selectedModels: [],
-      selectedMethods: [],
+      wrappers: [...state.wrappers, newWrapper],
+    }));
+
+    return { success: true };
+  },
+
+  updateWrapper: (id, updates) => {
+    const { isNameUnique } = get();
+
+    // If updating name, check uniqueness
+    if (updates.name && !isNameUnique(updates.name, id)) {
+      return {
+        success: false,
+        error: `An algorithm with name "${updates.name}" already exists. Each algorithm must have a unique name.`,
+      };
+    }
+
+    set((state) => ({
+      wrappers: state.wrappers.map((w) =>
+        w.id === id ? { ...w, ...updates } : w
+      ),
+    }));
+
+    return { success: true };
+  },
+
+  deleteWrapper: (id) => {
+    set((state) => ({
+      wrappers: state.wrappers.filter((w) => w.id !== id),
     }));
   },
 
-  setLoading: (loading) => {
-    set({ loading });
+  isNameUnique: (name, excludeId) => {
+    const { wrappers } = get();
+    const normalizedName = name.toLowerCase().trim();
+    return !wrappers.some(
+      (w) => w.id !== excludeId && w.name.toLowerCase().trim() === normalizedName
+    );
+  },
+
+  getWrapperByName: (name) => {
+    const { wrappers } = get();
+    const normalizedName = name.toLowerCase().trim();
+    return wrappers.find((w) => w.name.toLowerCase().trim() === normalizedName);
   },
 
   reset: () => {
-    set({
-      algorithms: DEFAULT_ALGORITHMS,
-      selectedModels: [],
-      selectedMethods: [],
-      loading: false,
-    });
+    set({ wrappers: [] });
   },
 }));

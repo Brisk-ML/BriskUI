@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
+import type { WizardAlgorithmWrapper } from "@/features/project/stores/useAlgorithmsStepStore";
 import { STYLES } from "@/shared/constants/colors";
-import type { AlgorithmWrapper } from "../types";
 
 interface AlgorithmWrapperCardProps {
-  wrapper: AlgorithmWrapper;
+  wrapper: WizardAlgorithmWrapper;
   onClick?: () => void;
   className?: string;
 }
@@ -14,6 +14,8 @@ export function AlgorithmWrapperCard({
   className,
 }: AlgorithmWrapperCardProps) {
   const Comp = onClick ? "button" : "div";
+  const hasCustomParams = !wrapper.useDefaults && Object.keys(wrapper.defaultParams).length > 0;
+  
   return (
     <Comp
       type={onClick ? "button" : undefined}
@@ -43,7 +45,7 @@ export function AlgorithmWrapperCard({
           {wrapper.className}
         </p>
         <p className="text-[13px] sm:text-[14px] lg:text-[16px] font-display leading-normal mt-auto pt-1">
-          Hyperparameter Grid: {wrapper.hasHyperparameterGrid ? "Yes" : "No"}
+          Custom Params: {hasCustomParams ? "Yes" : "No"}
         </p>
       </div>
     </Comp>

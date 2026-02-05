@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -13,23 +14,39 @@ import { useProjectModalStore } from "@/shared/stores/useProjectModalStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
 
 export function DeleteProjectDialog() {
+  const navigate = useNavigate();
   const { projectName, deleteProject } = useProjectStore();
   const { deleteModal, closeDeleteModal, closeAllModals } =
     useProjectModalStore();
   const [confirmText, setConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!deleteModal) {
       setConfirmText("");
+      setDeleteError(null);
     }
   }, [deleteModal]);
 
   const isValid = confirmText === `delete ${projectName}`;
 
-  const handleDelete = () => {
-    if (isValid) {
-      deleteProject();
+  const handleDelete = async () => {
+    if (!isValid) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await deleteProject();
       closeAllModals();
+      navigate("/project");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete project"
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -67,23 +84,31 @@ export function DeleteProjectDialog() {
               placeholder="delete..."
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
+              disabled={isDeleting}
               className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-10 sm:h-12 text-base sm:text-lg placeholder:text-white/40`}
             />
           </div>
+
+          {deleteError && (
+            <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-md">
+              <p className="text-red-400 text-sm font-display">{deleteError}</p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mt-8 sm:mt-10 md:mt-12 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between w-full gap-3 sm:gap-4">
           <Button
             variant="outline"
             onClick={handleDelete}
-            disabled={!isValid}
+            disabled={!isValid || isDeleting}
             className={`btn-delete-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-10 sm:h-12 md:h-[50px] text-base sm:text-lg disabled:opacity-30 disabled:cursor-not-allowed w-full sm:flex-1`}
           >
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
           <Button
             variant="outline"
             onClick={() => closeDeleteModal()}
+            disabled={isDeleting}
             className={`btn-cancel-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-10 sm:h-12 md:h-[50px] text-base sm:text-lg w-full sm:flex-1`}
           >
             Cancel

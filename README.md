@@ -108,6 +108,45 @@ poetry run brisk-ui-dev --port 9000
 poetry run brisk-ui-dev /path/to/project --mode test --port 8080
 ```
 
+### Create Mode (New Project)
+
+Create mode allows you to test the project creation workflow without an existing project.
+
+**Terminal 1: Backend with --create flag**
+
+```bash
+# Specify the parent directory where projects will be created
+poetry run brisk-ui-dev ./projects --create
+```
+
+This will:
+- Create the parent directory if it doesn't exist
+- Skip the database validation
+- Set the app to "create mode"
+
+**Terminal 2: Frontend**
+
+```bash
+cd frontend && npm run dev
+```
+
+The app will automatically redirect to `/project` where you can:
+1. Fill out the project information form (the project name becomes the directory name)
+2. Navigate through all 8 wizard steps
+3. Click "Create Project" on the final step to save files
+
+**Example:** If you enter "My Cool Project" as the project name, it will create:
+```
+./projects/my-cool-project/
+└── .brisk/
+    └── .env
+```
+
+After creating, you can restart without `--create` to test editing:
+```bash
+poetry run brisk-ui-dev ./projects/my-cool-project
+```
+
 ## Project Structure
 
 ```

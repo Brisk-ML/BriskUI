@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import { getProjectSettings, updateProjectSettings } from "@/api";
+import {
+  getProjectSettings,
+  updateProjectSettings,
+  deleteProject as deleteProjectApi,
+} from "@/api";
 
 interface ProjectState {
   projectName: string;
@@ -13,10 +17,11 @@ interface ProjectState {
     description?: string;
     path?: string;
   }) => Promise<void>;
-  deleteProject: () => void;
+  deleteProject: () => Promise<void>;
+  resetToNewProject: () => void;
 }
 
-export const useProjectStore = create<ProjectState>()((set, get) => ({
+export const useProjectStore = create<ProjectState>()((set) => ({
   projectName: "Loading...",
   projectDescription: "",
   projectPath: "",
@@ -64,12 +69,32 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }
   },
 
-  // Reset to default project state (local only for now)
-  deleteProject: () => {
+  // Delete the project via backend API
+  deleteProject: async () => {
+    try {
+      await deleteProjectApi();
+      // Reset to new project state after successful deletion
+      set({
+        projectName: "New Project",
+        projectDescription: "",
+        projectPath: "",
+        error: null,
+      });
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : "Failed to delete project",
+      });
+      throw err;
+    }
+  },
+
+  // Reset to new project state (local only, for UI purposes)
+  resetToNewProject: () => {
     set({
       projectName: "New Project",
       projectDescription: "",
       projectPath: "",
+      error: null,
     });
   },
 }));

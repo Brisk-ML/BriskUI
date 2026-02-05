@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -17,7 +16,6 @@ import { useProjectStore } from "@/shared/stores/useProjectStore";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 
 export function EditProjectModal() {
-  const navigate = useNavigate();
   const { projectDescription, projectPath, setProjectInfo } = useProjectStore();
   const { editModal, closeEditModal, openDeleteModal } = useProjectModalStore();
 
@@ -40,7 +38,6 @@ export function EditProjectModal() {
     try {
       await setProjectInfo({ path: localPath, description: localDescription });
       closeEditModal();
-      navigate("/project");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save");
     } finally {

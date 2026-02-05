@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import type { WizardAlgorithmWrapper } from "@/features/project/stores/useAlgorithmsStepStore";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -6,12 +7,11 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { STYLES } from "@/shared/constants/colors";
-import type { AlgorithmWrapper } from "../types";
 
 interface ViewAlgorithmModalProps {
   open: boolean;
   onClose: () => void;
-  wrapper: AlgorithmWrapper | null;
+  wrapper: WizardAlgorithmWrapper | null;
   onRemove?: (id: string) => void;
 }
 
@@ -29,7 +29,7 @@ export function ViewAlgorithmModal({
 }: ViewAlgorithmModalProps) {
   if (!wrapper) return null;
 
-  const hyperparameterEntries = Object.entries(wrapper.hyperparameters);
+  const hyperparameterEntries = Object.entries(wrapper.defaultParams);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -71,10 +71,18 @@ export function ViewAlgorithmModal({
             </div>
             <div>
               <span className="text-white/60 text-xs sm:text-sm font-display">
-                Hyperparameter Grid
+                Module
               </span>
               <p className="text-white text-sm sm:text-base font-display">
-                {wrapper.hasHyperparameterGrid ? "Yes" : "No"}
+                {wrapper.classModule}
+              </p>
+            </div>
+            <div>
+              <span className="text-white/60 text-xs sm:text-sm font-display">
+                Custom Parameters
+              </span>
+              <p className="text-white text-sm sm:text-base font-display">
+                {!wrapper.useDefaults && Object.keys(wrapper.defaultParams).length > 0 ? "Yes" : "No"}
               </p>
             </div>
           </div>
@@ -84,7 +92,7 @@ export function ViewAlgorithmModal({
               <div className="h-[1px] bg-white/40" />
               <div>
                 <span className="text-white/60 text-[12px] sm:text-sm font-display block mb-2">
-                  Hyperparameters
+                  Parameters
                 </span>
                 <div
                   className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 rounded space-y-2 sm:space-y-2.5 max-h-[200px] sm:max-h-[240px] lg:max-h-[280px] overflow-y-auto min-h-[120px] sm:min-h-[140px]`}

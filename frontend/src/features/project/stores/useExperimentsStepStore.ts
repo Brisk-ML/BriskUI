@@ -1,119 +1,85 @@
 import { create } from "zustand";
 
+/**
+ * Experiment group configuration for settings.py
+ * Maps to Configuration.add_experiment_group() call
+ */
 export interface ExperimentGroup {
   id: string;
-  name: string;
+  name: string; // group name
   description: string;
-  datasets: string[];
-  algorithms: string[];
+  datasetId: string; // reference to dataset in DatasetsStepStore
+  datasetFileName: string; // the actual file name for settings.py
+  datasetTableName: string | null; // optional table name for tuple format
+  algorithms: string[]; // list of algorithm names (from AlgorithmsStepStore)
+  useDefaultDataManager: boolean; // if true, skip data_config in settings.py
 }
 
 export interface ExperimentsStepState {
+  // List of experiment groups
   groups: ExperimentGroup[];
-  experimentName: string;
-  experimentDescription: string;
-  selectedDatasets: string[];
-  selectedAlgorithms: string[];
-  loading: boolean;
 
   // Actions
-  setExperimentName: (name: string) => void;
-  setExperimentDescription: (description: string) => void;
-  setSelectedDatasets: (datasets: string[]) => void;
-  setSelectedAlgorithms: (algorithms: string[]) => void;
-  toggleDataset: (datasetId: string) => void;
-  toggleAlgorithm: (algorithmId: string) => void;
-  addGroup: (group: ExperimentGroup) => void;
-  removeGroup: (id: string) => void;
+  addGroup: (group: Omit<ExperimentGroup, "id">) => { success: boolean; error?: string };
   updateGroup: (id: string, updates: Partial<ExperimentGroup>) => void;
-  setLoading: (loading: boolean) => void;
+  deleteGroup: (id: string) => void;
+
+  // Validation
+  isNameUnique: (name: string, excludeId?: string) => boolean;
+
+  // Reset
   reset: () => void;
 }
 
-export const useExperimentsStepStore = create<ExperimentsStepState>((set) => ({
+export const useExperimentsStepStore = create<ExperimentsStepState>((set, get) => ({
   groups: [],
-  experimentName: "",
-  experimentDescription: "",
-  selectedDatasets: [],
-  selectedAlgorithms: [],
-  loading: false,
-
-  setExperimentName: (name) => {
-    set({ experimentName: name });
-  },
-
-  setExperimentDescription: (description) => {
-    set({ experimentDescription: description });
-  },
-
-  setSelectedDatasets: (datasets) => {
-    set({ selectedDatasets: datasets });
-  },
-
-  setSelectedAlgorithms: (algorithms) => {
-    set({ selectedAlgorithms: algorithms });
-  },
-
-  toggleDataset: (datasetId) => {
-    set((state) => {
-      const { selectedDatasets } = state;
-      if (selectedDatasets.includes(datasetId)) {
-        return {
-          selectedDatasets: selectedDatasets.filter((id) => id !== datasetId),
-        };
-      }
-      return {
-        selectedDatasets: [...selectedDatasets, datasetId],
-      };
-    });
-  },
-
-  toggleAlgorithm: (algorithmId) => {
-    set((state) => {
-      const { selectedAlgorithms } = state;
-      if (selectedAlgorithms.includes(algorithmId)) {
-        return {
-          selectedAlgorithms: selectedAlgorithms.filter(
-            (id) => id !== algorithmId,
-          ),
-        };
-      }
-      return {
-        selectedAlgorithms: [...selectedAlgorithms, algorithmId],
-      };
-    });
-  },
 
   addGroup: (group) => {
+    const { isNameUnique } = get();
+
+    // Validate unique name
+    if (!isNameUnique(group.name)) {
+      return {
+        success: false,
+        error: `An experiment group with name "${group.name}" already exists. Each group must have a unique name.`,
+      };
+    }
+
+    const newGroup: ExperimentGroup = {
+      ...group,
+      id: `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
+
     set((state) => ({
-      groups: [...state.groups, group],
+      groups: [...state.groups, newGroup],
+    }));
+
+    return { success: true };
+  },
+
+  updateGroup: (id, updates) => {
+    set((state) => ({
+      groups: state.groups.map((g) =>
+        g.id === id ? { ...g, ...updates } : g
+      ),
     }));
   },
 
-  removeGroup: (id) => {
+  deleteGroup: (id) => {
     set((state) => ({
       groups: state.groups.filter((g) => g.id !== id),
     }));
   },
 
-  updateGroup: (id, updates) => {
-    set((state) => ({
-      groups: state.groups.map((g) => (g.id === id ? { ...g, ...updates } : g)),
-    }));
-  },
-
-  setLoading: (loading) => {
-    set({ loading });
+  isNameUnique: (name, excludeId) => {
+    const { groups } = get();
+    const normalizedName = name.toLowerCase().trim();
+    return !groups.some(
+      (g) => g.id !== excludeId && g.name.toLowerCase().trim() === normalizedName
+    );
   },
 
   reset: () => {
-    set({
-      groups: [],
-      experimentName: "",
-      experimentDescription: "",
-      selectedDatasets: [],
-      selectedAlgorithms: [],
-      loading: false,
-    });
+    set({ groups: [] });
   },
 }));

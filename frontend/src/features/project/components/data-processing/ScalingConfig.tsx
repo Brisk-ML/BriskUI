@@ -7,18 +7,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import type { ScalingConfig as ScalingConfigType } from "@/types";
-import { useDataProcessingStore } from "../../stores/useDataProcessingStore";
+import {
+  useDataProcessingStepStore,
+  type ScalingPreprocessorConfig,
+} from "../../stores/useDataProcessingStepStore";
 
-export function ScalingConfig() {
-  const { addScalingConfig, loading } = useDataProcessingStore();
+interface ScalingConfigProps {
+  datasetId: string;
+}
 
-  const [method, setMethod] = useState<ScalingConfigType["method"] | "">("");
+export function ScalingConfig({ datasetId }: ScalingConfigProps) {
+  const { addPreprocessorConfig } = useDataProcessingStepStore();
+
+  const [method, setMethod] = useState<ScalingPreprocessorConfig["method"] | "">("");
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleAdd = async () => {
     if (!method) return;
-    await addScalingConfig({ method });
+    setIsAdding(true);
+    
+    addPreprocessorConfig(datasetId, "scaling", { method });
     setMethod("");
+    setIsAdding(false);
   };
 
   return (
@@ -74,10 +84,10 @@ export function ScalingConfig() {
         <button
           type="button"
           onClick={handleAdd}
-          disabled={loading}
+          disabled={isAdding || !method}
           className="btn-add-hover bg-[#006b4c] text-white h-10 sm:h-11 md:h-[50px] px-6 sm:px-8 text-base sm:text-lg md:text-[20px] font-display disabled:opacity-50"
         >
-          {loading ? "Adding..." : "Add"}
+          {isAdding ? "Adding..." : "Add"}
         </button>
       </div>
     </div>

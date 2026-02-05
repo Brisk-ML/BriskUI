@@ -1,6 +1,10 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  useAlgorithmsStepStore,
+  SKLEARN_CLASS_MODULES,
+} from "@/features/project/stores/useAlgorithmsStepStore";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -10,7 +14,6 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { STYLES } from "@/shared/constants/colors";
-import { useAlgorithmWrapperStore } from "../stores/useAlgorithmWrapperStore";
 import type {
   AlgorithmCatalogItem,
   HyperparameterValue,
@@ -33,7 +36,7 @@ export function AddAlgorithmModal({
   onClose,
   algorithm,
 }: AddAlgorithmModalProps) {
-  const { addWrapper } = useAlgorithmWrapperStore();
+  const { addWrapper, isNameUnique } = useAlgorithmsStepStore();
 
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -74,9 +77,12 @@ export function AddAlgorithmModal({
     if (!algorithm) return;
 
     const newErrors: Record<string, string> = {};
+    const trimmedName = name.trim();
 
-    if (!name.trim()) {
+    if (!trimmedName) {
       newErrors.name = "Name is required";
+    } else if (!isNameUnique(trimmedName)) {
+      newErrors.name = "An algorithm with this name already exists. Each algorithm must have a unique name.";
     }
     if (!displayName.trim()) {
       newErrors.displayName = "Display Name is required";
@@ -94,17 +100,25 @@ export function AddAlgorithmModal({
       return;
     }
 
-    addWrapper({
+    // Get the class module from the mapping
+    const classModule = SKLEARN_CLASS_MODULES[algorithm.className] || "sklearn";
+
+    const result = addWrapper({
       algorithmId: algorithm.id,
-      name: name.trim(),
+      name: trimmedName,
       displayName: displayName.trim(),
       className: algorithm.className,
+      classModule,
       useDefaults,
-      hyperparameters: useDefaults
+      defaultParams: useDefaults
         ? getDefaultHyperparameters(algorithm.id)
         : hyperparameters,
-      hasHyperparameterGrid: !useDefaults,
     });
+
+    if (!result.success) {
+      setErrors({ name: result.error || "Failed to add algorithm" });
+      return;
+    }
 
     onClose();
   };

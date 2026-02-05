@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { getServerStatus, validatePath } from "@/api";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import {
@@ -9,24 +10,56 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { useProjectStore } from "@/shared/stores/useProjectStore";
+import { useProjectWizardStore, type ProblemType } from "@/features/project/stores/useProjectWizardStore";
 
 export function ProjectInfoStep() {
-  const { projectName, projectPath, projectDescription, setProjectInfo } =
-    useProjectStore();
+  const { projectInfo, setProjectInfo, problemType, setProblemType, mode } = useProjectWizardStore();
+  const [pathError, setPathError] = useState<string | null>(null);
+  const [isValidatingPath, setIsValidatingPath] = useState(false);
 
-  const [localName, setLocalName] = useState(projectName);
-  const [localPath, setLocalPath] = useState(projectPath);
-  const [localDescription, setLocalDescription] = useState(projectDescription);
-  const [problemType, setProblemType] = useState("");
-
+  // Load default path from backend on mount (only in create mode with empty path)
   useEffect(() => {
-    setProjectInfo({
-      name: localName,
-      path: localPath,
-      description: localDescription,
-    });
-  }, [localName, localPath, localDescription, setProjectInfo]);
+    if (mode === "create" && !projectInfo.projectPath) {
+      getServerStatus().then((status) => {
+        if (status.project_path && !projectInfo.projectPath) {
+          setProjectInfo({ projectPath: status.project_path });
+        }
+      }).catch(() => {
+        // Ignore errors - path will just be empty
+      });
+    }
+  }, [mode, projectInfo.projectPath, setProjectInfo]);
+
+  // Debounced path validation
+  const validateProjectPath = useCallback(async (path: string) => {
+    if (!path.trim()) {
+      setPathError(null);
+      return;
+    }
+    
+    setIsValidatingPath(true);
+    try {
+      const result = await validatePath(path);
+      if (!result.exists) {
+        setPathError("Path does not exist");
+      } else if (!result.is_directory) {
+        setPathError("Path is not a directory");
+      } else {
+        setPathError(null);
+      }
+    } catch {
+      setPathError("Could not validate path");
+    }
+    setIsValidatingPath(false);
+  }, []);
+
+  // Validate path when it changes (with debounce)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      validateProjectPath(projectInfo.projectPath);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [projectInfo.projectPath, validateProjectPath]);
 
   return (
     <div className="w-full max-w-[calc(100vw-2rem)] sm:max-w-[600px] md:max-w-[720px] lg:max-w-[900px] xl:max-w-[1050px] 2xl:max-w-[1200px] mx-auto min-h-[calc(100vh-12rem)] md:min-h-[calc(100vh-10rem)] flex flex-col">
@@ -49,8 +82,8 @@ export function ProjectInfoStep() {
                 Name
               </Label>
               <Input
-                value={localName}
-                onChange={(e) => setLocalName(e.target.value)}
+                value={projectInfo.projectName}
+                onChange={(e) => setProjectInfo({ projectName: e.target.value })}
                 placeholder="Project Name"
                 className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] h-9 sm:h-10 lg:h-[40px] placeholder:text-white/60 w-full lg:max-w-[400px]"
               />
@@ -61,12 +94,29 @@ export function ProjectInfoStep() {
               <Label className="text-white text-base sm:text-lg md:text-xl lg:text-[28px] font-normal font-display block">
                 Project Path
               </Label>
-              <Input
-                value={localPath}
-                onChange={(e) => setLocalPath(e.target.value)}
-                placeholder="path/to/project"
-                className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] h-9 sm:h-10 lg:h-[40px] placeholder:text-white/40 w-full lg:max-w-[400px]"
-              />
+              <div className="relative">
+                <Input
+                  value={projectInfo.projectPath}
+                  onChange={(e) => setProjectInfo({ projectPath: e.target.value })}
+                  placeholder="path/to/project"
+                  className={`bg-[#282828] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] h-9 sm:h-10 lg:h-[40px] placeholder:text-white/40 w-full lg:max-w-[400px] ${
+                    pathError ? "border-red-500" : "border-[#404040]"
+                  }`}
+                />
+                {isValidatingPath && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">
+                    ...
+                  </span>
+                )}
+              </div>
+              {pathError && (
+                <p className="text-red-400 text-sm font-display">{pathError}</p>
+              )}
+              {mode === "create" && !pathError && projectInfo.projectPath && (
+                <p className="text-white/50 text-sm font-display">
+                  Project will be created in this directory
+                </p>
+              )}
             </div>
 
             {/* Problem Type */}
@@ -74,7 +124,10 @@ export function ProjectInfoStep() {
               <Label className="text-white text-base sm:text-lg md:text-xl lg:text-[28px] font-normal font-display block">
                 Problem Type
               </Label>
-              <Select value={problemType} onValueChange={setProblemType}>
+              <Select 
+                value={problemType} 
+                onValueChange={(v) => setProblemType(v as ProblemType)}
+              >
                 <SelectTrigger className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] h-9 sm:h-10 lg:h-[40px] w-full max-w-[180px] sm:max-w-[220px]">
                   <SelectValue
                     placeholder="Select one"
@@ -94,18 +147,6 @@ export function ProjectInfoStep() {
                   >
                     Regression
                   </SelectItem>
-                  <SelectItem
-                    value="clustering"
-                    className="text-white text-sm sm:text-base"
-                  >
-                    Clustering
-                  </SelectItem>
-                  <SelectItem
-                    value="other"
-                    className="text-white text-sm sm:text-base"
-                  >
-                    Other
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -117,8 +158,8 @@ export function ProjectInfoStep() {
               Description
             </Label>
             <Textarea
-              value={localDescription}
-              onChange={(e) => setLocalDescription(e.target.value)}
+              value={projectInfo.projectDescription}
+              onChange={(e) => setProjectInfo({ projectDescription: e.target.value })}
               placeholder="This is a classification project training on ..."
               className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] min-h-[200px] sm:min-h-[280px] md:min-h-[350px] lg:min-h-[400px] xl:min-h-[450px] resize-none placeholder:text-white/40 w-full lg:max-w-[400px] [field-sizing:auto]"
             />

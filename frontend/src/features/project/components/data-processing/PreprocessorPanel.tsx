@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { PreprocessorType } from "@/types";
-import { useDataProcessingStore } from "../../stores/useDataProcessingStore";
+import { useDataProcessingStepStore } from "../../stores/useDataProcessingStepStore";
 import { EncodingConfig } from "./EncodingConfig";
 import { FeatureSelectionConfig } from "./FeatureSelectionConfig";
 import { MissingDataConfig } from "./MissingDataConfig";
@@ -13,20 +13,45 @@ const PREPROCESSORS: { id: PreprocessorType; label: string }[] = [
   { id: "feature-selection", label: "Feature\nSelection" },
 ];
 
-export function PreprocessorPanel() {
-  const { activePreprocessor, setActivePreprocessor, configuredPreprocessors } =
-    useDataProcessingStore();
+interface PreprocessorPanelProps {
+  datasetId: string | null;
+}
+
+export function PreprocessorPanel({ datasetId }: PreprocessorPanelProps) {
+  const { activePreprocessor, setActivePreprocessor, getDatasetPreprocessors } =
+    useDataProcessingStepStore();
+
+  // Get preprocessors configured for the selected dataset
+  const configuredPreprocessors = datasetId
+    ? getDatasetPreprocessors(datasetId)
+    : [];
+
+  const handlePreprocessorClick = (id: PreprocessorType) => {
+    // Must have a dataset selected to select a preprocessor
+    if (!datasetId) return;
+    setActivePreprocessor(id);
+  };
 
   const renderConfigForm = () => {
+    if (!datasetId) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-white text-[28px] font-display text-center">
+            Select a dataset first
+          </p>
+        </div>
+      );
+    }
+
     switch (activePreprocessor) {
       case "missing-data":
-        return <MissingDataConfig />;
+        return <MissingDataConfig datasetId={datasetId} />;
       case "scaling":
-        return <ScalingConfig />;
+        return <ScalingConfig datasetId={datasetId} />;
       case "encoding":
-        return <EncodingConfig />;
+        return <EncodingConfig datasetId={datasetId} />;
       case "feature-selection":
-        return <FeatureSelectionConfig />;
+        return <FeatureSelectionConfig datasetId={datasetId} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -50,21 +75,26 @@ export function PreprocessorPanel() {
             const isConfigured = configuredPreprocessors.includes(
               preprocessor.id,
             );
+            const isDisabled = !datasetId;
 
             return (
               <button
                 key={preprocessor.id}
                 type="button"
-                onClick={() => setActivePreprocessor(preprocessor.id)}
+                onClick={() => handlePreprocessorClick(preprocessor.id)}
+                disabled={isDisabled}
                 className={cn(
                   "card-hover-fade w-[100px] h-[100px] border-2 flex items-center justify-center relative",
                   "text-white text-[18px] sm:text-[20px] font-display text-center leading-tight",
-                  "transition-all duration-300 cursor-pointer whitespace-pre-line",
-                  isActive
+                  "transition-all duration-300 whitespace-pre-line",
+                  isDisabled
+                    ? "bg-[#1a1a1a] border-[#2a2a2a] cursor-not-allowed opacity-50"
+                    : "cursor-pointer",
+                  !isDisabled && isActive
                     ? "bg-[#006b4c] border-[#00a878] ring-2 ring-white ring-offset-2 ring-offset-[#181818]"
-                    : isConfigured
+                    : !isDisabled && isConfigured
                       ? "bg-[#006b4c] border-[#00a878]"
-                      : "bg-[#121212] border-[#363636]",
+                      : !isDisabled && "bg-[#121212] border-[#363636]",
                 )}
               >
                 {preprocessor.label}
@@ -75,7 +105,7 @@ export function PreprocessorPanel() {
       </div>
 
       <div className="shrink-0">
-        {activePreprocessor && (
+        {activePreprocessor && datasetId && (
           <p className="text-white/80 text-sm sm:text-base font-display mb-2">
             Configuring:{" "}
             <span className="font-semibold text-white">

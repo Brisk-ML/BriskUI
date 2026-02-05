@@ -1,93 +1,60 @@
 import { create } from "zustand";
 
-export interface WorkflowMethod {
+/**
+ * A single workflow step: one evaluator call with its arguments.
+ * Order in the list = order of execution in the workflow.
+ */
+export interface WorkflowStep {
   id: string;
-  model: string;
-  xVariable: string;
-  yVariable: string;
-  metrics: string[];
-  filename: string;
-  cv: number;
+  evaluatorId: string; // key from workflow evaluators catalog
+  methodName: string;  // Python method name on Workflow (e.g. "evaluate_model")
+  args: Record<string, unknown>; // collected form values (X, y, metrics, filename, etc.)
 }
 
 export interface WorkflowStepState {
-  methods: WorkflowMethod[];
-  selectedMethodId: string | null;
-  isModalOpen: boolean;
-  loading: boolean;
+  steps: WorkflowStep[];
 
-  // Actions
-  addMethod: (method: WorkflowMethod) => void;
-  removeMethod: (id: string) => void;
-  updateMethod: (id: string, updates: Partial<WorkflowMethod>) => void;
-  reorderMethods: (fromIndex: number, toIndex: number) => void;
-  selectMethod: (id: string | null) => void;
-  openModal: () => void;
-  closeModal: () => void;
-  setLoading: (loading: boolean) => void;
+  addStep: (step: Omit<WorkflowStep, "id">) => void;
+  updateStep: (id: string, updates: Partial<Pick<WorkflowStep, "args">>) => void;
+  removeStep: (id: string) => void;
+  moveStep: (id: string, direction: "up" | "down") => void;
+
   reset: () => void;
 }
 
-export const useWorkflowStepStore = create<WorkflowStepState>((set) => ({
-  methods: [],
-  selectedMethodId: null,
-  isModalOpen: false,
-  loading: false,
+export const useWorkflowStepStore = create<WorkflowStepState>((set, get) => ({
+  steps: [],
 
-  addMethod: (method) => {
-    set((state) => ({
-      methods: [...state.methods, method],
-      isModalOpen: false,
-    }));
+  addStep: (step) => {
+    const newStep: WorkflowStep = {
+      ...step,
+      id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    };
+    set((state) => ({ steps: [...state.steps, newStep] }));
   },
 
-  removeMethod: (id) => {
+  updateStep: (id, updates) => {
     set((state) => ({
-      methods: state.methods.filter((m) => m.id !== id),
-      selectedMethodId:
-        state.selectedMethodId === id ? null : state.selectedMethodId,
-    }));
-  },
-
-  updateMethod: (id, updates) => {
-    set((state) => ({
-      methods: state.methods.map((m) =>
-        m.id === id ? { ...m, ...updates } : m,
+      steps: state.steps.map((s) =>
+        s.id === id ? { ...s, ...updates } : s
       ),
     }));
   },
 
-  reorderMethods: (fromIndex, toIndex) => {
-    set((state) => {
-      const methods = [...state.methods];
-      const [removed] = methods.splice(fromIndex, 1);
-      methods.splice(toIndex, 0, removed);
-      return { methods };
-    });
+  removeStep: (id) => {
+    set((state) => ({ steps: state.steps.filter((s) => s.id !== id) }));
   },
 
-  selectMethod: (id) => {
-    set({ selectedMethodId: id });
+  moveStep: (id, direction) => {
+    const { steps } = get();
+    const idx = steps.findIndex((s) => s.id === id);
+    if (idx < 0) return;
+    const newIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= steps.length) return;
+    const next = [...steps];
+    [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+    set({ steps: next });
   },
 
-  openModal: () => {
-    set({ isModalOpen: true });
-  },
-
-  closeModal: () => {
-    set({ isModalOpen: false });
-  },
-
-  setLoading: (loading) => {
-    set({ loading });
-  },
-
-  reset: () => {
-    set({
-      methods: [],
-      selectedMethodId: null,
-      isModalOpen: false,
-      loading: false,
-    });
-  },
+  reset: () => set({ steps: [] }),
 }));

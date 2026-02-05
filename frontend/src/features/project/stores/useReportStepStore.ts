@@ -1,5 +1,16 @@
 import { create } from "zustand";
-import { COLORS } from "@/shared/constants/colors";
+
+/** Aligned with Brisk PlotSettings defaults for non-default detection. */
+export const BRISK_PLOT_SETTINGS_DEFAULTS = {
+  file_format: "png",
+  transparent: false,
+  width: 10,
+  height: 8,
+  dpi: 300,
+  primary_color: "#1175D5",
+  secondary_color: "#00A878",
+  accent_color: "#DE6B48",
+} as const;
 
 export interface PlotSettings {
   fileFormat: string;
@@ -20,7 +31,6 @@ export interface ReportStepState {
   colors: ColorOption[];
   loading: boolean;
 
-  // Actions
   setFileFormat: (format: string) => void;
   setTransparent: (transparent: boolean) => void;
   setImageWidth: (width: number) => void;
@@ -35,17 +45,17 @@ export interface ReportStepState {
 }
 
 const DEFAULT_PLOT_SETTINGS: PlotSettings = {
-  fileFormat: "png",
-  transparent: false,
-  imageWidth: 8,
-  imageHeight: 10,
-  dpi: 300,
+  fileFormat: BRISK_PLOT_SETTINGS_DEFAULTS.file_format,
+  transparent: BRISK_PLOT_SETTINGS_DEFAULTS.transparent,
+  imageWidth: BRISK_PLOT_SETTINGS_DEFAULTS.width,
+  imageHeight: BRISK_PLOT_SETTINGS_DEFAULTS.height,
+  dpi: BRISK_PLOT_SETTINGS_DEFAULTS.dpi,
 };
 
 const DEFAULT_COLORS: ColorOption[] = [
-  { id: "primary", name: "Primary", color: COLORS.accent },
-  { id: "secondary", name: "Secondary", color: COLORS.primaryLight },
-  { id: "accent", name: "Accent", color: "#ff6b6b" },
+  { id: "primary", name: "Primary", color: BRISK_PLOT_SETTINGS_DEFAULTS.primary_color },
+  { id: "secondary", name: "Secondary", color: BRISK_PLOT_SETTINGS_DEFAULTS.secondary_color },
+  { id: "accent", name: "Accent", color: BRISK_PLOT_SETTINGS_DEFAULTS.accent_color },
 ];
 
 export const useReportStepStore = create<ReportStepState>((set) => ({

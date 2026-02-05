@@ -8,33 +8,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import type { FeatureSelectionConfig as FeatureSelectionConfigType } from "@/types";
-import { useDataProcessingStore } from "../../stores/useDataProcessingStore";
+import {
+  useDataProcessingStepStore,
+  type FeatureSelectionPreprocessorConfig,
+} from "../../stores/useDataProcessingStepStore";
 
-export function FeatureSelectionConfig() {
-  const { addFeatureSelectionConfig, loading } = useDataProcessingStore();
+interface FeatureSelectionConfigProps {
+  datasetId: string;
+}
+
+export function FeatureSelectionConfig({ datasetId }: FeatureSelectionConfigProps) {
+  const { addPreprocessorConfig } = useDataProcessingStepStore();
 
   const [method, setMethod] = useState<
-    FeatureSelectionConfigType["method"] | ""
+    FeatureSelectionPreprocessorConfig["method"] | ""
   >("");
-  const [numberOfFeatures, setNumberOfFeatures] = useState("");
-  const [estimator, setEstimator] = useState<
-    FeatureSelectionConfigType["estimator"] | ""
-  >("");
-  const [crossValidation, setCrossValidation] = useState("");
+  const [nFeatures, setNFeatures] = useState("");
+  const [estimator, setEstimator] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleAdd = async () => {
     if (!method) return;
-    await addFeatureSelectionConfig({
+    setIsAdding(true);
+    
+    const config: FeatureSelectionPreprocessorConfig = {
       method,
-      numberOfFeatures: numberOfFeatures ? Number(numberOfFeatures) : undefined,
+      nFeatures: nFeatures ? (nFeatures === "auto" ? "auto" : Number(nFeatures)) : undefined,
       estimator: estimator || undefined,
-      crossValidation: crossValidation ? Number(crossValidation) : undefined,
-    });
+    };
+    
+    addPreprocessorConfig(datasetId, "feature-selection", config);
     setMethod("");
-    setNumberOfFeatures("");
+    setNFeatures("");
     setEstimator("");
-    setCrossValidation("");
+    setIsAdding(false);
   };
 
   return (
@@ -47,35 +54,23 @@ export function FeatureSelectionConfig() {
         <Select
           value={method}
           onValueChange={(v) =>
-            setMethod(v as FeatureSelectionConfigType["method"])
+            setMethod(v as FeatureSelectionPreprocessorConfig["method"])
           }
         >
           <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
             <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent className="bg-[#282828] border-[#404040]">
-            <SelectItem
-              value="variance"
-              className="text-white text-sm sm:text-base"
-            >
+            <SelectItem value="variance" className="text-white text-sm sm:text-base">
               Variance Threshold
             </SelectItem>
-            <SelectItem
-              value="univariate"
-              className="text-white text-sm sm:text-base"
-            >
+            <SelectItem value="univariate" className="text-white text-sm sm:text-base">
               Univariate
             </SelectItem>
-            <SelectItem
-              value="recursive"
-              className="text-white text-sm sm:text-base"
-            >
+            <SelectItem value="recursive" className="text-white text-sm sm:text-base">
               Recursive Feature Elimination
             </SelectItem>
-            <SelectItem
-              value="lasso"
-              className="text-white text-sm sm:text-base"
-            >
+            <SelectItem value="lasso" className="text-white text-sm sm:text-base">
               Lasso
             </SelectItem>
           </SelectContent>
@@ -88,59 +83,27 @@ export function FeatureSelectionConfig() {
           Number of Features
         </Label>
         <Input
-          value={numberOfFeatures}
-          onChange={(e) => setNumberOfFeatures(e.target.value)}
-          placeholder="ID"
+          value={nFeatures}
+          onChange={(e) => setNFeatures(e.target.value)}
+          placeholder="auto or number"
           className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
         />
       </div>
 
-      {/* Estimator */}
-      <div>
-        <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
-          Estimator
-        </Label>
-        <Select
-          value={estimator}
-          onValueChange={(v) =>
-            setEstimator(v as FeatureSelectionConfigType["estimator"])
-          }
-        >
-          <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#282828] border-[#404040]">
-            <SelectItem
-              value="random-forest"
-              className="text-white text-sm sm:text-base"
-            >
-              Random Forest
-            </SelectItem>
-            <SelectItem
-              value="logistic"
-              className="text-white text-sm sm:text-base"
-            >
-              Logistic Regression
-            </SelectItem>
-            <SelectItem value="svm" className="text-white text-sm sm:text-base">
-              SVM
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Cross Validation */}
-      <div>
-        <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
-          Cross Validation
-        </Label>
-        <Input
-          value={crossValidation}
-          onChange={(e) => setCrossValidation(e.target.value)}
-          placeholder="5"
-          className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
-        />
-      </div>
+      {/* Estimator (for recursive method) */}
+      {(method === "recursive" || method === "lasso") && (
+        <div>
+          <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
+            Estimator
+          </Label>
+          <Input
+            value={estimator}
+            onChange={(e) => setEstimator(e.target.value)}
+            placeholder="e.g., RandomForestClassifier"
+            className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+          />
+        </div>
+      )}
 
       {/* Help Text */}
       <p className="text-white/60 text-sm sm:text-[16px] font-display">
@@ -152,10 +115,10 @@ export function FeatureSelectionConfig() {
         <button
           type="button"
           onClick={handleAdd}
-          disabled={loading}
+          disabled={isAdding || !method}
           className="btn-add-hover bg-[#006b4c] text-white h-10 sm:h-11 md:h-[50px] px-6 sm:px-8 text-base sm:text-lg md:text-[20px] font-display disabled:opacity-50"
         >
-          {loading ? "Adding..." : "Add"}
+          {isAdding ? "Adding..." : "Add"}
         </button>
       </div>
     </div>

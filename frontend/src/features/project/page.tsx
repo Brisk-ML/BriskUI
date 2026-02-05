@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import {
   DEFAULT_SETUP_STEPS,
   ProgressTracker,
 } from "@/shared/components/ProgressTracker";
+import { useProjectStore } from "@/shared/stores/useProjectStore";
 import { AlgorithmsStep } from "./components/algorithms/AlgorithmsStep";
 import { DataProcessingStep } from "./components/data-processing/DataProcessingStep";
 import { DatasetsStep } from "./components/datasets/DatasetsStep";
@@ -13,8 +15,26 @@ import { WorkflowStep } from "./components/workflow/WorkflowStep";
 import { useProjectWizardStore } from "./stores/useProjectWizardStore";
 
 export default function ProjectWizardPage() {
-  const { currentStep, nextStep, prevStep, totalSteps } =
+  const { currentStep, nextStep, prevStep, totalSteps, mode, loadFromBackend } =
     useProjectWizardStore();
+  const { projectName, projectPath, projectDescription } = useProjectStore();
+
+  // Initialize wizard with existing project data (only in edit mode)
+  useEffect(() => {
+    // Skip if in create mode - wizard data should stay empty
+    if (mode === "create") {
+      return;
+    }
+
+    // If we have existing project data, load it into wizard (edit mode)
+    if (projectName && projectName !== "Loading...") {
+      loadFromBackend({
+        project_name: projectName,
+        project_path: projectPath,
+        project_description: projectDescription,
+      });
+    }
+  }, [mode, projectName, projectPath, projectDescription, loadFromBackend]);
 
   // Render the step component based on current step number
   const renderStepContent = () => {

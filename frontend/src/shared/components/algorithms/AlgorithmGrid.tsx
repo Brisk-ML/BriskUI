@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AddAlgorithmModal } from "@/features/algorithms/components/AddAlgorithmModal";
 import { AlgorithmCard } from "@/features/algorithms/components/AlgorithmCard";
 import { ALGORITHMS_CATALOG } from "@/features/algorithms/constants/algorithmsCatalog";
 import type { AlgorithmCatalogItem } from "@/features/algorithms/types";
+import { useProjectWizardStore } from "@/features/project/stores/useProjectWizardStore";
 import { STYLES } from "@/shared/constants/colors";
 
 export function AlgorithmGrid() {
+  const { problemType } = useProjectWizardStore();
   const [selectedAlgorithm, setSelectedAlgorithm] =
     useState<AlgorithmCatalogItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Filter algorithms based on the selected problem type
+  const filteredAlgorithms = useMemo(() => {
+    return ALGORITHMS_CATALOG.filter(
+      (algorithm) => algorithm.type === problemType
+    );
+  }, [problemType]);
 
   const handleAlgorithmClick = (algorithm: AlgorithmCatalogItem) => {
     setSelectedAlgorithm(algorithm);
@@ -27,11 +36,11 @@ export function AlgorithmGrid() {
       >
         <div className="px-2 mb-5 pt-1">
           <h2 className="h1-underline text-[#ebebeb] text-[24px] sm:text-[30px] lg:text-[36px] font-bold font-display">
-            Add Algorithms
+            Add {problemType === "classification" ? "Classification" : "Regression"} Algorithms
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-          {ALGORITHMS_CATALOG.map((algorithm) => (
+          {filteredAlgorithms.map((algorithm) => (
             <AlgorithmCard
               key={algorithm.id}
               algorithm={algorithm}

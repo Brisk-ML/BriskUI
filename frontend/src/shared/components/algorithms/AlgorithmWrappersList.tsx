@@ -2,15 +2,14 @@ import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AlgorithmWrapperCard } from "@/features/algorithms/components/AlgorithmWrapperCard";
 import { ViewAlgorithmModal } from "@/features/algorithms/components/ViewAlgorithmModal";
-import { useAlgorithmWrapperStore } from "@/features/algorithms/stores/useAlgorithmWrapperStore";
-import type { AlgorithmWrapper } from "@/features/algorithms/types";
+import { useAlgorithmsStepStore, type WizardAlgorithmWrapper } from "@/features/project/stores/useAlgorithmsStepStore";
 import { Input } from "@/shared/components/ui/input";
 import { STYLES } from "@/shared/constants/colors";
 
 export function AlgorithmWrappersList() {
-  const { wrappers, deleteWrapper } = useAlgorithmWrapperStore();
+  const { wrappers, deleteWrapper } = useAlgorithmsStepStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewingWrapper, setViewingWrapper] = useState<AlgorithmWrapper | null>(
+  const [viewingWrapper, setViewingWrapper] = useState<WizardAlgorithmWrapper | null>(
     null,
   );
 

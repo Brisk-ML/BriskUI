@@ -1,7 +1,7 @@
 import { Search, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useRef, useState } from "react";
-import { useDatasetsStore } from "@/features/datasets/stores/useDatasetsStore";
+import { useDatasetsStepStore } from "@/features/project/stores/useDatasetsStepStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -13,31 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import type { DatasetFileType, Feature } from "@/types";
+import type { DatasetFileType } from "@/types";
 
 export function DatasetsStep() {
-  const { datasets, selectedDatasetId, selectDataset, addDataset } =
-    useDatasetsStore();
+  const {
+    datasets,
+    selectedDatasetId,
+    form,
+    setForm,
+    addFeature,
+    removeFeature,
+    addDataset,
+    updateDataset,
+    toggleDataset,
+    resetForm,
+  } = useDatasetsStepStore();
 
-  const [fileName, setFileName] = useState("");
-  const [tableName, setTableName] = useState("");
-  const [fileType, setFileType] = useState<DatasetFileType>("csv");
-  const [groupColumn, setGroupColumn] = useState("");
-  const [targetFeature, setTargetFeature] = useState("");
-  const [featuresCount, setFeaturesCount] = useState("");
-  const [observationsCount, setObservationsCount] = useState("");
-
+  // Local state for feature input
   const [featureName, setFeatureName] = useState("");
   const [dataType, setDataType] = useState<"str" | "int" | "float">("str");
-  const [features, setFeatures] = useState<Feature[]>([
-    { id: "1", name: "Feature 1", type: "str" },
-    { id: "2", name: "Feature 2", type: "int" },
-    { id: "3", name: "Feature 3", type: "float" },
-    { id: "4", name: "Feature 4", type: "str" },
-    { id: "5", name: "Feature 5", type: "float" },
-    { id: "6", name: "Feature 6", type: "str" },
-    { id: "7", name: "Feature 7", type: "int" },
-  ]);
   const [searchQuery, setSearchQuery] = useState("");
   const [resetHovered, setResetHovered] = useState(false);
 
@@ -52,84 +46,58 @@ export function DatasetsStep() {
     if (file) {
       const name = file.name;
       const extension = name.split(".").pop()?.toLowerCase();
-      setFileName(name);
-      setTableName(name.replace(/\.[^/.]+$/, ""));
-      if (extension === "parquet") setFileType("parquet");
-      else if (extension === "json") setFileType("json");
-      else setFileType("csv");
+      let newFileType: DatasetFileType = "csv";
+      if (extension === "parquet") newFileType = "parquet";
+      else if (extension === "json") newFileType = "json";
+
+      setForm({
+        fileName: name,
+        tableName: name.replace(/\.[^/.]+$/, ""),
+        fileType: newFileType,
+      });
     }
   };
 
   const handleAddFeature = () => {
     if (featureName.trim()) {
-      setFeatures([
-        ...features,
-        {
-          id: crypto.randomUUID(),
-          name: featureName,
-          type: dataType,
-        },
-      ]);
+      addFeature({
+        id: crypto.randomUUID(),
+        name: featureName,
+        type: dataType,
+      });
       setFeatureName("");
       setDataType("str");
     }
   };
 
   const handleDeleteFeature = (id: string) => {
-    setFeatures(features.filter((f) => f.id !== id));
+    removeFeature(id);
   };
 
   const handleReset = () => {
-    setFileName("");
-    setTableName("");
-    setFileType("csv");
-    setGroupColumn("");
-    setTargetFeature("");
-    setFeaturesCount("");
-    setObservationsCount("");
-    setFeatures([
-      { id: "1", name: "Feature 1", type: "str" },
-      { id: "2", name: "Feature 2", type: "int" },
-      { id: "3", name: "Feature 3", type: "float" },
-      { id: "4", name: "Feature 4", type: "str" },
-      { id: "5", name: "Feature 5", type: "float" },
-      { id: "6", name: "Feature 6", type: "str" },
-      { id: "7", name: "Feature 7", type: "int" },
-    ]);
+    resetForm();
+    setFeatureName("");
+    setDataType("str");
+    setSearchQuery("");
   };
 
-  const handleAddDataset = () => {
-    if (!fileName) return;
-    addDataset({
-      name: fileName,
-      fileName,
-      tableName,
-      fileType,
-      groupColumn,
-      targetFeature,
-      featuresCount: Number.parseInt(featuresCount, 10) || features.length,
-      observationsCount: Number.parseInt(observationsCount, 10) || 0,
-      features: [...features],
-    });
-    handleReset();
-  };
+  const handleAddOrUpdateDataset = () => {
+    if (!form.fileName) return;
 
-  const handleSelectDataset = (id: string) => {
-    selectDataset(id);
-    const dataset = datasets.find((d) => d.id === id);
-    if (dataset) {
-      setFileName(dataset.fileName);
-      setTableName(dataset.tableName);
-      setFileType(dataset.fileType);
-      setGroupColumn(dataset.groupColumn);
-      setTargetFeature(dataset.targetFeature);
-      setFeaturesCount(dataset.featuresCount.toString());
-      setObservationsCount(dataset.observationsCount.toString());
-      setFeatures([...dataset.features]);
+    if (selectedDatasetId) {
+      // Update existing dataset
+      updateDataset(selectedDatasetId);
+    } else {
+      // Add new dataset
+      addDataset();
     }
   };
 
-  const filteredFeatures = features.filter((f) =>
+  const handleCardClick = (id: string) => {
+    toggleDataset(id);
+  };
+
+  const filteredFeatures = form.features.filter((f) =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
@@ -154,8 +122,8 @@ export function DatasetsStep() {
                 File Name
               </Label>
               <Input
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
+                value={form.fileName}
+                onChange={(e) => setForm({ fileName: e.target.value })}
                 placeholder="File name"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
@@ -167,8 +135,8 @@ export function DatasetsStep() {
                 Table Name
               </Label>
               <Input
-                value={tableName}
-                onChange={(e) => setTableName(e.target.value)}
+                value={form.tableName}
+                onChange={(e) => setForm({ tableName: e.target.value })}
                 placeholder="Optional"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
@@ -180,9 +148,9 @@ export function DatasetsStep() {
                 File Type
               </Label>
               <Select
-                value={fileType}
-                onValueChange={(v: "csv" | "parquet" | "json") =>
-                  setFileType(v)
+                value={form.fileType}
+                onValueChange={(v: DatasetFileType) =>
+                  setForm({ fileType: v })
                 }
               >
                 <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] w-full sm:w-[150px] text-base sm:text-[18px]">
@@ -208,8 +176,8 @@ export function DatasetsStep() {
                 Group Column
               </Label>
               <Input
-                value={groupColumn}
-                onChange={(e) => setGroupColumn(e.target.value)}
+                value={form.groupColumn}
+                onChange={(e) => setForm({ groupColumn: e.target.value })}
                 placeholder="Optional"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
@@ -221,8 +189,8 @@ export function DatasetsStep() {
                 Target Feature
               </Label>
               <Input
-                value={targetFeature}
-                onChange={(e) => setTargetFeature(e.target.value)}
+                value={form.targetFeature}
+                onChange={(e) => setForm({ targetFeature: e.target.value })}
                 placeholder="Name"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
@@ -234,8 +202,8 @@ export function DatasetsStep() {
                 Features (#)
               </Label>
               <Input
-                value={featuresCount}
-                onChange={(e) => setFeaturesCount(e.target.value)}
+                value={form.featuresCount}
+                onChange={(e) => setForm({ featuresCount: e.target.value })}
                 placeholder="Ex. 10"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
@@ -247,8 +215,8 @@ export function DatasetsStep() {
                 Observations (#)
               </Label>
               <Input
-                value={observationsCount}
-                onChange={(e) => setObservationsCount(e.target.value)}
+                value={form.observationsCount}
+                onChange={(e) => setForm({ observationsCount: e.target.value })}
                 placeholder="Ex. 500"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
@@ -406,13 +374,13 @@ export function DatasetsStep() {
               color: "white",
             }}
           >
-            Reset
+            {selectedDatasetId ? "Cancel Edit" : "Reset"}
           </button>
           <Button
-            onClick={handleAddDataset}
+            onClick={handleAddOrUpdateDataset}
             className="btn-add-hover bg-[#006b4c] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display border border-[#363636]"
           >
-            Add Dataset
+            {selectedDatasetId ? "Update Dataset" : "Add Dataset"}
           </Button>
         </div>
       </div>
@@ -433,7 +401,7 @@ export function DatasetsStep() {
                 <button
                   key={dataset.id}
                   type="button"
-                  onClick={() => handleSelectDataset(dataset.id)}
+                  onClick={() => handleCardClick(dataset.id)}
                   className={cn(
                     "card-hover-fade flex-shrink-0 w-full sm:w-[250px] h-auto min-h-[180px] sm:h-[250px] p-3 sm:p-2 flex flex-col gap-2 sm:gap-4 cursor-pointer transition-all duration-300 border relative",
                     "hover:border-[#404040]",

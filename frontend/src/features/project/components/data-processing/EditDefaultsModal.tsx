@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { useDataProcessingStore } from "../../stores/useDataProcessingStore";
+import { useDataProcessingStepStore } from "../../stores/useDataProcessingStepStore";
 
 interface EditDefaultsModalProps {
   open: boolean;
@@ -22,52 +22,51 @@ interface EditDefaultsModalProps {
 }
 
 export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
-  const { dataManager, updateDataManager } = useDataProcessingStore();
+  const { baseDataManager, updateBaseDataManager } = useDataProcessingStepStore();
 
-  const [trainSize, setTrainSize] = useState(
-    dataManager.testSize.train.toString(),
+  // Convert test_size (0-1) to percentage for display
+  const [testSizePercent, setTestSizePercent] = useState(
+    Math.round(baseDataManager.testSize * 100).toString(),
   );
-  const [testSize, setTestSize] = useState(
-    dataManager.testSize.test.toString(),
-  );
-  const [groupColumn, setGroupColumn] = useState(dataManager.groupColumn);
-  const [splitMethod, setSplitMethod] = useState(dataManager.splitMethod);
-  const [numberOfSplits, setNumberOfSplits] = useState(
-    dataManager.numberOfSplits.toString(),
-  );
+  const [groupColumn, setGroupColumn] = useState(baseDataManager.groupColumn || "");
+  const [splitMethod, setSplitMethod] = useState(baseDataManager.splitMethod);
+  const [nSplits, setNSplits] = useState(baseDataManager.nSplits.toString());
   const [stratified, setStratified] = useState(
-    dataManager.stratified ? "true" : "false",
+    baseDataManager.stratified ? "true" : "false",
   );
   const [randomState, setRandomState] = useState(
-    dataManager.randomState.toString(),
+    baseDataManager.randomState?.toString() || "",
   );
 
   useEffect(() => {
     if (open) {
-      setTrainSize(dataManager.testSize.train.toString());
-      setTestSize(dataManager.testSize.test.toString());
-      setGroupColumn(dataManager.groupColumn);
-      setSplitMethod(dataManager.splitMethod);
-      setNumberOfSplits(dataManager.numberOfSplits.toString());
-      setStratified(dataManager.stratified ? "true" : "false");
-      setRandomState(dataManager.randomState.toString());
+      setTestSizePercent(Math.round(baseDataManager.testSize * 100).toString());
+      setGroupColumn(baseDataManager.groupColumn || "");
+      setSplitMethod(baseDataManager.splitMethod);
+      setNSplits(baseDataManager.nSplits.toString());
+      setStratified(baseDataManager.stratified ? "true" : "false");
+      setRandomState(baseDataManager.randomState?.toString() || "");
     }
-  }, [open, dataManager]);
+  }, [open, baseDataManager]);
 
   const handleSave = () => {
-    updateDataManager({
-      testSize: {
-        train: Number.parseInt(trainSize, 10) || 50,
-        test: Number.parseInt(testSize, 10) || 50,
-      },
-      groupColumn,
-      splitMethod: splitMethod as "random" | "shuffle" | "stratified",
-      numberOfSplits: Number.parseInt(numberOfSplits, 10) || 3,
+    const testSizeValue = Number.parseInt(testSizePercent, 10) || 20;
+    const randomStateValue = randomState.trim() 
+      ? Number.parseInt(randomState, 10) 
+      : null;
+
+    updateBaseDataManager({
+      testSize: Math.max(0.01, Math.min(0.99, testSizeValue / 100)),
+      groupColumn: groupColumn.trim() || null,
+      splitMethod: splitMethod as "shuffle" | "kfold",
+      nSplits: Number.parseInt(nSplits, 10) || 5,
       stratified: stratified === "true",
-      randomState: Number.parseInt(randomState, 10) || 42,
+      randomState: randomStateValue,
     });
     onClose();
   };
+
+  const trainSizePercent = 100 - (Number.parseInt(testSizePercent, 10) || 0);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -92,17 +91,16 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
                   Train
                 </div>
                 <Input
-                  value={trainSize}
+                  value={trainSizePercent.toString()}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setTrainSize(val);
                     const trainNum = Number.parseInt(val, 10) || 0;
-                    setTestSize((100 - trainNum).toString());
+                    setTestSizePercent((100 - trainNum).toString());
                   }}
                   className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
                 />
                 <div className="text-white/60 text-xs sm:text-[14px] mt-1">
-                  {trainSize}%
+                  {trainSizePercent}%
                 </div>
               </div>
               <div className="flex-1">
@@ -110,17 +108,12 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
                   Test
                 </div>
                 <Input
-                  value={testSize}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setTestSize(val);
-                    const testNum = Number.parseInt(val, 10) || 0;
-                    setTrainSize((100 - testNum).toString());
-                  }}
+                  value={testSizePercent}
+                  onChange={(e) => setTestSizePercent(e.target.value)}
                   className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
                 />
                 <div className="text-white/60 text-xs sm:text-[14px] mt-1">
-                  {testSize}%
+                  {testSizePercent}%
                 </div>
               </div>
             </div>
@@ -134,7 +127,7 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
             <Input
               value={groupColumn}
               onChange={(e) => setGroupColumn(e.target.value)}
-              placeholder="Name"
+              placeholder="Optional"
               className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
             />
           </div>
@@ -145,8 +138,8 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
               Number of Splits
             </Label>
             <Input
-              value={numberOfSplits}
-              onChange={(e) => setNumberOfSplits(e.target.value)}
+              value={nSplits}
+              onChange={(e) => setNSplits(e.target.value)}
               placeholder="5"
               className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
             />
@@ -159,20 +152,12 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
             </Label>
             <Select
               value={splitMethod}
-              onValueChange={(v: "random" | "shuffle" | "stratified") =>
-                setSplitMethod(v)
-              }
+              onValueChange={(v: "shuffle" | "kfold") => setSplitMethod(v)}
             >
               <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent className="bg-[#282828] border-[#404040]">
-                <SelectItem
-                  value="random"
-                  className="text-white text-sm sm:text-base"
-                >
-                  Random
-                </SelectItem>
                 <SelectItem
                   value="shuffle"
                   className="text-white text-sm sm:text-base"
@@ -180,10 +165,10 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
                   Shuffle
                 </SelectItem>
                 <SelectItem
-                  value="stratified"
+                  value="kfold"
                   className="text-white text-sm sm:text-base"
                 >
-                  Stratified
+                  K-Fold
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -197,7 +182,7 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
             <Input
               value={randomState}
               onChange={(e) => setRandomState(e.target.value)}
-              placeholder="42"
+              placeholder="Optional (e.g., 42)"
               className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
             />
           </div>
