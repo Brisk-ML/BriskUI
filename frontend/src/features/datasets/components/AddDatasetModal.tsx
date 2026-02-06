@@ -8,13 +8,7 @@ import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Dialog, DialogContent, DialogTitle } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { STYLES } from "@/shared/constants/colors";
 import type { DatasetFileType, Feature } from "@/types";
 
@@ -233,19 +227,17 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
               <Label className="text-white text-sm sm:text-base font-display mb-1 block">
                 File Type
               </Label>
-              <Select
+              <HoverSelect
                 value={form.fileType}
                 onValueChange={(v) => setForm((prev) => ({ ...prev, fileType: v as DatasetFileType }))}
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 text-sm">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="csv" className="text-white">CSV</SelectItem>
-                  <SelectItem value="xlsx" className="text-white">XLSX</SelectItem>
-                  <SelectItem value="sqlite" className="text-white">SQLite</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "csv", label: "CSV" },
+                  { value: "xlsx", label: "XLSX" },
+                  { value: "sqlite", label: "SQLite" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+              />
             </div>
 
             {/* Target Feature */}
@@ -308,16 +300,17 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
                 <Label className="text-white text-sm font-display mb-1 block">
                   Data Type
                 </Label>
-                <Select value={dataType} onValueChange={(v) => setDataType(v as "str" | "int" | "float")}>
-                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-8 text-sm">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#282828] border-[#404040]">
-                    <SelectItem value="str" className="text-white">str</SelectItem>
-                    <SelectItem value="int" className="text-white">int</SelectItem>
-                    <SelectItem value="float" className="text-white">float</SelectItem>
-                  </SelectContent>
-                </Select>
+                <HoverSelect
+                  value={dataType}
+                  onValueChange={(v) => setDataType(v as "str" | "int" | "float")}
+                  placeholder="Select"
+                  options={[
+                    { value: "str", label: "str" },
+                    { value: "int", label: "int" },
+                    { value: "float", label: "float" },
+                  ]}
+                  triggerClassName="bg-[#282828] border-[#404040] text-white h-8 text-sm"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox

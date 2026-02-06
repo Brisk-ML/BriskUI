@@ -2,13 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChromePicker, type ColorResult } from "react-color";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { STYLES } from "@/shared/constants/colors";
 import { useReportStepStore, type ColorOption } from "@/features/project/stores/useReportStepStore";
 
@@ -140,39 +134,34 @@ export function ReportStep() {
                 <Label className="text-white text-base sm:text-lg lg:text-[20px] font-display mb-2 block">
                   File Format
                 </Label>
-                <Select value={plotSettings.fileFormat} onValueChange={setFileFormat}>
-                  <SelectTrigger
-                    className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 md:h-11 w-full max-w-[200px] text-sm sm:text-base`}
-                  >
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                    <SelectItem value="png" className="text-white">PNG</SelectItem>
-                    <SelectItem value="svg" className="text-white">SVG</SelectItem>
-                    <SelectItem value="pdf" className="text-white">PDF</SelectItem>
-                    <SelectItem value="jpg" className="text-white">JPG</SelectItem>
-                  </SelectContent>
-                </Select>
+                <HoverSelect
+                  value={plotSettings.fileFormat}
+                  onValueChange={setFileFormat}
+                  placeholder="Select"
+                  options={[
+                    { value: "png", label: "PNG" },
+                    { value: "svg", label: "SVG" },
+                    { value: "pdf", label: "PDF" },
+                    { value: "jpg", label: "JPG" },
+                  ]}
+                  triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 md:h-11 w-full max-w-[200px] text-sm sm:text-base`}
+                />
               </div>
 
               <div>
                 <Label className="text-white text-base sm:text-lg lg:text-[20px] font-display mb-2 block">
                   Transparent
                 </Label>
-                <Select
+                <HoverSelect
                   value={plotSettings.transparent ? "yes" : "no"}
                   onValueChange={(v) => setTransparent(v === "yes")}
-                >
-                  <SelectTrigger
-                    className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 md:h-11 w-full max-w-[200px] text-sm sm:text-base`}
-                  >
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                    <SelectItem value="yes" className="text-white">Yes</SelectItem>
-                    <SelectItem value="no" className="text-white">No</SelectItem>
-                  </SelectContent>
-                </Select>
+                  placeholder="Select"
+                  options={[
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
+                  ]}
+                  triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 md:h-11 w-full max-w-[200px] text-sm sm:text-base`}
+                />
               </div>
 
               <div>

@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import {
   useDataProcessingStepStore,
   type ScalingPreprocessorConfig,
@@ -60,40 +54,18 @@ export function ScalingConfig({ datasetId }: ScalingConfigProps) {
           <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
             Method
           </Label>
-          <Select
+          <HoverSelect
             value={method}
             onValueChange={(v) => setMethod(v as ScalingPreprocessorConfig["method"])}
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem
-                value="standard"
-                className="text-white text-sm sm:text-base"
-              >
-                Standard
-              </SelectItem>
-              <SelectItem
-                value="minmax"
-                className="text-white text-sm sm:text-base"
-              >
-                MinMax
-              </SelectItem>
-              <SelectItem
-                value="robust"
-                className="text-white text-sm sm:text-base"
-              >
-                Robust
-              </SelectItem>
-              <SelectItem
-                value="normalizer"
-                className="text-white text-sm sm:text-base"
-              >
-                Normalizer
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select"
+            options={[
+              { value: "standard", label: "Standard" },
+              { value: "minmax", label: "MinMax" },
+              { value: "robust", label: "Robust" },
+              { value: "normalizer", label: "Normalizer" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+          />
         </div>
       </div>
 

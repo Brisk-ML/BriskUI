@@ -4,13 +4,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { STYLES } from "@/shared/constants/colors";
 import { useDatasetsStepStore } from "@/features/project/stores/useDatasetsStepStore";
@@ -240,33 +234,19 @@ export function ExperimentsStep() {
             <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
               Dataset
             </Label>
-            <Select
+            <HoverSelect
               value={selectedDatasetId}
               onValueChange={setSelectedDatasetId}
-            >
-              <SelectTrigger
-                className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-10 sm:h-[40px] text-base sm:text-[18px]`}
-                disabled={datasets.length === 0}
-              >
-                <SelectValue
-                  placeholder={
-                    datasets.length === 0 ? "No datasets available" : "Select"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                {datasets.map((dataset) => (
-                  <SelectItem
-                    key={dataset.id}
-                    value={dataset.id}
-                    className="text-white"
-                  >
-                    {dataset.fileName}
-                    {dataset.tableName && ` (${dataset.tableName})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={datasets.length === 0 ? "No datasets available" : "Select"}
+              disabled={datasets.length === 0}
+              options={datasets.map((dataset) => ({
+                value: dataset.id,
+                label: dataset.tableName 
+                  ? `${dataset.fileName} (${dataset.tableName})`
+                  : dataset.fileName,
+              }))}
+              triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-10 sm:h-[40px] text-base sm:text-[18px]`}
+            />
           </div>
 
           {/* Description */}

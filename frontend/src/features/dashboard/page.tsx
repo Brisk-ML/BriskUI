@@ -114,7 +114,7 @@ export default function Home() {
       </header>
 
       {/* Dashboard Container */}
-      <main className="flex-1 flex flex-col overflow-y-auto px-4 sm:px-6 md:px-8 lg:pl-[15px] lg:pr-[19px] pt-1 sm:pt-1.5 lg:pt-[6px] pb-1 sm:pb-1.5 lg:pb-[6px]">
+      <main className="flex-1 flex flex-col overflow-y-auto px-4 sm:px-6 md:px-8 lg:pl-[15px] lg:pr-[19px] pb-1 sm:pb-1.5 lg:pb-[6px]">
       <div className="flex-1 border-2 border-border-primary px-4 sm:px-5 md:px-6 lg:px-[26px] py-4 sm:py-5 md:py-6 lg:py-[29px] flex flex-col bg-bg-dashboard">
           <div className="flex-1 flex flex-col xl:flex-row gap-4 sm:gap-5 md:gap-6 lg:gap-[35px]">
             {/* Result Summary */}

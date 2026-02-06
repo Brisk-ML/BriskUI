@@ -3,13 +3,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { Button } from "@/shared/components/ui/button";
 import { STYLES } from "@/shared/constants/colors";
 
@@ -163,24 +157,17 @@ export function DataManagerModal({
             <Label className="text-white text-base sm:text-lg font-display mb-2 block">
               Split Method
             </Label>
-            <Select
+            <HoverSelect
               value={localConfig.splitMethod}
-              onValueChange={(v: "shuffle" | "kfold") =>
-                setLocalConfig((prev) => ({ ...prev, splitMethod: v }))
+              onValueChange={(v) =>
+                setLocalConfig((prev) => ({ ...prev, splitMethod: v as "shuffle" | "kfold" }))
               }
-            >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-10 text-base">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
-                <SelectItem value="shuffle" className="text-white">
-                  Shuffle
-                </SelectItem>
-                <SelectItem value="kfold" className="text-white">
-                  K-Fold
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "shuffle", label: "Shuffle" },
+                { value: "kfold", label: "K-Fold" },
+              ]}
+              triggerClassName="bg-[#282828] border-[#404040] text-white h-10 text-base"
+            />
           </div>
 
           {/* Number of Splits */}
@@ -200,24 +187,17 @@ export function DataManagerModal({
             <Label className="text-white text-base sm:text-lg font-display mb-2 block">
               Stratified
             </Label>
-            <Select
+            <HoverSelect
               value={localConfig.stratified ? "true" : "false"}
               onValueChange={(v) =>
                 setLocalConfig((prev) => ({ ...prev, stratified: v === "true" }))
               }
-            >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-10 text-base">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
-                <SelectItem value="false" className="text-white">
-                  False
-                </SelectItem>
-                <SelectItem value="true" className="text-white">
-                  True
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "false", label: "False" },
+                { value: "true", label: "True" },
+              ]}
+              triggerClassName="bg-[#282828] border-[#404040] text-white h-10 text-base"
+            />
           </div>
 
           {/* Random State */}

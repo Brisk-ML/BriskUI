@@ -9,15 +9,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { STYLES } from "@/shared/constants/colors";
 import { usePendingChangesStore } from "@/shared/stores/usePendingChangesStore";
@@ -251,31 +245,20 @@ export default function ExperimentsPage() {
               <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display">
                 Datasets
               </Label>
-              <Select
+              <HoverSelect
                 value={selectedDataset}
                 onValueChange={setSelectedDataset}
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[38px] lg:h-[40px] text-sm sm:text-base">
-                  <SelectValue placeholder="Select dataset" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  {datasets.length === 0 ? (
-                    <SelectItem value="_none" disabled className="text-white/50">
-                      No datasets available
-                    </SelectItem>
-                  ) : (
-                    datasets.map((dataset) => (
-                      <SelectItem
-                        key={dataset.filename}
-                        value={dataset.filename}
-                        className="text-white hover:bg-[#363636]"
-                      >
-                        {dataset.filename}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                placeholder="Select dataset"
+                options={
+                  datasets.length === 0
+                    ? [{ value: "_none", label: "No datasets available", disabled: true }]
+                    : datasets.map((dataset) => ({
+                        value: dataset.filename,
+                        label: dataset.filename,
+                      }))
+                }
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[38px] lg:h-[40px] text-sm sm:text-base"
+              />
             </div>
 
             {/* Description Textarea */}

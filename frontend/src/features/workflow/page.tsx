@@ -12,13 +12,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { STYLES } from "@/shared/constants/colors";
 import {
   getWorkflowEvaluatorsForProblemType,
@@ -174,23 +168,16 @@ function EvaluatorModal({
                   {field.label}
                 </Label>
                 {field.type === "data" ? (
-                  <Select
+                  <HoverSelect
                     value={String(currentArgs[field.name] ?? field.default ?? "")}
                     onValueChange={(v) => updateArg(field.name, v)}
-                  >
-                    <SelectTrigger
-                      className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
-                    >
-                      <SelectValue placeholder={field.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                      {(field.options ?? []).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-white">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={field.placeholder}
+                    options={(field.options ?? []).map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    }))}
+                    triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
+                  />
                 ) : field.type === "metrics" ? (
                   <div className="flex flex-wrap gap-2 p-2 rounded border border-[#404040] bg-[#181818] max-h-[140px] overflow-y-auto">
                     {metricsOptions.map((opt) => {
@@ -218,41 +205,27 @@ function EvaluatorModal({
                     })}
                   </div>
                 ) : field.type === "metric_single" ? (
-                  <Select
+                  <HoverSelect
                     value={String(currentArgs[field.name] ?? field.default ?? "")}
                     onValueChange={(v) => updateArg(field.name, v)}
-                  >
-                    <SelectTrigger
-                      className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
-                    >
-                      <SelectValue placeholder={field.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                      {metricsOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-white">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={field.placeholder}
+                    options={metricsOptions.map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    }))}
+                    triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
+                  />
                 ) : field.type === "data_x" || field.type === "data_y" || (field.type === "select" && field.options) ? (
-                  <Select
+                  <HoverSelect
                     value={String(currentArgs[field.name] ?? field.default ?? "")}
                     onValueChange={(v) => updateArg(field.name, v)}
-                  >
-                    <SelectTrigger
-                      className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
-                    >
-                      <SelectValue placeholder={field.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                      {(field.options ?? []).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-white">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={field.placeholder}
+                    options={(field.options ?? []).map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    }))}
+                    triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
+                  />
                 ) : field.type === "boolean" ? (
                   <div className="flex items-center gap-2">
                     <Checkbox

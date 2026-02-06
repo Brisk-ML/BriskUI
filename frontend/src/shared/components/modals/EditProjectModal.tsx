@@ -12,13 +12,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { STYLES } from "@/shared/constants/colors";
 import { useProjectModalStore } from "@/shared/stores/useProjectModalStore";
@@ -262,38 +256,34 @@ export function EditProjectModal() {
                     <Label className="text-white text-sm sm:text-base font-display">
                       File Format
                     </Label>
-                    <Select 
-                      value={plotSettings.file_format} 
+                    <HoverSelect
+                      value={plotSettings.file_format}
                       onValueChange={(v) => updatePlotSetting("file_format", v)}
-                    >
-                      <SelectTrigger className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 w-full max-w-[180px] text-sm`}>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                        <SelectItem value="png" className="text-white">PNG</SelectItem>
-                        <SelectItem value="svg" className="text-white">SVG</SelectItem>
-                        <SelectItem value="pdf" className="text-white">PDF</SelectItem>
-                        <SelectItem value="jpg" className="text-white">JPG</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select"
+                      options={[
+                        { value: "png", label: "PNG" },
+                        { value: "svg", label: "SVG" },
+                        { value: "pdf", label: "PDF" },
+                        { value: "jpg", label: "JPG" },
+                      ]}
+                      triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 w-full max-w-[180px] text-sm`}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-white text-sm sm:text-base font-display">
                       Transparent
                     </Label>
-                    <Select 
-                      value={plotSettings.transparent ? "yes" : "no"} 
+                    <HoverSelect
+                      value={plotSettings.transparent ? "yes" : "no"}
                       onValueChange={(v) => updatePlotSetting("transparent", v === "yes")}
-                    >
-                      <SelectTrigger className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 w-full max-w-[180px] text-sm`}>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent className={`${STYLES.bgCardAlt} ${STYLES.border}`}>
-                        <SelectItem value="yes" className="text-white">Yes</SelectItem>
-                        <SelectItem value="no" className="text-white">No</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select"
+                      options={[
+                        { value: "yes", label: "Yes" },
+                        { value: "no", label: "No" },
+                      ]}
+                      triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 w-full max-w-[180px] text-sm`}
+                    />
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">

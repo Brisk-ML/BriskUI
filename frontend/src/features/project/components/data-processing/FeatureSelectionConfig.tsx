@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import {
   useDataProcessingStepStore,
   type FeatureSelectionPreprocessorConfig,
@@ -77,30 +71,20 @@ export function FeatureSelectionConfig({ datasetId }: FeatureSelectionConfigProp
           <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
             Method
           </Label>
-          <Select
+          <HoverSelect
             value={method}
             onValueChange={(v) =>
               setMethod(v as FeatureSelectionPreprocessorConfig["method"])
             }
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="variance" className="text-white text-sm sm:text-base">
-                Variance Threshold
-              </SelectItem>
-              <SelectItem value="univariate" className="text-white text-sm sm:text-base">
-                Univariate
-              </SelectItem>
-              <SelectItem value="recursive" className="text-white text-sm sm:text-base">
-                Recursive Feature Elimination
-              </SelectItem>
-              <SelectItem value="lasso" className="text-white text-sm sm:text-base">
-                Lasso
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select"
+            options={[
+              { value: "variance", label: "Variance Threshold" },
+              { value: "univariate", label: "Univariate" },
+              { value: "recursive", label: "Recursive Feature Elimination" },
+              { value: "lasso", label: "Lasso" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+          />
         </div>
 
         {/* Number of Features */}

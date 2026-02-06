@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import {
   useDataProcessingStepStore,
   type EncodingPreprocessorConfig,
@@ -64,28 +58,18 @@ export function EncodingConfig({ datasetId }: EncodingConfigProps) {
           <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
             Method
           </Label>
-          <Select
+          <HoverSelect
             value={method}
             onValueChange={(v) => setMethod(v as EncodingPreprocessorConfig["method"])}
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="onehot" className="text-white text-sm sm:text-base">
-                One-Hot
-              </SelectItem>
-              <SelectItem value="label" className="text-white text-sm sm:text-base">
-                Label
-              </SelectItem>
-              <SelectItem value="ordinal" className="text-white text-sm sm:text-base">
-                Ordinal
-              </SelectItem>
-              <SelectItem value="target" className="text-white text-sm sm:text-base">
-                Target
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select"
+            options={[
+              { value: "onehot", label: "One-Hot" },
+              { value: "label", label: "Label" },
+              { value: "ordinal", label: "Ordinal" },
+              { value: "target", label: "Target" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+          />
         </div>
 
         {/* Handle Unknown */}
@@ -93,22 +77,16 @@ export function EncodingConfig({ datasetId }: EncodingConfigProps) {
           <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
             Handle Unknown
           </Label>
-          <Select
+          <HoverSelect
             value={handleUnknown}
             onValueChange={(v) => setHandleUnknown(v as "error" | "ignore")}
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="error" className="text-white text-sm sm:text-base">
-                Error
-              </SelectItem>
-              <SelectItem value="ignore" className="text-white text-sm sm:text-base">
-                Ignore
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select"
+            options={[
+              { value: "error", label: "Error" },
+              { value: "ignore", label: "Ignore" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+          />
         </div>
       </div>
 

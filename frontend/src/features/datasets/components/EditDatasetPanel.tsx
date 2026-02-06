@@ -4,13 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import type { Feature } from "@/types";
 import { useDatasetsModalStore } from "../stores/useDatasetsModalStore";
 import { useDatasetsStore } from "../stores/useDatasetsStore";
@@ -95,27 +89,18 @@ export function EditDatasetPanel({ className }: EditDatasetPanelProps) {
           <Label className="text-white text-[16px] sm:text-[20px] font-display mb-1 sm:mb-2 block">
             File Type
           </Label>
-          <Select
+          <HoverSelect
             value={editForm.fileType}
-            onValueChange={(value: "csv" | "parquet" | "json") =>
-              updateEditForm({ fileType: value })
+            onValueChange={(value) =>
+              updateEditForm({ fileType: value as "csv" | "parquet" | "json" })
             }
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="csv" className="text-white">
-                CSV
-              </SelectItem>
-              <SelectItem value="parquet" className="text-white">
-                Parquet
-              </SelectItem>
-              <SelectItem value="json" className="text-white">
-                JSON
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "csv", label: "CSV" },
+              { value: "parquet", label: "Parquet" },
+              { value: "json", label: "JSON" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] text-[16px] sm:text-[18px]"
+          />
         </div>
 
         {/* Group Column */}
@@ -206,27 +191,18 @@ export function EditDatasetPanel({ className }: EditDatasetPanelProps) {
                     <span className="text-white text-[14px] sm:text-[16px] truncate">
                       {feature.name}
                     </span>
-                    <Select
+                    <HoverSelect
                       value={feature.type}
-                      onValueChange={(value: "str" | "int" | "float") =>
-                        updateFeature(feature.id, { type: value })
+                      onValueChange={(value) =>
+                        updateFeature(feature.id, { type: value as "str" | "int" | "float" })
                       }
-                    >
-                      <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[28px] sm:h-[32px] text-[12px] sm:text-[14px] px-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#282828] border-[#404040]">
-                        <SelectItem value="str" className="text-white">
-                          str
-                        </SelectItem>
-                        <SelectItem value="int" className="text-white">
-                          int
-                        </SelectItem>
-                        <SelectItem value="float" className="text-white">
-                          float
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: "str", label: "str" },
+                        { value: "int", label: "int" },
+                        { value: "float", label: "float" },
+                      ]}
+                      triggerClassName="bg-[#282828] border-[#404040] text-white h-[28px] sm:h-[32px] text-[12px] sm:text-[14px] px-2"
+                    />
                     <Button
                       variant="ghost"
                       size="icon-sm"

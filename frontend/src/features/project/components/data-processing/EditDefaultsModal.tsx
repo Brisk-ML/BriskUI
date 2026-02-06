@@ -7,13 +7,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { useDataProcessingStepStore } from "../../stores/useDataProcessingStepStore";
 
 interface EditDefaultsModalProps {
@@ -150,28 +144,16 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
             <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
               Split Method
             </Label>
-            <Select
+            <HoverSelect
               value={splitMethod}
-              onValueChange={(v: "shuffle" | "kfold") => setSplitMethod(v)}
-            >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
-                <SelectItem
-                  value="shuffle"
-                  className="text-white text-sm sm:text-base"
-                >
-                  Shuffle
-                </SelectItem>
-                <SelectItem
-                  value="kfold"
-                  className="text-white text-sm sm:text-base"
-                >
-                  K-Fold
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              onValueChange={(v) => setSplitMethod(v as "shuffle" | "kfold")}
+              placeholder="Select"
+              options={[
+                { value: "shuffle", label: "Shuffle" },
+                { value: "kfold", label: "K-Fold" },
+              ]}
+              triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+            />
           </div>
 
           {/* Random State */}
@@ -192,25 +174,16 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
             <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
               Stratified
             </Label>
-            <Select value={stratified} onValueChange={setStratified}>
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
-                <SelectItem
-                  value="false"
-                  className="text-white text-sm sm:text-base"
-                >
-                  False
-                </SelectItem>
-                <SelectItem
-                  value="true"
-                  className="text-white text-sm sm:text-base"
-                >
-                  True
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <HoverSelect
+              value={stratified}
+              onValueChange={setStratified}
+              placeholder="Select"
+              options={[
+                { value: "false", label: "False" },
+                { value: "true", label: "True" },
+              ]}
+              triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+            />
           </div>
         </div>
 

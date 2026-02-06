@@ -1,12 +1,6 @@
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { useDataProcessingStepStore } from "../../stores/useDataProcessingStepStore";
 
 interface DataManagerPanelProps {
@@ -94,24 +88,17 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
           <Label className="text-white text-lg sm:text-xl lg:text-[20px] font-display mb-2 block">
             Split Method
           </Label>
-          <Select 
-            value={dataManager.splitMethod} 
-            onValueChange={(v: "shuffle" | "kfold") => 
-              updateDatasetDataManager(datasetId, { splitMethod: v })
+          <HoverSelect
+            value={dataManager.splitMethod}
+            onValueChange={(v) =>
+              updateDatasetDataManager(datasetId, { splitMethod: v as "shuffle" | "kfold" })
             }
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="shuffle" className="text-white">
-                Shuffle
-              </SelectItem>
-              <SelectItem value="kfold" className="text-white">
-                K-Fold
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "shuffle", label: "Shuffle" },
+              { value: "kfold", label: "K-Fold" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+          />
         </div>
 
         {/* Number of Splits */}
@@ -131,24 +118,17 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
           <Label className="text-white text-lg sm:text-xl lg:text-[20px] font-display mb-2 block">
             Stratified
           </Label>
-          <Select 
-            value={dataManager.stratified ? "true" : "false"} 
-            onValueChange={(v) => 
+          <HoverSelect
+            value={dataManager.stratified ? "true" : "false"}
+            onValueChange={(v) =>
               updateDatasetDataManager(datasetId, { stratified: v === "true" })
             }
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="false" className="text-white">
-                False
-              </SelectItem>
-              <SelectItem value="true" className="text-white">
-                True
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "false", label: "False" },
+              { value: "true", label: "True" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+          />
         </div>
 
         {/* Random State */}

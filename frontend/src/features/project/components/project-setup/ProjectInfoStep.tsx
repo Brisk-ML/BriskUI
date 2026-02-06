@@ -2,13 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getServerStatus, validatePath } from "@/api";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useProjectWizardStore, type ProblemType } from "@/features/project/stores/useProjectWizardStore";
 
@@ -124,31 +118,16 @@ export function ProjectInfoStep() {
               <Label className="text-white text-base sm:text-lg md:text-xl lg:text-[28px] font-normal font-display block">
                 Problem Type
               </Label>
-              <Select 
-                value={problemType} 
+              <HoverSelect
+                value={problemType}
                 onValueChange={(v) => setProblemType(v as ProblemType)}
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] h-9 sm:h-10 lg:h-[40px] w-full max-w-[180px] sm:max-w-[220px]">
-                  <SelectValue
-                    placeholder="Select one"
-                    className="text-white/40"
-                  />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem
-                    value="classification"
-                    className="text-white text-sm sm:text-base"
-                  >
-                    Classification
-                  </SelectItem>
-                  <SelectItem
-                    value="regression"
-                    className="text-white text-sm sm:text-base"
-                  >
-                    Regression
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select one"
+                options={[
+                  { value: "classification", label: "Classification" },
+                  { value: "regression", label: "Regression" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white text-sm sm:text-base md:text-[17px] lg:text-[18px] h-9 sm:h-10 lg:h-[40px] w-full max-w-[180px] sm:max-w-[220px]"
+              />
             </div>
           </div>
 

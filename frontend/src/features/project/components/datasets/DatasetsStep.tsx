@@ -8,13 +8,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import type { DatasetFileType, Feature } from "@/types";
 
 export function DatasetsStep() {
@@ -186,27 +180,17 @@ export function DatasetsStep() {
               <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
                 File Type
               </Label>
-              <Select
+              <HoverSelect
                 value={form.fileType}
-                onValueChange={(v: DatasetFileType) =>
-                  setForm({ fileType: v })
-                }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] w-full sm:w-[150px] text-base sm:text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="csv" className="text-white">
-                    CSV
-                  </SelectItem>
-                  <SelectItem value="xlsx" className="text-white">
-                    XLSX
-                  </SelectItem>
-                  <SelectItem value="sqlite" className="text-white">
-                    SQLite
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                onValueChange={(v) => setForm({ fileType: v as DatasetFileType })}
+                placeholder="Select"
+                options={[
+                  { value: "csv", label: "CSV" },
+                  { value: "xlsx", label: "XLSX" },
+                  { value: "sqlite", label: "SQLite" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] w-full sm:w-[150px] text-base sm:text-[18px]"
+              />
             </div>
 
             {/* Target Feature */}
@@ -271,25 +255,17 @@ export function DatasetsStep() {
                 <Label className="text-white text-base sm:text-lg font-display mb-1 block">
                   Data Type
                 </Label>
-                <Select
+                <HoverSelect
                   value={dataType}
-                  onValueChange={(v: "str" | "int" | "float") => setDataType(v)}
-                >
-                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 w-full text-sm sm:text-base">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#282828] border-[#404040]">
-                    <SelectItem value="str" className="text-white">
-                      str
-                    </SelectItem>
-                    <SelectItem value="int" className="text-white">
-                      int
-                    </SelectItem>
-                    <SelectItem value="float" className="text-white">
-                      float
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                  onValueChange={(v) => setDataType(v as "str" | "int" | "float")}
+                  placeholder="Select"
+                  options={[
+                    { value: "str", label: "str" },
+                    { value: "int", label: "int" },
+                    { value: "float", label: "float" },
+                  ]}
+                  triggerClassName="bg-[#282828] border-[#404040] text-white h-9 w-full text-sm sm:text-base"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox

@@ -3,13 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import type { PreprocessorType } from "@/types";
 import { useDatasetsModalStore } from "../stores/useDatasetsModalStore";
 import { useDatasetsStore } from "../stores/useDatasetsStore";
@@ -68,31 +62,25 @@ export function EditDataProcessingPanel() {
               <Label className="text-white text-[20px] font-display mb-2 block">
                 Strategy
               </Label>
-              <Select
+              <HoverSelect
                 value={missingDataConfig.strategy}
                 onValueChange={(value) =>
                   setMissingDataConfig((prev) => ({ ...prev, strategy: value }))
                 }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="drop" className="text-white">
-                    Drop
-                  </SelectItem>
-                  <SelectItem value="impute" className="text-white">
-                    Impute
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "drop", label: "Drop" },
+                  { value: "impute", label: "Impute" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+              />
             </div>
 
             <div>
               <Label className="text-white text-[20px] font-display mb-2 block">
                 Impute Method
               </Label>
-              <Select
+              <HoverSelect
                 value={missingDataConfig.imputeMethod}
                 onValueChange={(value) =>
                   setMissingDataConfig((prev) => ({
@@ -100,25 +88,15 @@ export function EditDataProcessingPanel() {
                     imputeMethod: value,
                   }))
                 }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="mean" className="text-white">
-                    Mean
-                  </SelectItem>
-                  <SelectItem value="median" className="text-white">
-                    Median
-                  </SelectItem>
-                  <SelectItem value="mode" className="text-white">
-                    Mode
-                  </SelectItem>
-                  <SelectItem value="constant" className="text-white">
-                    Constant
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "mean", label: "Mean" },
+                  { value: "median", label: "Median" },
+                  { value: "mode", label: "Mode" },
+                  { value: "constant", label: "Constant" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+              />
             </div>
 
             <div>
@@ -160,30 +138,20 @@ export function EditDataProcessingPanel() {
               <Label className="text-white text-[20px] font-display mb-2 block">
                 Method
               </Label>
-              <Select
+              <HoverSelect
                 value={scalingConfig.method}
                 onValueChange={(value) =>
                   setScalingConfig((prev) => ({ ...prev, method: value }))
                 }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="standard" className="text-white">
-                    Standard
-                  </SelectItem>
-                  <SelectItem value="minmax" className="text-white">
-                    MinMax
-                  </SelectItem>
-                  <SelectItem value="robust" className="text-white">
-                    Robust
-                  </SelectItem>
-                  <SelectItem value="normalizer" className="text-white">
-                    Normalizer
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "standard", label: "Standard" },
+                  { value: "minmax", label: "MinMax" },
+                  { value: "robust", label: "Robust" },
+                  { value: "normalizer", label: "Normalizer" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+              />
             </div>
 
             <p className="text-white/60 text-[16px] font-display">
@@ -208,30 +176,20 @@ export function EditDataProcessingPanel() {
               <Label className="text-white text-[20px] font-display mb-2 block">
                 Method
               </Label>
-              <Select
+              <HoverSelect
                 value={encodingConfig.method}
                 onValueChange={(value) =>
                   setEncodingConfig((prev) => ({ ...prev, method: value }))
                 }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="onehot" className="text-white">
-                    One-Hot
-                  </SelectItem>
-                  <SelectItem value="label" className="text-white">
-                    Label
-                  </SelectItem>
-                  <SelectItem value="ordinal" className="text-white">
-                    Ordinal
-                  </SelectItem>
-                  <SelectItem value="binary" className="text-white">
-                    Binary
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "onehot", label: "One-Hot" },
+                  { value: "label", label: "Label" },
+                  { value: "ordinal", label: "Ordinal" },
+                  { value: "binary", label: "Binary" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+              />
             </div>
 
             <div>
@@ -273,7 +231,7 @@ export function EditDataProcessingPanel() {
               <Label className="text-white text-[20px] font-display mb-2 block">
                 Method
               </Label>
-              <Select
+              <HoverSelect
                 value={featureSelectionConfig.method}
                 onValueChange={(value) =>
                   setFeatureSelectionConfig((prev) => ({
@@ -281,25 +239,15 @@ export function EditDataProcessingPanel() {
                     method: value,
                   }))
                 }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="variance" className="text-white">
-                    Variance Threshold
-                  </SelectItem>
-                  <SelectItem value="univariate" className="text-white">
-                    Univariate
-                  </SelectItem>
-                  <SelectItem value="recursive" className="text-white">
-                    Recursive Feature Elimination
-                  </SelectItem>
-                  <SelectItem value="lasso" className="text-white">
-                    Lasso
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "variance", label: "Variance Threshold" },
+                  { value: "univariate", label: "Univariate" },
+                  { value: "recursive", label: "Recursive Feature Elimination" },
+                  { value: "lasso", label: "Lasso" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+              />
             </div>
 
             <div>
@@ -323,7 +271,7 @@ export function EditDataProcessingPanel() {
               <Label className="text-white text-[20px] font-display mb-2 block">
                 Estimator
               </Label>
-              <Select
+              <HoverSelect
                 value={featureSelectionConfig.estimator}
                 onValueChange={(value) =>
                   setFeatureSelectionConfig((prev) => ({
@@ -331,22 +279,14 @@ export function EditDataProcessingPanel() {
                     estimator: value,
                   }))
                 }
-              >
-                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#404040]">
-                  <SelectItem value="random-forest" className="text-white">
-                    Random Forest
-                  </SelectItem>
-                  <SelectItem value="logistic" className="text-white">
-                    Logistic Regression
-                  </SelectItem>
-                  <SelectItem value="svm" className="text-white">
-                    SVM
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select"
+                options={[
+                  { value: "random-forest", label: "Random Forest" },
+                  { value: "logistic", label: "Logistic Regression" },
+                  { value: "svm", label: "SVM" },
+                ]}
+                triggerClassName="bg-[#282828] border-[#404040] text-white h-[40px] text-[18px]"
+              />
             </div>
 
             <div>
@@ -445,22 +385,17 @@ export function EditDataProcessingPanel() {
             <Label className="text-white text-[20px] font-display mb-2 block">
               Split Method
             </Label>
-            <Select value={dataManager.splitMethod} disabled>
-              <SelectTrigger className="bg-[#121212] border-[#363636] text-white h-[40px] text-[18px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#363636]">
-                <SelectItem value="random" className="text-white">
-                  Random
-                </SelectItem>
-                <SelectItem value="shuffle" className="text-white">
-                  Shuffle
-                </SelectItem>
-                <SelectItem value="stratified" className="text-white">
-                  Stratified
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <HoverSelect
+              value={dataManager.splitMethod}
+              onValueChange={() => {}}
+              disabled
+              options={[
+                { value: "random", label: "Random" },
+                { value: "shuffle", label: "Shuffle" },
+                { value: "stratified", label: "Stratified" },
+              ]}
+              triggerClassName="bg-[#121212] border-[#363636] text-white h-[40px] text-[18px]"
+            />
           </div>
 
           {/* Number of Splits */}

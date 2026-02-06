@@ -279,3 +279,17 @@
 .btn-add-hover:hover {
   background-color: #005a3f !important;
 }
+
+/* HoverSelect item gradient effect - fades in from right */
+.hover-select-item:hover .hover-select-gradient {
+  opacity: 1 !important;
+}
+
+.hover-select-gradient {
+  background: linear-gradient(
+    to right,
+    rgba(17, 117, 213, 0.4) 0%,
+    rgba(17, 117, 213, 0.2) 40%,
+    transparent 100%
+  );
+}

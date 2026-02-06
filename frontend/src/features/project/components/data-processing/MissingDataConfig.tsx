@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import {
   useDataProcessingStepStore,
   type MissingDataPreprocessorConfig,
@@ -72,33 +66,21 @@ export function MissingDataConfig({ datasetId }: MissingDataConfigProps) {
           <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
             Strategy
           </Label>
-          <Select
+          <HoverSelect
             value={strategy}
             onValueChange={(v) =>
               setStrategy(v as MissingDataPreprocessorConfig["strategy"])
             }
-          >
-            <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#282828] border-[#404040]">
-              <SelectItem value="mean" className="text-white text-sm sm:text-base">
-                Mean
-              </SelectItem>
-              <SelectItem value="median" className="text-white text-sm sm:text-base">
-                Median
-              </SelectItem>
-              <SelectItem value="most_frequent" className="text-white text-sm sm:text-base">
-                Most Frequent
-              </SelectItem>
-              <SelectItem value="constant" className="text-white text-sm sm:text-base">
-                Constant
-              </SelectItem>
-              <SelectItem value="drop" className="text-white text-sm sm:text-base">
-                Drop
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select"
+            options={[
+              { value: "mean", label: "Mean" },
+              { value: "median", label: "Median" },
+              { value: "most_frequent", label: "Most Frequent" },
+              { value: "constant", label: "Constant" },
+              { value: "drop", label: "Drop" },
+            ]}
+            triggerClassName="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
+          />
         </div>
 
         {/* Fill Value (only for constant) */}

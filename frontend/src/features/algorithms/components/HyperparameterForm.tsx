@@ -1,12 +1,6 @@
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
+import { HoverSelect } from "@/shared/components/ui/hover-select";
 import type {
   HyperparameterField,
   HyperparameterValue,
@@ -93,7 +87,7 @@ export function HyperparameterForm({
                 </span>
               )}
             </Label>
-            <Select
+            <HoverSelect
               value={String(value)}
               onValueChange={(val) => {
                 // Find the option object to get the original value type (not just string)
@@ -104,22 +98,14 @@ export function HyperparameterForm({
                   onChange(field.name, option.value);
                 }
               }}
-            >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[200px] text-[16px] sm:text-[18px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
-                {field.options?.map((option) => (
-                  <SelectItem
-                    key={String(option.value)}
-                    value={String(option.value)}
-                    className="text-white"
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={
+                field.options?.map((option) => ({
+                  value: String(option.value),
+                  label: option.label,
+                })) ?? []
+              }
+              triggerClassName="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[200px] text-[16px] sm:text-[18px]"
+            />
             {error && (
               <p className="text-red-500 text-[12px] sm:text-[14px] mt-1">
                 {error}
@@ -139,22 +125,15 @@ export function HyperparameterForm({
                 </span>
               )}
             </Label>
-            <Select
+            <HoverSelect
               value={String(value)}
               onValueChange={(val) => onChange(field.name, val === "true")}
-            >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[200px] text-[16px] sm:text-[18px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#282828] border-[#404040]">
-                <SelectItem value="true" className="text-white">
-                  True
-                </SelectItem>
-                <SelectItem value="false" className="text-white">
-                  False
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "true", label: "True" },
+                { value: "false", label: "False" },
+              ]}
+              triggerClassName="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[200px] text-[16px] sm:text-[18px]"
+            />
             {error && (
               <p className="text-red-500 text-[12px] sm:text-[14px] mt-1">
                 {error}
