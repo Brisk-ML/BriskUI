@@ -16,8 +16,14 @@ export {
   writeEvaluatorsFile,
   writeSettingsFile,
   writeWorkflowFile,
+  getProjectStats,
+  getProjectFiles,
+  getFileContent,
+  downloadFile,
+  getExperimentsData,
 } from "./project";
 export type {
+  ProblemType,
   ProjectSettings,
   ProjectSettingsUpdate,
   CreateProjectRequest,
@@ -40,6 +46,14 @@ export type {
   WorkflowStepConfig,
   WriteWorkflowFileRequest,
   WriteWorkflowFileResponse,
+  ProjectStats,
+  ProjectFileInfo,
+  ProjectFilesResponse,
+  FileContentResponse,
+  DatasetInfo,
+  AlgorithmInfo,
+  ExperimentGroupInfo,
+  ExperimentsDataResponse,
 } from "./project";
 
 export { getServerStatus, validatePath, switchToEditMode } from "./status";

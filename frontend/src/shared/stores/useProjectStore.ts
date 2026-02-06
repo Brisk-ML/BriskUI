@@ -3,12 +3,14 @@ import {
   getProjectSettings,
   updateProjectSettings,
   deleteProject as deleteProjectApi,
+  type ProblemType,
 } from "@/api";
 
 interface ProjectState {
   projectName: string;
   projectDescription: string;
   projectPath: string;
+  projectType: ProblemType;
   isLoading: boolean;
   error: string | null;
   fetchProjectSettings: () => Promise<void>;
@@ -16,6 +18,7 @@ interface ProjectState {
     name?: string;
     description?: string;
     path?: string;
+    projectType?: ProblemType;
   }) => Promise<void>;
   deleteProject: () => Promise<void>;
   resetToNewProject: () => void;
@@ -25,6 +28,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
   projectName: "Loading...",
   projectDescription: "",
   projectPath: "",
+  projectType: "classification",
   isLoading: false,
   error: null,
 
@@ -37,6 +41,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
         projectName: settings.project_name || "Untitled Project",
         projectDescription: settings.project_description,
         projectPath: settings.project_path,
+        projectType: settings.project_type || "classification",
         isLoading: false,
       });
     } catch (err) {
@@ -53,6 +58,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
     if (info.name !== undefined) update.project_name = info.name;
     if (info.description !== undefined) update.project_description = info.description;
     if (info.path !== undefined) update.project_path = info.path;
+    if (info.projectType !== undefined) update.project_type = info.projectType;
 
     try {
       const settings = await updateProjectSettings(update);
@@ -60,6 +66,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
         projectName: settings.project_name || "Untitled Project",
         projectDescription: settings.project_description,
         projectPath: settings.project_path,
+        projectType: settings.project_type || "classification",
       });
     } catch (err) {
       set({
@@ -78,6 +85,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
         projectName: "New Project",
         projectDescription: "",
         projectPath: "",
+        projectType: "classification",
         error: null,
       });
     } catch (err) {
@@ -94,6 +102,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
       projectName: "New Project",
       projectDescription: "",
       projectPath: "",
+      projectType: "classification",
       error: null,
     });
   },

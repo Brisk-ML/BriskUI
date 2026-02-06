@@ -10,7 +10,7 @@ import { DatasetsStep } from "./components/datasets/DatasetsStep";
 import { ExperimentsStep } from "./components/experiments/ExperimentsStep";
 import { ProjectInfoStep } from "./components/project-setup/ProjectInfoStep";
 import { ReportStep } from "./components/report/ReportStep";
-import { SyncStep } from "./components/sync/SyncStep";
+import { SaveStep } from "./components/sync/SyncStep";
 import { WorkflowStep } from "./components/workflow/WorkflowStep";
 import { useProjectWizardStore } from "./stores/useProjectWizardStore";
 
@@ -54,7 +54,7 @@ export default function ProjectWizardPage() {
       case 7:
         return <ReportStep />;
       case 8:
-        return <SyncStep />;
+        return <SaveStep />;
       default:
         return <ProjectInfoStep />;
     }

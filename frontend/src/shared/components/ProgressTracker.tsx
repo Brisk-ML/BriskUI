@@ -88,5 +88,5 @@ export const DEFAULT_SETUP_STEPS: Step[] = [
   { number: 5, label: "Experiments" },
   { number: 6, label: "Workflow" },
   { number: 7, label: "Report" },
-  { number: 8, label: "Sync" },
+  { number: 8, label: "Save" },
 ];

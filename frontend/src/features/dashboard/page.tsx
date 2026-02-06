@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { getProjectStats, type ProjectStats } from "@/api";
 import { StatsCard } from "@/features/dashboard/components/StatsCard";
 import { useProjectModalStore } from "@/shared/stores/useProjectModalStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
@@ -5,13 +7,33 @@ import { useProjectStore } from "@/shared/stores/useProjectStore";
 export default function Home() {
   const { projectName } = useProjectStore();
   const { openEditModal } = useProjectModalStore();
+  const [stats, setStats] = useState<ProjectStats>({
+    groups: 0,
+    experiments: 0,
+    datasets: 0,
+    algorithms: 0,
+    metrics: 0,
+  });
+
+  // Fetch stats on mount and when returning to page
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getProjectStats();
+        setStats(data);
+      } catch (err) {
+        console.error("Failed to fetch project stats:", err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const statsCards = [
-    { label: "Experiments", value: 40, href: "/experiments" },
-    { label: "Groups", value: 3 },
-    { label: "Datasets", value: 2, href: "/datasets" },
-    { label: "Algorithms", value: 7, href: "/algorithms" },
-    { label: "Metrics", value: 10 },
+    { label: "Experiments", value: stats.experiments, href: "/experiments" },
+    { label: "Groups", value: stats.groups },
+    { label: "Datasets", value: stats.datasets, href: "/datasets" },
+    { label: "Algorithms", value: stats.algorithms, href: "/algorithms" },
+    { label: "Metrics", value: stats.metrics },
   ];
 
   return (

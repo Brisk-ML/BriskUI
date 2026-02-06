@@ -4,10 +4,22 @@ import { AlgorithmCard } from "@/features/algorithms/components/AlgorithmCard";
 import { ALGORITHMS_CATALOG } from "@/features/algorithms/constants/algorithmsCatalog";
 import type { AlgorithmCatalogItem } from "@/features/algorithms/types";
 import { useProjectWizardStore } from "@/features/project/stores/useProjectWizardStore";
+import { useProjectStore } from "@/shared/stores/useProjectStore";
 import { STYLES } from "@/shared/constants/colors";
 
-export function AlgorithmGrid() {
-  const { problemType } = useProjectWizardStore();
+export type AlgorithmGridMode = "wizard" | "standalone";
+
+interface AlgorithmGridProps {
+  mode?: AlgorithmGridMode;
+}
+
+export function AlgorithmGrid({ mode = "wizard" }: AlgorithmGridProps) {
+  // Use the appropriate store based on mode
+  const wizardProblemType = useProjectWizardStore((s) => s.problemType);
+  const projectProblemType = useProjectStore((s) => s.projectType);
+  
+  const problemType = mode === "wizard" ? wizardProblemType : projectProblemType;
+  
   const [selectedAlgorithm, setSelectedAlgorithm] =
     useState<AlgorithmCatalogItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,6 +66,7 @@ export function AlgorithmGrid() {
         open={isModalOpen}
         onClose={handleCloseModal}
         algorithm={selectedAlgorithm}
+        mode={mode}
       />
     </>
   );

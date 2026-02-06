@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import type { WizardAlgorithmWrapper } from "@/features/project/stores/useAlgorithmsStepStore";
+import type { AlgorithmWrapperState } from "@/shared/stores/usePendingChangesStore";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -8,10 +9,13 @@ import {
 } from "@/shared/components/ui/dialog";
 import { STYLES } from "@/shared/constants/colors";
 
+// Union type for wrapper that works with both stores
+type AlgorithmWrapper = WizardAlgorithmWrapper | AlgorithmWrapperState;
+
 interface ViewAlgorithmModalProps {
   open: boolean;
   onClose: () => void;
-  wrapper: WizardAlgorithmWrapper | null;
+  wrapper: AlgorithmWrapper | null;
   onRemove?: (id: string) => void;
 }
 

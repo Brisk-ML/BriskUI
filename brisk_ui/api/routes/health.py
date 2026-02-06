@@ -25,9 +25,9 @@ async def get_status(request: fastapi.Request):
     settings = request.app.state.settings
     create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
     
-    # Check if project is initialized (has .env file)
-    env_file = settings.project_path / ".brisk" / ".env"
-    project_initialized = env_file.exists()
+    # Check if project is initialized (has project.json file)
+    config_file = settings.project_path / ".brisk" / "project.json"
+    project_initialized = config_file.exists()
     
     return {
         "project_path": str(settings.project_path),

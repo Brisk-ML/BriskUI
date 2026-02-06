@@ -1,9 +1,13 @@
 import { cn } from "@/lib/utils";
 import type { WizardAlgorithmWrapper } from "@/features/project/stores/useAlgorithmsStepStore";
+import type { AlgorithmWrapperState } from "@/shared/stores/usePendingChangesStore";
 import { STYLES } from "@/shared/constants/colors";
 
+// Union type for wrapper that works with both stores
+type AlgorithmWrapper = WizardAlgorithmWrapper | AlgorithmWrapperState;
+
 interface AlgorithmWrapperCardProps {
-  wrapper: WizardAlgorithmWrapper;
+  wrapper: AlgorithmWrapper;
   onClick?: () => void;
   className?: string;
 }

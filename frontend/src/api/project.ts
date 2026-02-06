@@ -4,28 +4,34 @@
 
 import { apiClient } from "./client";
 
+export type ProblemType = "classification" | "regression";
+
 export interface ProjectSettings {
   project_name: string;
   project_path: string;
   project_description: string;
+  project_type: ProblemType;
 }
 
 export interface ProjectSettingsUpdate {
   project_name?: string;
   project_path?: string;
   project_description?: string;
+  project_type?: ProblemType;
 }
 
 export interface CreateProjectRequest {
   project_name: string;
   project_path?: string;
   project_description?: string;
+  project_type?: ProblemType;
 }
 
 export interface CreateProjectResponse {
   project_name: string;
   project_path: string;
   project_description: string;
+  project_type: ProblemType;
   directory_name: string;
 }
 
@@ -33,6 +39,14 @@ export interface DeleteResponse {
   success: boolean;
   message: string;
   deleted_path: string;
+}
+
+export interface ProjectStats {
+  groups: number;
+  experiments: number;
+  datasets: number;
+  algorithms: number;
+  metrics: number;
 }
 
 export interface DataManagerConfig {
@@ -161,7 +175,7 @@ export async function getProjectSettings(): Promise<ProjectSettings> {
 
 /**
  * Create or initialize project settings.
- * Creates .brisk directory and .env file.
+ * Creates .brisk directory and project.json file.
  * In create mode, creates a new directory named after the project.
  */
 export async function createProject(
@@ -238,4 +252,104 @@ export async function writeWorkflowFile(
   data: WriteWorkflowFileRequest
 ): Promise<WriteWorkflowFileResponse> {
   return apiClient.post<WriteWorkflowFileResponse>("/project/workflow-file", data);
+}
+
+/**
+ * Get project statistics (groups, experiments, datasets, algorithms, metrics).
+ */
+export async function getProjectStats(): Promise<ProjectStats> {
+  return apiClient.get<ProjectStats>("/project/stats");
+}
+
+// ============================================================================
+// File Preview API
+// ============================================================================
+
+export interface ProjectFileInfo {
+  id: string;
+  name: string;
+  path: string;
+  exists: boolean;
+  size: number;
+}
+
+export interface ProjectFilesResponse {
+  files: ProjectFileInfo[];
+  project_type: ProblemType;
+}
+
+export interface FileContentResponse {
+  name: string;
+  content: string;
+  exists: boolean;
+}
+
+/**
+ * Get list of project configuration files.
+ */
+export async function getProjectFiles(): Promise<ProjectFilesResponse> {
+  return apiClient.get<ProjectFilesResponse>("/project/files");
+}
+
+/**
+ * Get the content of a specific project file.
+ */
+export async function getFileContent(fileId: string): Promise<FileContentResponse> {
+  return apiClient.get<FileContentResponse>(`/project/files/${encodeURIComponent(fileId)}/content`);
+}
+
+/**
+ * Download a project file.
+ */
+export async function downloadFile(fileId: string): Promise<Blob> {
+  const API_BASE = import.meta.env.DEV
+    ? "http://localhost:8050/api"
+    : "/api";
+  
+  const response = await fetch(`${API_BASE}/project/files/${encodeURIComponent(fileId)}/download`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to download file: ${response.statusText}`);
+  }
+  return response.blob();
+}
+
+// ============================================================================
+// Experiments Data API
+// ============================================================================
+
+export interface DatasetInfo {
+  name: string;
+  filename: string;
+  file_type: string;
+}
+
+export interface AlgorithmInfo {
+  name: string;
+  display_name: string;
+  class_name: string;
+  class_module: string;
+  default_params: Record<string, unknown>;
+  use_defaults: boolean;
+}
+
+export interface ExperimentGroupInfo {
+  name: string;
+  description: string;
+  datasets: string[];
+  algorithms: string[];
+}
+
+export interface ExperimentsDataResponse {
+  datasets: DatasetInfo[];
+  algorithms: AlgorithmInfo[];
+  experiment_groups: ExperimentGroupInfo[];
+}
+
+/**
+ * Get all data needed for the experiments page.
+ */
+export async function getExperimentsData(): Promise<ExperimentsDataResponse> {
+  return apiClient.get<ExperimentsDataResponse>("/project/experiments-data");
 }

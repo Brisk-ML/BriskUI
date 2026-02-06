@@ -22,7 +22,7 @@ import {
 } from "@/features/project/stores/useReportStepStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
 
-export function SyncStep() {
+export function SaveStep() {
   const navigate = useNavigate();
   const {
     mode,
@@ -50,7 +50,7 @@ export function SyncStep() {
     setSyncSuccess(false);
     setLocalError(null);
     try {
-      // First sync the project info (.env file)
+      // First save the project info (project.json file)
       await syncProjectInfo();
       
       // Then write the data.py file with BASE_DATA_MANAGER
@@ -233,7 +233,7 @@ export function SyncStep() {
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
           <h1 className="h1-underline text-2xl sm:text-3xl lg:text-[36px] font-bold text-white font-display">
-            {mode === "create" ? "Create Project" : "Sync Project"}
+            {mode === "create" ? "Create Project" : "Save Project"}
           </h1>
         </div>
 
@@ -245,7 +245,7 @@ export function SyncStep() {
                 <Check className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
               <p className="text-white text-xl sm:text-2xl font-display text-center">
-                Project {mode === "create" ? "created" : "synced"} successfully!
+                Project {mode === "create" ? "created" : "saved"} successfully!
               </p>
               {mode === "create" && createdDirectoryName && (
                 <div className="text-center">
@@ -267,7 +267,7 @@ export function SyncStep() {
                 <Check className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
               <p className="text-white text-xl sm:text-2xl font-display text-center">
-                Your project is ready to {mode === "create" ? "create" : "sync"}!
+                Your project is ready to {mode === "create" ? "create" : "save"}!
               </p>
               <p className="text-white/60 text-base sm:text-lg font-display text-center max-w-md">
                 {mode === "create"
@@ -540,10 +540,10 @@ export function SyncStep() {
                   <Upload className="w-5 h-5 mr-2" />
                 )}
                 {isSyncing
-                  ? "Syncing..."
+                  ? "Saving..."
                   : mode === "create"
                     ? "Create Project"
-                    : "Sync Now"}
+                    : "Save Now"}
               </Button>
             </>
           )}

@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { ProjectHeader } from "@/shared/components/layout/ProjectHeader";
+import { useEffect, useState } from "react";
+import { 
+  getExperimentsData, 
+  type DatasetInfo, 
+  type AlgorithmInfo,
+} from "@/api";
+import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
@@ -12,58 +17,77 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
-
-const ALGORITHMS = [
-  "Algorithm 1",
-  "Algorithm 2",
-  "Algorithm 3",
-  "Algorithm 4",
-  "Algorithm 5",
-  "Algorithm 6",
-  "Algorithm 7",
-  "Algorithm 8",
-  "Algorithm 9",
-  "Algorithm 10",
-  "Algorithm 11",
-  "Algorithm 12",
-  "Algorithm 13",
-  "Algorithm 14",
-];
-
-const DATASETS = ["Dataset 1", "Dataset 2", "Dataset 3"];
-
-interface ExperimentGroup {
-  id: string;
-  name: string;
-  description: string;
-  datasets: string[];
-}
+import { STYLES } from "@/shared/constants/colors";
+import { usePendingChangesStore } from "@/shared/stores/usePendingChangesStore";
+import { useProjectStore } from "@/shared/stores/useProjectStore";
 
 export default function ExperimentsPage() {
+  // Form state
   const [name, setName] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
   const [description, setDescription] = useState("");
   const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>([]);
-  const [groups, setGroups] = useState<ExperimentGroup[]>([
-    {
-      id: "1",
-      name: "Group Name",
-      description: "Description",
-      datasets: ["Datasets"],
-    },
-    {
-      id: "2",
-      name: "Testing",
-      description: "Describe the group",
-      datasets: ["Dataset 1"],
-    },
-  ]);
+  
+  // Selected group for editing (null = add mode)
+  const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
+  
+  // Data from backend
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
+  const [algorithms, setAlgorithms] = useState<AlgorithmInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAlgorithmToggle = (algorithm: string) => {
+  // Global stores
+  const { projectType } = useProjectStore();
+  const { 
+    experimentGroups, 
+    setExperimentGroups, 
+    addExperimentGroup,
+    removeExperimentGroup,
+    setDefaultAlgorithms,
+    setProblemType,
+  } = usePendingChangesStore();
+
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Sync problem type when it changes
+  useEffect(() => {
+    setProblemType(projectType);
+  }, [projectType, setProblemType]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getExperimentsData();
+      setDatasets(data.datasets);
+      setAlgorithms(data.algorithms);
+      
+      // Initialize pending changes store with existing data
+      setExperimentGroups(data.experiment_groups.map((g) => ({
+        name: g.name,
+        description: g.description,
+        datasets: g.datasets,
+        algorithms: g.algorithms,
+      })));
+      
+      // Set default algorithms from all configured algorithms
+      setDefaultAlgorithms(data.algorithms.map((a) => a.name));
+      
+      // Reset hasChanges since we just loaded from backend
+      usePendingChangesStore.setState({ hasChanges: false });
+    } catch (error) {
+      console.error("Failed to load experiments data:", error);
+    }
+    setIsLoading(false);
+  };
+
+  const handleAlgorithmToggle = (algorithmName: string) => {
     setSelectedAlgorithms((prev) =>
-      prev.includes(algorithm)
-        ? prev.filter((a) => a !== algorithm)
-        : [...prev, algorithm],
+      prev.includes(algorithmName)
+        ? prev.filter((a) => a !== algorithmName)
+        : [...prev, algorithmName],
     );
   };
 
@@ -72,22 +96,66 @@ export default function ExperimentsPage() {
     setSelectedDataset("");
     setDescription("");
     setSelectedAlgorithms([]);
+    setEditingGroupName(null);
   };
 
-  const handleAddGroup = () => {
+  const handleSelectGroup = (groupName: string) => {
+    // If already selected, deselect and reset to add mode
+    if (editingGroupName === groupName) {
+      handleReset();
+      return;
+    }
+    
+    // Select the group and populate form
+    const group = experimentGroups.find((g) => g.name === groupName);
+    if (group) {
+      setEditingGroupName(groupName);
+      setName(group.name);
+      setDescription(group.description);
+      setSelectedDataset(group.datasets[0] || "");
+      setSelectedAlgorithms([...group.algorithms]);
+    }
+  };
+
+  const handleAddOrUpdateGroup = () => {
     if (!name.trim()) return;
 
-    // Create new experiment group and add to list, then reset form
-    const newGroup: ExperimentGroup = {
-      id: Date.now().toString(), // Simple ID generation for now
+    if (editingGroupName) {
+      // Update existing group - remove old and add new
+      removeExperimentGroup(editingGroupName);
+    }
+    
+    addExperimentGroup({
       name: name.trim(),
-      description: description.trim() || "No description",
+      description: description.trim() || "",
       datasets: selectedDataset ? [selectedDataset] : [],
-    };
-
-    setGroups((prev) => [...prev, newGroup]);
+      algorithms: selectedAlgorithms,
+    });
+    
     handleReset();
   };
+
+  const handleDeleteGroup = (groupName: string) => {
+    removeExperimentGroup(groupName);
+    // If we're editing the deleted group, reset the form
+    if (editingGroupName === groupName) {
+      handleReset();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(18, 18, 18, 1) 39%, rgba(40, 40, 40, 1) 100%)",
+        }}
+      >
+        <p className="text-white/50 text-xl font-display">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -97,16 +165,14 @@ export default function ExperimentsPage() {
           "linear-gradient(180deg, rgba(18, 18, 18, 1) 39%, rgba(40, 40, 40, 1) 100%)",
       }}
     >
-      <ProjectHeader />
-
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start pt-6 sm:pt-8 lg:pt-12 xl:pt-[144px] px-3 sm:px-4 lg:px-6">
+      <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start pt-4 sm:pt-6 lg:pt-8 px-3 sm:px-4 lg:px-6">
         {/* Add Experiments Form */}
         <div className="w-full max-w-[1055px] bg-[#181818] border-2 border-[#404040] p-3 sm:p-4 lg:p-6">
           {/* Header */}
           <div className="mb-4 sm:mb-6">
             <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-[36px] font-bold text-[#ebebeb] font-display relative inline-block">
-              Add Experiments
+              {editingGroupName ? "Edit Group" : "Add Experiments"}
               <div className="absolute -bottom-1 sm:-bottom-2 left-0 w-full max-w-[330px] h-[2px] bg-white" />
             </h1>
           </div>
@@ -127,7 +193,7 @@ export default function ExperimentsPage() {
             </div>
 
             {/* Datasets Dropdown */}
-            <div className="flex flex-col gap-1 sm:gap-2 w-full md:w-[140px] lg:w-[150px]">
+            <div className="flex flex-col gap-1 sm:gap-2 w-full md:w-[180px] lg:w-[200px]">
               <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display">
                 Datasets
               </Label>
@@ -136,18 +202,24 @@ export default function ExperimentsPage() {
                 onValueChange={setSelectedDataset}
               >
                 <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[38px] lg:h-[40px] text-sm sm:text-base">
-                  <SelectValue placeholder="Select" />
+                  <SelectValue placeholder="Select dataset" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#282828] border-[#404040]">
-                  {DATASETS.map((dataset) => (
-                    <SelectItem
-                      key={dataset}
-                      value={dataset}
-                      className="text-white hover:bg-[#363636]"
-                    >
-                      {dataset}
+                  {datasets.length === 0 ? (
+                    <SelectItem value="_none" disabled className="text-white/50">
+                      No datasets available
                     </SelectItem>
-                  ))}
+                  ) : (
+                    datasets.map((dataset) => (
+                      <SelectItem
+                        key={dataset.name}
+                        value={dataset.name}
+                        className="text-white hover:bg-[#363636]"
+                      >
+                        {dataset.filename}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -172,27 +244,33 @@ export default function ExperimentsPage() {
               Algorithms
             </Label>
             <div className="bg-[#282828] border-2 border-[#404040] p-2 sm:p-3 lg:p-4 max-h-[200px] sm:max-h-[240px] lg:max-h-[284px] overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-1 sm:gap-y-2">
-                {ALGORITHMS.map((algorithm) => (
-                  <div
-                    key={algorithm}
-                    className="flex items-center gap-2 py-0.5 sm:py-1"
-                  >
-                    <Checkbox
-                      id={algorithm}
-                      checked={selectedAlgorithms.includes(algorithm)}
-                      onCheckedChange={() => handleAlgorithmToggle(algorithm)}
-                      className="bg-[#121212] border-[#363636] data-[state=checked]:bg-accent-500 h-4 w-4 sm:h-5 sm:w-5"
-                    />
-                    <label
-                      htmlFor={algorithm}
-                      className="text-white text-sm sm:text-base lg:text-lg font-normal font-display cursor-pointer"
+              {algorithms.length === 0 ? (
+                <p className="text-white/50 text-sm sm:text-base font-display py-4 text-center">
+                  No algorithms configured. Add algorithms on the Algorithms page first.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-1 sm:gap-y-2">
+                  {algorithms.map((algorithm) => (
+                    <div
+                      key={algorithm.name}
+                      className="flex items-center gap-2 py-0.5 sm:py-1"
                     >
-                      {algorithm}
-                    </label>
-                  </div>
-                ))}
-              </div>
+                      <Checkbox
+                        id={algorithm.name}
+                        checked={selectedAlgorithms.includes(algorithm.name)}
+                        onCheckedChange={() => handleAlgorithmToggle(algorithm.name)}
+                        className="bg-[#121212] border-[#363636] data-[state=checked]:bg-accent-500 h-4 w-4 sm:h-5 sm:w-5"
+                      />
+                      <label
+                        htmlFor={algorithm.name}
+                        className="text-white text-sm sm:text-base lg:text-lg font-normal font-display cursor-pointer"
+                      >
+                        {algorithm.display_name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -203,44 +281,91 @@ export default function ExperimentsPage() {
               onClick={handleReset}
               className="btn-reset-hover border border-[#404040] bg-[#121212] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[24px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[120px] lg:min-w-[150px]"
             >
-              Reset
+              {editingGroupName ? "Cancel" : "Reset"}
             </Button>
             <Button
-              onClick={handleAddGroup}
-              className="btn-add-hover bg-[#006b4c] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[28px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px]"
+              onClick={handleAddOrUpdateGroup}
+              disabled={!name.trim() || selectedAlgorithms.length === 0}
+              className="btn-add-hover bg-[#006b4c] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[28px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] disabled:opacity-50"
             >
-              Add Group
+              {editingGroupName ? "Update Group" : "Add Group"}
             </Button>
           </div>
         </div>
 
         {/* Experiment Groups Bar */}
-        <div className="w-full max-w-[1055px] bg-[#282828] border-2 border-[#363636] mt-3 sm:mt-4 mb-4 sm:mb-6 overflow-hidden">
-          <div className="flex gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-x-auto">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                className="bg-[#121212] border border-[#363636] p-2 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-[180px] sm:min-w-[210px] lg:min-w-[250px] w-[180px] sm:w-[210px] lg:w-[250px] h-[180px] sm:h-[210px] lg:h-[250px] shrink-0"
-              >
-                {/* Group Name */}
-                <div className="text-white text-lg sm:text-xl lg:text-2xl xl:text-[28px] font-normal font-display h-[32px] sm:h-[36px] lg:h-[40px] flex items-center truncate">
-                  {group.name}
-                </div>
-                {/* Divider */}
-                <div className="h-[1px] bg-white/20 w-full max-w-[225px]" />
-                {/* Description */}
-                <div className="text-[#b3b3b3] text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display line-clamp-2">
-                  {group.description}
-                </div>
-                {/* Datasets */}
-                <div className="text-[#b3b3b3] text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display line-clamp-2">
-                  {group.datasets.length > 0
-                    ? group.datasets.join(", ")
-                    : "No datasets"}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div
+          className={`w-full max-w-[1055px] ${STYLES.bgCardAlt} border-2 ${STYLES.borderSecondary} mt-3 sm:mt-4 mb-4 sm:mb-6 h-[200px] sm:h-[250px] overflow-hidden`}
+        >
+          {experimentGroups.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-white text-[24px] sm:text-[28px] font-display">
+                No groups added
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-4 items-center h-full p-4 overflow-x-auto">
+              {experimentGroups.map((group) => {
+                const isSelected = editingGroupName === group.name;
+                return (
+                  <button
+                    key={group.name}
+                    type="button"
+                    onClick={() => handleSelectGroup(group.name)}
+                    className={cn(
+                      "card-hover-fade flex-shrink-0 w-[200px] sm:w-[250px] h-[160px] sm:h-[200px] p-3 sm:p-4 flex flex-col gap-2 relative text-left transition-colors duration-300",
+                      isSelected
+                        ? "bg-gradient-to-b from-[#1175d5] via-[#181818] via-[40%] to-[#121212] border border-[#404040]"
+                        : `${STYLES.bgDark} border ${STYLES.borderSecondary} hover:bg-[#181818]`
+                    )}
+                  >
+                    {/* Delete button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteGroup(group.name);
+                      }}
+                      className="absolute top-2 right-2 text-white/40 hover:text-red-400 transition-colors"
+                      title="Delete group"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M18 6L6 18" />
+                        <path d="M6 6l12 12" />
+                      </svg>
+                    </button>
+
+                    <div className="text-white text-lg sm:text-[24px] font-display font-bold truncate pr-6">
+                      {group.name}
+                    </div>
+                    <div className="h-[2px] bg-white w-full" />
+                    <div className="text-white/80 text-sm sm:text-[18px] font-display line-clamp-2">
+                      {group.description || "No description"}
+                    </div>
+                    <div className="text-white/60 text-sm sm:text-[16px] font-display truncate">
+                      {group.datasets.length > 0
+                        ? group.datasets.join(", ")
+                        : "No datasets"}
+                    </div>
+                    <div className="text-white/40 text-xs sm:text-[14px] font-display mt-auto">
+                      {group.algorithms.length} algorithm
+                      {group.algorithms.length !== 1 ? "s" : ""}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

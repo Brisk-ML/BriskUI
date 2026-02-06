@@ -5,6 +5,7 @@ import {
   useAlgorithmsStepStore,
   SKLEARN_CLASS_MODULES,
 } from "@/features/project/stores/useAlgorithmsStepStore";
+import { usePendingChangesStore } from "@/shared/stores/usePendingChangesStore";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -25,18 +26,31 @@ import {
 } from "../utils/hyperparameters";
 import { HyperparameterForm } from "./HyperparameterForm";
 
+export type AddAlgorithmMode = "wizard" | "standalone";
+
 interface AddAlgorithmModalProps {
   open: boolean;
   onClose: () => void;
   algorithm: AlgorithmCatalogItem | null;
+  mode?: AddAlgorithmMode;
 }
 
 export function AddAlgorithmModal({
   open,
   onClose,
   algorithm,
+  mode = "wizard",
 }: AddAlgorithmModalProps) {
-  const { addWrapper, isNameUnique } = useAlgorithmsStepStore();
+  // Use appropriate store based on mode
+  const wizardStore = useAlgorithmsStepStore();
+  const pendingStore = usePendingChangesStore();
+  
+  const addWrapper = mode === "wizard" 
+    ? wizardStore.addWrapper 
+    : pendingStore.addAlgorithmWrapper;
+  const isNameUnique = mode === "wizard" 
+    ? wizardStore.isNameUnique 
+    : pendingStore.isAlgorithmNameUnique;
 
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");

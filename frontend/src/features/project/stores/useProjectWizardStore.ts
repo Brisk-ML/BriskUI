@@ -128,7 +128,7 @@ export const useProjectWizardStore = create<ProjectWizardState>((set, get) => ({
 
   // Sync project info to backend
   syncProjectInfo: async () => {
-    const { mode, projectInfo } = get();
+    const { mode, projectInfo, problemType } = get();
     set({ isSyncing: true, syncError: null });
 
     try {
@@ -137,6 +137,7 @@ export const useProjectWizardStore = create<ProjectWizardState>((set, get) => ({
           project_name: projectInfo.projectName,
           project_path: projectInfo.projectPath,
           project_description: projectInfo.projectDescription,
+          project_type: problemType,
         });
         set({
           isDirty: false,
@@ -149,6 +150,7 @@ export const useProjectWizardStore = create<ProjectWizardState>((set, get) => ({
           project_name: projectInfo.projectName,
           project_path: projectInfo.projectPath,
           project_description: projectInfo.projectDescription,
+          project_type: problemType,
         });
         set({ isDirty: false, isSyncing: false });
       }
@@ -169,6 +171,7 @@ export const useProjectWizardStore = create<ProjectWizardState>((set, get) => ({
         projectPath: settings.project_path,
         projectDescription: settings.project_description,
       },
+      problemType: settings.project_type || "classification",
       isDirty: false,
       mode: "edit",
     });

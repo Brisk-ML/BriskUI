@@ -6,7 +6,6 @@ import HomePage from "./features/dashboard/page";
 import DatasetsPage from "./features/datasets/page";
 import ExperimentsPage from "./features/experiments/page";
 import FilesPage from "./features/files/page";
-import MetricsPage from "./features/metrics/page";
 import ProjectWizardPage from "./features/project/page";
 import { useProjectWizardStore } from "./features/project/stores/useProjectWizardStore";
 import ResultsPage from "./features/results/page";
@@ -76,7 +75,6 @@ export default function App() {
         <Route path="/experiments" element={<ExperimentsPage />} />
         <Route path="/datasets" element={<DatasetsPage />} />
         <Route path="/algorithms" element={<AlgorithmsPage />} />
-        <Route path="/metrics" element={<MetricsPage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/files" element={<FilesPage />} />
         <Route path="/save" element={<SavePage />} />

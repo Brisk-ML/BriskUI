@@ -3,13 +3,31 @@ import { useMemo, useState } from "react";
 import { AlgorithmWrapperCard } from "@/features/algorithms/components/AlgorithmWrapperCard";
 import { ViewAlgorithmModal } from "@/features/algorithms/components/ViewAlgorithmModal";
 import { useAlgorithmsStepStore, type WizardAlgorithmWrapper } from "@/features/project/stores/useAlgorithmsStepStore";
+import { usePendingChangesStore, type AlgorithmWrapperState } from "@/shared/stores/usePendingChangesStore";
 import { Input } from "@/shared/components/ui/input";
 import { STYLES } from "@/shared/constants/colors";
 
-export function AlgorithmWrappersList() {
-  const { wrappers, deleteWrapper } = useAlgorithmsStepStore();
+export type AlgorithmWrapperListMode = "wizard" | "standalone";
+
+interface AlgorithmWrappersListProps {
+  mode?: AlgorithmWrapperListMode;
+}
+
+// Union type for wrapper that works with both stores
+type AlgorithmWrapper = WizardAlgorithmWrapper | AlgorithmWrapperState;
+
+export function AlgorithmWrappersList({ mode = "wizard" }: AlgorithmWrappersListProps) {
+  // Use appropriate store based on mode
+  const wizardStore = useAlgorithmsStepStore();
+  const pendingStore = usePendingChangesStore();
+  
+  const wrappers = mode === "wizard" ? wizardStore.wrappers : pendingStore.algorithmWrappers;
+  const deleteWrapper = mode === "wizard" 
+    ? wizardStore.deleteWrapper 
+    : pendingStore.deleteAlgorithmWrapper;
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewingWrapper, setViewingWrapper] = useState<WizardAlgorithmWrapper | null>(
+  const [viewingWrapper, setViewingWrapper] = useState<AlgorithmWrapper | null>(
     null,
   );
 

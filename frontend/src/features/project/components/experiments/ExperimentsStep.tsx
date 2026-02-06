@@ -75,6 +75,9 @@ export function ExperimentsStep() {
   const [description, setDescription] = useState("");
   const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // Selected group for editing (null = add mode)
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
 
   const handleAlgorithmToggle = (algorithmName: string) => {
     setSelectedAlgorithms((prev) =>
@@ -98,9 +101,29 @@ export function ExperimentsStep() {
     setDescription("");
     setSelectedAlgorithms([]);
     setError(null);
+    setEditingGroupId(null);
   };
 
-  const handleAddGroup = () => {
+  const handleSelectGroup = (groupId: string) => {
+    // If already selected, deselect and reset to add mode
+    if (editingGroupId === groupId) {
+      handleReset();
+      return;
+    }
+    
+    // Select the group and populate form
+    const group = groups.find((g) => g.id === groupId);
+    if (group) {
+      setEditingGroupId(groupId);
+      setGroupName(group.name);
+      setDescription(group.description);
+      setSelectedDatasetId(group.datasetId);
+      setSelectedAlgorithms([...group.algorithms]);
+      setError(null);
+    }
+  };
+
+  const handleAddOrUpdateGroup = () => {
     setError(null);
 
     if (!groupName.trim()) {
@@ -124,6 +147,11 @@ export function ExperimentsStep() {
       return;
     }
 
+    // If editing, delete old group first
+    if (editingGroupId) {
+      deleteGroup(editingGroupId);
+    }
+
     const result = addGroup({
       name: groupName.trim(),
       description: description.trim(),
@@ -144,6 +172,10 @@ export function ExperimentsStep() {
 
   const handleDeleteGroup = (groupId: string) => {
     deleteGroup(groupId);
+    // If we're editing the deleted group, reset the form
+    if (editingGroupId === groupId) {
+      handleReset();
+    }
   };
 
   // Find dataset name for display
@@ -159,7 +191,7 @@ export function ExperimentsStep() {
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <h1 className="h1-underline text-2xl sm:text-3xl lg:text-[36px] font-bold text-white font-display">
-            Add Experiments
+            {editingGroupId ? "Edit Group" : "Add Experiments"}
           </h1>
         </div>
 
@@ -311,10 +343,10 @@ export function ExperimentsStep() {
             variant="outline"
             className={`btn-reset-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-[44px] sm:h-[50px] px-6 sm:px-8 text-xl sm:text-2xl lg:text-[28px] font-display`}
           >
-            Reset
+            {editingGroupId ? "Cancel" : "Reset"}
           </Button>
           <Button
-            onClick={handleAddGroup}
+            onClick={handleAddOrUpdateGroup}
             disabled={
               datasets.length === 0 ||
               algorithms.length === 0 ||
@@ -322,7 +354,7 @@ export function ExperimentsStep() {
             }
             className={`btn-add-hover ${STYLES.bgPrimary} text-white h-[44px] sm:h-[50px] px-6 sm:px-8 text-xl sm:text-2xl lg:text-[28px] font-display disabled:opacity-50`}
           >
-            Add Group
+            {editingGroupId ? "Update Group" : "Add Group"}
           </Button>
         </div>
       </div>
@@ -339,53 +371,63 @@ export function ExperimentsStep() {
           </div>
         ) : (
           <div className="flex gap-4 items-center h-full p-4 overflow-x-auto">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                className={cn(
-                  "flex-shrink-0 w-[200px] sm:w-[250px] h-[160px] sm:h-[200px] p-3 sm:p-4 flex flex-col gap-2 relative",
-                  `${STYLES.bgDark} border ${STYLES.borderSecondary}`
-                )}
-              >
-                {/* Delete button */}
+            {groups.map((group) => {
+              const isSelected = editingGroupId === group.id;
+              return (
                 <button
+                  key={group.id}
                   type="button"
-                  onClick={() => handleDeleteGroup(group.id)}
-                  className="absolute top-2 right-2 text-white/40 hover:text-red-400 transition-colors"
-                  title="Delete group"
+                  onClick={() => handleSelectGroup(group.id)}
+                  className={cn(
+                    "card-hover-fade flex-shrink-0 w-[200px] sm:w-[250px] h-[160px] sm:h-[200px] p-3 sm:p-4 flex flex-col gap-2 relative text-left transition-colors duration-300",
+                    isSelected
+                      ? "bg-gradient-to-b from-[#1175d5] via-[#181818] via-[40%] to-[#121212] border border-[#404040]"
+                      : `${STYLES.bgDark} border ${STYLES.borderSecondary} hover:bg-[#181818]`
+                  )}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  {/* Delete button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteGroup(group.id);
+                    }}
+                    className="absolute top-2 right-2 text-white/40 hover:text-red-400 transition-colors"
+                    title="Delete group"
                   >
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </svg>
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 6L6 18" />
+                      <path d="M6 6l12 12" />
+                    </svg>
+                  </button>
 
-                <div className="text-white text-lg sm:text-[24px] font-display font-bold truncate pr-6">
-                  {group.name}
-                </div>
-                <div className="h-[2px] bg-white w-full" />
-                <div className="text-white/80 text-sm sm:text-[18px] font-display line-clamp-2">
-                  {group.description || "No description"}
-                </div>
-                <div className="text-white/60 text-sm sm:text-[16px] font-display truncate">
-                  {getDatasetDisplayName(group)}
-                </div>
-                <div className="text-white/40 text-xs sm:text-[14px] font-display mt-auto">
-                  {group.algorithms.length} algorithm
-                  {group.algorithms.length !== 1 ? "s" : ""}
-                </div>
-              </div>
-            ))}
+                  <div className="text-white text-lg sm:text-[24px] font-display font-bold truncate pr-6">
+                    {group.name}
+                  </div>
+                  <div className="h-[2px] bg-white w-full" />
+                  <div className="text-white/80 text-sm sm:text-[18px] font-display line-clamp-2">
+                    {group.description || "No description"}
+                  </div>
+                  <div className="text-white/60 text-sm sm:text-[16px] font-display truncate">
+                    {getDatasetDisplayName(group)}
+                  </div>
+                  <div className="text-white/40 text-xs sm:text-[14px] font-display mt-auto">
+                    {group.algorithms.length} algorithm
+                    {group.algorithms.length !== 1 ? "s" : ""}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
