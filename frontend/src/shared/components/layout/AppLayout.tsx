@@ -39,10 +39,13 @@ export function AppLayout({ children }: AppLayoutProps) {
           : "overflow-hidden",
       )}
     >
-      <Sidebar />
+      {/* Hide sidebar on project wizard pages */}
+      {!isProjectWizard && <Sidebar />}
       <main
         className={cn(
-          "flex-1 md:ml-[60px] lg:ml-[72px] xl:ml-[88px] pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto w-full max-w-full",
+          "flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto w-full max-w-full",
+          // Only add left margin for sidebar when not on wizard
+          !isProjectWizard && "md:ml-[60px] lg:ml-[72px] xl:ml-[88px]",
           isProjectWizard ? "overflow-x-visible" : "overflow-x-hidden",
         )}
       >

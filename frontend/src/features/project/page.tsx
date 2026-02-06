@@ -85,39 +85,41 @@ export default function ProjectWizardPage() {
           <div className="w-full">{renderStepContent()}</div>
         </div>
 
-        {canGoBack && (
-          <button
-            type="button"
-            onClick={prevStep}
-            className="group hidden lg:flex absolute left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 w-[80px] h-[80px] lg:w-[100px] lg:h-[100px] xl:w-[120px] xl:h-[120px] 2xl:w-[140px] 2xl:h-[140px] items-center justify-center z-10 cursor-pointer"
-            aria-label="Previous step"
-          >
-            <div className="pointer-events-none absolute inset-0 -left-8 lg:-left-10 xl:-left-12 2xl:-left-[76px] -top-4 lg:-top-6 xl:-top-8 2xl:-top-12 -bottom-4 lg:-bottom-6 xl:-bottom-8 2xl:-bottom-12 arrow-glow-left opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <img
-              src="/arrow-right.svg"
-              alt="Previous"
-              className="relative z-10 w-full h-full scale-[0.96] transition-transform duration-300 group-hover:scale-100 rotate-180"
-            />
-          </button>
-        )}
-
-        {/* Right Arrow - responsive size, glow extends to right edge */}
-        {canGoNext && (
-          <button
-            type="button"
-            onClick={nextStep}
-            className="group hidden lg:flex absolute right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 w-[80px] h-[80px] lg:w-[100px] lg:h-[100px] xl:w-[120px] xl:h-[120px] 2xl:w-[140px] 2xl:h-[140px] items-center justify-center z-10 cursor-pointer"
-            aria-label="Next step"
-          >
-            <div className="pointer-events-none absolute inset-0 -right-8 lg:-right-10 xl:-right-12 2xl:-right-[76px] -top-4 lg:-top-6 xl:-top-8 2xl:-top-12 -bottom-4 lg:-bottom-6 xl:-bottom-8 2xl:-bottom-12 arrow-glow opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <img
-              src="/arrow-right.svg"
-              alt="Next"
-              className="relative z-10 w-full h-full scale-[0.96] transition-transform duration-300 group-hover:scale-100"
-            />
-          </button>
-        )}
       </div>
+
+      {/* Fixed navigation arrows - stay in place when scrolling */}
+      {canGoBack && (
+        <button
+          type="button"
+          onClick={prevStep}
+          className="group hidden lg:flex fixed left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 w-[80px] h-[80px] lg:w-[100px] lg:h-[100px] xl:w-[120px] xl:h-[120px] 2xl:w-[140px] 2xl:h-[140px] items-center justify-center z-10 cursor-pointer"
+          aria-label="Previous step"
+        >
+          <div className="pointer-events-none absolute inset-0 -left-8 lg:-left-10 xl:-left-12 2xl:-left-[76px] -top-4 lg:-top-6 xl:-top-8 2xl:-top-12 -bottom-4 lg:-bottom-6 xl:-bottom-8 2xl:-bottom-12 arrow-glow-left opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <img
+            src="/arrow-right.svg"
+            alt="Previous"
+            className="relative z-10 w-full h-full scale-[0.96] transition-transform duration-300 group-hover:scale-100 rotate-180"
+          />
+        </button>
+      )}
+
+      {/* Right Arrow - fixed position, responsive size */}
+      {canGoNext && (
+        <button
+          type="button"
+          onClick={nextStep}
+          className="group hidden lg:flex fixed right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 w-[80px] h-[80px] lg:w-[100px] lg:h-[100px] xl:w-[120px] xl:h-[120px] 2xl:w-[140px] 2xl:h-[140px] items-center justify-center z-10 cursor-pointer"
+          aria-label="Next step"
+        >
+          <div className="pointer-events-none absolute inset-0 -right-8 lg:-right-10 xl:-right-12 2xl:-right-[76px] -top-4 lg:-top-6 xl:-top-8 2xl:-top-12 -bottom-4 lg:-bottom-6 xl:-bottom-8 2xl:-bottom-12 arrow-glow opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <img
+            src="/arrow-right.svg"
+            alt="Next"
+            className="relative z-10 w-full h-full scale-[0.96] transition-transform duration-300 group-hover:scale-100"
+          />
+        </button>
+      )}
 
       <div className="lg:hidden fixed bottom-24 md:bottom-6 left-4 md:left-[76px] right-4 z-50 flex justify-between pointer-events-none">
         {canGoBack ? (
