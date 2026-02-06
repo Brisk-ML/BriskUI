@@ -3,6 +3,7 @@ import {
   writeSettingsFile,
   writeAlgorithmsFile,
   writeDataFile,
+  writeWorkflowFile,
   saveDatasets,
   type ExperimentGroupConfig,
   type AlgorithmWrapperConfig,
@@ -12,6 +13,7 @@ import {
   type PreprocessorEntry,
   type StoredDatasetConfig,
   type StoredPreprocessorConfig,
+  type WorkflowStepConfig,
 } from "@/api";
 import type { Feature } from "@/types";
 import { useDataProcessingStepStore, type DatasetPreprocessors } from "@/features/project/stores/useDataProcessingStepStore";
@@ -66,6 +68,16 @@ export interface DatasetState {
   features: Feature[];
 }
 
+/**
+ * Workflow step state for pending changes.
+ */
+export interface WorkflowStepState {
+  id: string;
+  evaluatorId: string;
+  methodName: string;
+  args: Record<string, unknown>;
+}
+
 interface PendingChangesState {
   // Pending experiment groups to save
   experimentGroups: ExperimentGroupState[];
@@ -80,6 +92,9 @@ interface PendingChangesState {
   
   // Base data manager config (for data.py)
   baseDataManager: BaseDataManagerConfig;
+  
+  // Pending workflow steps to save
+  workflowSteps: WorkflowStepState[];
   
   // Track if there are unsaved changes
   hasChanges: boolean;
@@ -113,6 +128,12 @@ interface PendingChangesState {
   setBaseDataManager: (config: BaseDataManagerConfig) => void;
   updateBaseDataManager: (updates: Partial<BaseDataManagerConfig>) => void;
   
+  // Workflow step actions
+  setWorkflowSteps: (steps: WorkflowStepState[]) => void;
+  addWorkflowStep: (step: Omit<WorkflowStepState, "id">) => void;
+  removeWorkflowStep: (id: string) => void;
+  moveWorkflowStep: (id: string, direction: "up" | "down") => void;
+  
   markChanged: () => void;
   
   // Save all pending changes
@@ -138,6 +159,7 @@ const initialState = {
   algorithmWrappers: [],
   datasets: [] as DatasetState[],
   baseDataManager: { ...DEFAULT_BASE_DATA_MANAGER },
+  workflowSteps: [] as WorkflowStepState[],
   hasChanges: false,
   isSaving: false,
   saveError: null,
@@ -285,6 +307,42 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
       baseDataManager: { ...state.baseDataManager, ...updates },
       hasChanges: true,
     }));
+  },
+
+  // Workflow step actions
+  setWorkflowSteps: (steps) => {
+    set({ workflowSteps: steps });
+    // Note: don't mark as changed when initializing from backend
+  },
+
+  addWorkflowStep: (step) => {
+    const newStep: WorkflowStepState = {
+      ...step,
+      id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    };
+    set((state) => ({
+      workflowSteps: [...state.workflowSteps, newStep],
+      hasChanges: true,
+    }));
+  },
+
+  removeWorkflowStep: (id) => {
+    set((state) => ({
+      workflowSteps: state.workflowSteps.filter((s) => s.id !== id),
+      hasChanges: true,
+    }));
+  },
+
+  moveWorkflowStep: (id, direction) => {
+    set((state) => {
+      const steps = [...state.workflowSteps];
+      const idx = steps.findIndex((s) => s.id === id);
+      if (idx < 0) return state;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= steps.length) return state;
+      [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
+      return { workflowSteps: steps, hasChanges: true };
+    });
   },
 
   markChanged: () => {
@@ -500,6 +558,20 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
         });
 
         await saveDatasets({ datasets: storedDatasets });
+      }
+
+      // Write workflow file if there are workflow steps
+      if (state.workflowSteps.length > 0) {
+        const workflowStepConfigs: WorkflowStepConfig[] = state.workflowSteps.map((s) => ({
+          evaluator_id: s.evaluatorId,
+          method_name: s.methodName,
+          args: s.args,
+        }));
+
+        await writeWorkflowFile({
+          problem_type: state.problemType,
+          steps: workflowStepConfigs,
+        });
       }
 
       set({ hasChanges: false, isSaving: false });

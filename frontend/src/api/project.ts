@@ -263,6 +263,28 @@ export async function writeWorkflowFile(
   return apiClient.post<WriteWorkflowFileResponse>("/project/workflow-file", data);
 }
 
+// ============================================================================
+// Workflow Data API
+// ============================================================================
+
+export interface WorkflowStepInfo {
+  evaluator_id: string;
+  method_name: string;
+  args: Record<string, unknown>;
+}
+
+export interface WorkflowDataResponse {
+  steps: WorkflowStepInfo[];
+  problem_type: ProblemType;
+}
+
+/**
+ * Get workflow steps from the current workflow file.
+ */
+export async function getWorkflowData(): Promise<WorkflowDataResponse> {
+  return apiClient.get<WorkflowDataResponse>("/project/workflow-data");
+}
+
 /**
  * Get project statistics (groups, experiments, datasets, algorithms, metrics).
  */

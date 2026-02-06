@@ -11,6 +11,7 @@ import { useProjectWizardStore } from "./features/project/stores/useProjectWizar
 import ResultsPage from "./features/results/page";
 import SavePage from "./features/save/page";
 import SettingsPage from "./features/settings/page";
+import WorkflowPage from "./features/workflow/page";
 import { AppLayout } from "./shared/components/layout/AppLayout";
 import { useProjectStore } from "./shared/stores/useProjectStore";
 
@@ -75,6 +76,7 @@ export default function App() {
         <Route path="/experiments" element={<ExperimentsPage />} />
         <Route path="/datasets" element={<DatasetsPage />} />
         <Route path="/algorithms" element={<AlgorithmsPage />} />
+        <Route path="/workflow" element={<WorkflowPage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/files" element={<FilesPage />} />
         <Route path="/save" element={<SavePage />} />

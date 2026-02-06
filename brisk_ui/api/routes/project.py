@@ -10,7 +10,13 @@ import shutil
 import fastapi
 import pydantic
 
+from brisk_ui.config import Settings
 from brisk_ui.services.project_config import ProjectConfigService
+
+
+def get_settings(request: fastapi.Request) -> Settings:
+    """Get application settings from request state."""
+    return request.app.state.settings
 
 
 def sanitize_directory_name(name: str) -> str:
@@ -779,6 +785,182 @@ class {class_name}(Workflow):
             status_code=500,
             detail=f"Failed to write workflow file: {str(e)}"
         )
+
+
+# --- Read Workflow Steps ---
+
+class WorkflowStepInfo(pydantic.BaseModel):
+    """Information about a single workflow step parsed from file."""
+    evaluator_id: str
+    method_name: str
+    args: dict = {}
+
+
+class WorkflowDataResponse(pydantic.BaseModel):
+    """Response model for workflow data."""
+    steps: list[WorkflowStepInfo]
+    problem_type: str
+
+
+def _parse_workflow_step(line: str) -> WorkflowStepInfo | None:
+    """Parse a workflow step from a Python method call line.
+    
+    Attempts to extract the method name and arguments from lines like:
+        self.evaluate_model(self.model, X_test, y_test, ["MAE"], "evaluate_model")
+        self.plot_pred_vs_obs(self.model, X_train, y_train, "pred_vs_obs")
+    """
+    import re
+    
+    # Match method calls on self
+    line = line.strip()
+    if not line.startswith("self."):
+        return None
+    
+    # Extract method name
+    method_match = re.match(r"self\.(\w+)\(", line)
+    if not method_match:
+        return None
+    
+    method_name = method_match.group(1)
+    
+    # Skip methods that aren't workflow evaluators
+    known_methods = {
+        "evaluate_model", "evaluate_model_cv", "plot_pred_vs_obs",
+        "plot_learning_curve", "plot_feature_importance", "plot_residuals",
+        "hyperparameter_tuning", "confusion_matrix", "plot_confusion_heatmap",
+        "plot_roc_curve", "plot_precision_recall_curve",
+    }
+    if method_name not in known_methods:
+        return None
+    
+    # Parse arguments (basic parsing)
+    args: dict = {}
+    
+    # Map method_name to evaluator_id
+    evaluator_id = method_name
+    
+    # Extract common args patterns
+    # Look for filename argument (usually last quoted string)
+    filename_match = re.search(r'"([^"]+)"(?:\s*\)|\s*,\s*\w+=)', line)
+    if filename_match:
+        args["filename"] = filename_match.group(1)
+    
+    # Look for X and y variables
+    if "X_train" in line:
+        args["X"] = "X_train"
+    elif "X_test" in line:
+        args["X"] = "X_test"
+    
+    if "y_train" in line:
+        args["y"] = "y_train"
+    elif "y_test" in line:
+        args["y"] = "y_test"
+    
+    # Look for metrics array
+    metrics_match = re.search(r'\[(["\'][^"\']+["\'](?:\s*,\s*["\'][^"\']+["\'])*)\]', line)
+    if metrics_match:
+        metrics_str = metrics_match.group(1)
+        # Parse individual metrics
+        metrics = re.findall(r'["\']([^"\']+)["\']', metrics_str)
+        if metrics:
+            args["metrics"] = metrics
+    
+    # Look for cv parameter
+    cv_match = re.search(r'cv=(\d+)', line)
+    if cv_match:
+        args["cv"] = int(cv_match.group(1))
+    
+    # Look for n_jobs parameter
+    n_jobs_match = re.search(r'n_jobs=(-?\d+)', line)
+    if n_jobs_match:
+        args["n_jobs"] = int(n_jobs_match.group(1))
+    
+    # Look for num_repeats/num_rep parameter
+    num_rep_match = re.search(r'num_rep(?:eats)?=(\d+)', line)
+    if num_rep_match:
+        args["num_repeats"] = int(num_rep_match.group(1))
+    
+    # Look for metric parameter (for learning curve, feature importance)
+    metric_match = re.search(r'metric="([^"]+)"', line)
+    if metric_match:
+        args["metric"] = metric_match.group(1)
+    
+    # Look for add_fit_line parameter
+    if "add_fit_line=True" in line:
+        args["add_fit_line"] = True
+    elif "add_fit_line=False" in line:
+        args["add_fit_line"] = False
+    
+    # Look for plot_results parameter
+    if "plot_results=True" in line:
+        args["plot_results"] = True
+    elif "plot_results=False" in line:
+        args["plot_results"] = False
+    
+    # Look for method parameter (for hyperparameter_tuning)
+    method_type_match = re.search(r'"(grid|random)"', line)
+    if method_name == "hyperparameter_tuning" and method_type_match:
+        args["method"] = method_type_match.group(1)
+    
+    # Look for scorer parameter
+    scorer_match = re.search(r'scorer="([^"]+)"', line)
+    if not scorer_match:
+        scorer_match = re.search(r'"(neg_[^"]+)"', line)
+    if scorer_match:
+        args["scorer"] = scorer_match.group(1)
+    
+    return WorkflowStepInfo(
+        evaluator_id=evaluator_id,
+        method_name=method_name,
+        args=args
+    )
+
+
+@router.get("/workflow-data", response_model=WorkflowDataResponse)
+async def get_workflow_data(settings: Settings = fastapi.Depends(get_settings)):
+    """Get workflow steps from the current workflow file.
+    
+    Parses the workflow Python file and extracts evaluator steps.
+    """
+    project_dir = settings.project_path
+    if not project_dir:
+        raise fastapi.HTTPException(status_code=400, detail="Project path not set")
+    
+    # Get project type from config
+    config_path = project_dir / ".brisk" / "project.json"
+    project_type = "classification"
+    if config_path.exists():
+        try:
+            import json
+            with open(config_path) as f:
+                config = json.load(f)
+                project_type = config.get("project_type", "classification")
+        except Exception:
+            pass
+    
+    # Read workflow file
+    workflow_file = project_dir / "workflows" / f"{project_type}.py"
+    
+    steps: list[WorkflowStepInfo] = []
+    
+    if workflow_file.exists():
+        try:
+            with open(workflow_file) as f:
+                content = f.read()
+            
+            # Parse each line looking for self.method_name() calls
+            for line in content.split("\n"):
+                step = _parse_workflow_step(line)
+                if step:
+                    steps.append(step)
+        except Exception as e:
+            # Return empty on parse error
+            pass
+    
+    return WorkflowDataResponse(
+        steps=steps,
+        problem_type=project_type
+    )
 
 
 class ExperimentGroupDataConfig(pydantic.BaseModel):

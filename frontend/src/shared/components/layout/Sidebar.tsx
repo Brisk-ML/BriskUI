@@ -18,6 +18,7 @@ const navGroups = [
       { icon: "/experiments.svg", href: "/experiments", label: "Experiments" },
       { icon: "/database.svg", href: "/datasets", label: "Datasets" },
       { icon: "/algorithms.svg", href: "/algorithms", label: "Algorithms" },
+      { icon: "/workflow.svg", href: "/workflow", label: "Workflow" },
       { icon: "/files.svg", href: "/files", label: "Files" },
     ],
   },
