@@ -133,19 +133,25 @@
 
   .arrow-glow {
     background: radial-gradient(
-      circle 200px at 100% 52%,
-      #1175D5 0%,
-      rgba(17, 117, 213, 0.5) 50%,
-      rgba(24, 24, 24, 0.1) 100%
+      circle at calc(100% + 120px) 50%,
+      rgba(17, 117, 213, 1) 0%,
+      rgba(17, 117, 213, 1) 80px,
+      rgba(17, 117, 213, 0.9) 160px,
+      rgba(17, 117, 213, 0.7) 260px,
+      rgba(17, 117, 213, 0.4) 380px,
+      transparent 480px
     );
   }
 
   .arrow-glow-left {
     background: radial-gradient(
-      circle 200px at 0% 52%,
-      #1175D5 0%,
-      rgba(17, 117, 213, 0.5) 50%,
-      rgba(24, 24, 24, 0.1) 100%
+      circle at calc(0% - 120px) 50%,
+      rgba(17, 117, 213, 1) 0%,
+      rgba(17, 117, 213, 1) 80px,
+      rgba(17, 117, 213, 0.9) 160px,
+      rgba(17, 117, 213, 0.7) 260px,
+      rgba(17, 117, 213, 0.4) 380px,
+      transparent 480px
     );
   }
 
