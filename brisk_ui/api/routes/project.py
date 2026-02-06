@@ -1876,3 +1876,225 @@ async def _parse_xlsx_file(file: fastapi.UploadFile) -> ParsedDatasetInfo:
         feature_count=len(features) - 1,
         row_count=row_count,
     )
+
+
+# ============================================================================
+# Dataset Configuration Storage (project.json)
+# ============================================================================
+
+class StoredFeatureInfo(pydantic.BaseModel):
+    """Stored feature information."""
+    name: str
+    data_type: str = "str"  # "str", "int", "float"
+    categorical: bool = False
+
+
+class StoredDataManagerConfig(pydantic.BaseModel):
+    """Per-dataset data manager configuration."""
+    test_size: float | None = None
+    n_splits: int | None = None
+    split_method: str | None = None
+    group_column: str | None = None
+    stratified: bool | None = None
+    random_state: int | None = None
+
+
+class StoredPreprocessorConfig(pydantic.BaseModel):
+    """Preprocessor configuration for a dataset."""
+    type: str  # "missing-data", "scaling", "encoding", "feature-selection"
+    config: dict = {}
+
+
+class StoredDatasetConfig(pydantic.BaseModel):
+    """Complete stored configuration for a dataset.
+    
+    The ID is based on filename (and table name for SQLite).
+    This ensures consistent IDs across sessions.
+    """
+    id: str  # filename or "filename:tablename" for sqlite
+    file_name: str
+    table_name: str | None = None
+    file_type: str = "csv"  # "csv", "xlsx", "sqlite"
+    target_feature: str = ""
+    features_count: int = 0
+    observations_count: int = 0
+    features: list[StoredFeatureInfo] = []
+    data_manager: StoredDataManagerConfig | None = None
+    preprocessors: list[StoredPreprocessorConfig] = []
+
+
+class StoredDatasetsResponse(pydantic.BaseModel):
+    """Response containing stored datasets merged with file system."""
+    datasets: list[StoredDatasetConfig]
+
+
+class SaveDatasetsRequest(pydantic.BaseModel):
+    """Request to save datasets configuration to project.json."""
+    datasets: list[StoredDatasetConfig]
+
+
+class SaveDatasetsResponse(pydantic.BaseModel):
+    """Response for saving datasets."""
+    success: bool
+    saved_count: int
+
+
+def _get_dataset_id(filename: str, table_name: str | None = None) -> str:
+    """Generate a consistent dataset ID from filename and optional table name."""
+    if table_name:
+        return f"{filename}:{table_name}"
+    return filename
+
+
+def _list_dataset_files(project_path) -> list[dict]:
+    """List dataset files in the datasets/ directory.
+    
+    Returns a list of dicts with file info.
+    """
+    import sqlite3
+    
+    datasets_dir = project_path / "datasets"
+    files = []
+    
+    if not datasets_dir.exists():
+        return files
+    
+    for item in datasets_dir.iterdir():
+        if item.is_file():
+            suffix = item.suffix.lower()
+            if suffix in ('.csv', '.xlsx', '.xls'):
+                files.append({
+                    "id": item.name,
+                    "file_name": item.name,
+                    "table_name": None,
+                    "file_type": "xlsx" if suffix in ('.xlsx', '.xls') else "csv",
+                })
+            elif suffix in ('.sqlite', '.db', '.sqlite3'):
+                # For SQLite, list all tables
+                try:
+                    conn = sqlite3.connect(str(item))
+                    cursor = conn.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                    )
+                    tables = [row[0] for row in cursor.fetchall()]
+                    conn.close()
+                    
+                    for table in tables:
+                        files.append({
+                            "id": f"{item.name}:{table}",
+                            "file_name": item.name,
+                            "table_name": table,
+                            "file_type": "sqlite",
+                        })
+                except Exception:
+                    # If can't read database, just add the file
+                    files.append({
+                        "id": item.name,
+                        "file_name": item.name,
+                        "table_name": None,
+                        "file_type": "sqlite",
+                    })
+    
+    return files
+
+
+@router.get("/datasets", response_model=StoredDatasetsResponse)
+async def get_datasets(request: fastapi.Request):
+    """Get datasets by merging file system with stored configuration.
+    
+    - Lists files in datasets/ directory
+    - Loads stored configurations from project.json
+    - Merges: if file exists, use stored config if available, otherwise create minimal entry
+    - Ignores stored configs for files that no longer exist
+    """
+    settings = request.app.state.settings
+    project_path = settings.project_path
+    
+    # Get files from file system
+    file_entries = _list_dataset_files(project_path)
+    
+    # Load stored configs from project.json
+    config_service = ProjectConfigService(project_path)
+    config_data = config_service.read()
+    stored_datasets = config_data.get("datasets", [])
+    
+    # Create a lookup by ID for stored configs
+    stored_by_id = {d.get("id"): d for d in stored_datasets if d.get("id")}
+    
+    # Merge: use stored config if available, otherwise create minimal entry from file
+    result_datasets: list[StoredDatasetConfig] = []
+    
+    for file_entry in file_entries:
+        file_id = file_entry["id"]
+        
+        if file_id in stored_by_id:
+            # Use stored config
+            stored = stored_by_id[file_id]
+            result_datasets.append(StoredDatasetConfig(
+                id=file_id,
+                file_name=stored.get("file_name", file_entry["file_name"]),
+                table_name=stored.get("table_name", file_entry["table_name"]),
+                file_type=stored.get("file_type", file_entry["file_type"]),
+                target_feature=stored.get("target_feature", ""),
+                features_count=stored.get("features_count", 0),
+                observations_count=stored.get("observations_count", 0),
+                features=[StoredFeatureInfo(**f) for f in stored.get("features", [])],
+                data_manager=StoredDataManagerConfig(**stored["data_manager"]) if stored.get("data_manager") else None,
+                preprocessors=[StoredPreprocessorConfig(**p) for p in stored.get("preprocessors", [])],
+            ))
+        else:
+            # Create minimal entry from file info
+            result_datasets.append(StoredDatasetConfig(
+                id=file_id,
+                file_name=file_entry["file_name"],
+                table_name=file_entry["table_name"],
+                file_type=file_entry["file_type"],
+            ))
+    
+    return StoredDatasetsResponse(datasets=result_datasets)
+
+
+@router.patch("/datasets", response_model=SaveDatasetsResponse)
+async def save_datasets(
+    request: fastapi.Request,
+    data: SaveDatasetsRequest,
+):
+    """Save datasets configuration to project.json.
+    
+    This persists all dataset metadata, data manager configs, and preprocessor configs.
+    """
+    settings = request.app.state.settings
+    project_path = settings.project_path
+    
+    config_service = ProjectConfigService(project_path)
+    config_data = config_service.read()
+    
+    # Convert to dict format for JSON storage
+    datasets_to_store = []
+    for ds in data.datasets:
+        ds_dict = {
+            "id": ds.id,
+            "file_name": ds.file_name,
+            "table_name": ds.table_name,
+            "file_type": ds.file_type,
+            "target_feature": ds.target_feature,
+            "features_count": ds.features_count,
+            "observations_count": ds.observations_count,
+            "features": [f.model_dump() for f in ds.features],
+        }
+        
+        if ds.data_manager:
+            ds_dict["data_manager"] = ds.data_manager.model_dump(exclude_none=True)
+        
+        if ds.preprocessors:
+            ds_dict["preprocessors"] = [p.model_dump() for p in ds.preprocessors]
+        
+        datasets_to_store.append(ds_dict)
+    
+    config_data["datasets"] = datasets_to_store
+    config_service.write(config_data)
+    
+    return SaveDatasetsResponse(
+        success=True,
+        saved_count=len(datasets_to_store),
+    )

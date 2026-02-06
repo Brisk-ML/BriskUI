@@ -406,3 +406,68 @@ export async function parseDatasetFile(file: File): Promise<ParsedDatasetInfo> {
 
   return response.json();
 }
+
+// ============================================================================
+// Dataset Configuration Storage API
+// ============================================================================
+
+export interface StoredFeatureInfo {
+  name: string;
+  data_type: "str" | "int" | "float";
+  categorical: boolean;
+}
+
+export interface StoredDataManagerConfig {
+  test_size?: number;
+  n_splits?: number;
+  split_method?: "shuffle" | "kfold";
+  group_column?: string | null;
+  stratified?: boolean;
+  random_state?: number | null;
+}
+
+export interface StoredPreprocessorConfig {
+  type: "missing-data" | "scaling" | "encoding" | "feature-selection";
+  config: Record<string, unknown>;
+}
+
+export interface StoredDatasetConfig {
+  id: string;  // filename or "filename:tablename" for sqlite
+  file_name: string;
+  table_name?: string | null;
+  file_type: "csv" | "xlsx" | "sqlite";
+  target_feature: string;
+  features_count: number;
+  observations_count: number;
+  features: StoredFeatureInfo[];
+  data_manager?: StoredDataManagerConfig | null;
+  preprocessors: StoredPreprocessorConfig[];
+}
+
+export interface StoredDatasetsResponse {
+  datasets: StoredDatasetConfig[];
+}
+
+export interface SaveDatasetsRequest {
+  datasets: StoredDatasetConfig[];
+}
+
+export interface SaveDatasetsResponse {
+  success: boolean;
+  saved_count: number;
+}
+
+/**
+ * Get datasets merged from file system and stored configuration.
+ * Uses consistent IDs based on file names.
+ */
+export async function getStoredDatasets(): Promise<StoredDatasetsResponse> {
+  return apiClient.get<StoredDatasetsResponse>("/project/datasets");
+}
+
+/**
+ * Save datasets configuration to project.json.
+ */
+export async function saveDatasets(data: SaveDatasetsRequest): Promise<SaveDatasetsResponse> {
+  return apiClient.patch<SaveDatasetsResponse>("/project/datasets", data);
+}

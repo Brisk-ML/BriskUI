@@ -22,6 +22,8 @@ export {
   downloadFile,
   getExperimentsData,
   parseDatasetFile,
+  getStoredDatasets,
+  saveDatasets,
 } from "./project";
 export type {
   ProblemType,
@@ -58,6 +60,13 @@ export type {
   ExperimentsDataResponse,
   FeatureInfo,
   ParsedDatasetInfo,
+  StoredFeatureInfo,
+  StoredDataManagerConfig,
+  StoredPreprocessorConfig,
+  StoredDatasetConfig,
+  StoredDatasetsResponse,
+  SaveDatasetsRequest,
+  SaveDatasetsResponse,
 } from "./project";
 
 export { getServerStatus, validatePath, switchToEditMode } from "./status";

@@ -1,8 +1,11 @@
-import { Plus, Search, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
+import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { parseDatasetFile } from "@/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
-import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Dialog, DialogContent, DialogTitle } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import {
@@ -13,451 +16,441 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { STYLES } from "@/shared/constants/colors";
-import type { Feature } from "@/types";
-import { useDatasetsModalStore } from "../stores/useDatasetsModalStore";
-import { useDatasetsStore } from "../stores/useDatasetsStore";
+import type { DatasetFileType, Feature } from "@/types";
+
+interface AddDatasetModalProps {
+  open: boolean;
+  onClose: () => void;
+  onAdd: (dataset: {
+    name: string;
+    fileName: string;
+    tableName: string;
+    fileType: DatasetFileType;
+    targetFeature: string;
+    featuresCount: number;
+    observationsCount: number;
+    features: Feature[];
+  }) => void;
+}
 
 interface FormState {
   fileName: string;
   tableName: string;
-  fileType: string;
-  groupColumn: string;
+  fileType: DatasetFileType;
   targetFeature: string;
   featuresCount: string;
   observationsCount: string;
-  newFeatureName: string;
-  newFeatureType: string;
   features: Feature[];
 }
 
 const initialFormState: FormState = {
   fileName: "",
   tableName: "",
-  fileType: "",
-  groupColumn: "",
+  fileType: "csv",
   targetFeature: "",
   featuresCount: "",
   observationsCount: "",
-  newFeatureName: "",
-  newFeatureType: "",
-  features: [
-    { id: "1", name: "Feature 1", type: "str" },
-    { id: "2", name: "Feature 2", type: "int" },
-    { id: "3", name: "Feature 3", type: "float" },
-    { id: "4", name: "Feature 4", type: "str" },
-    { id: "5", name: "Feature 5", type: "float" },
-    { id: "6", name: "Feature 6", type: "str" },
-    { id: "7", name: "Feature 7", type: "int" },
-  ],
+  features: [],
 };
 
-export function AddDatasetModal() {
-  const { addDataset } = useDatasetsStore();
-  const { addDatasetModal, closeAddDatasetModal } = useDatasetsModalStore();
-
+export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) {
   const [form, setForm] = useState<FormState>(initialFormState);
-  const [featureSearch, setFeatureSearch] = useState("");
+  const [featureName, setFeatureName] = useState("");
+  const [dataType, setDataType] = useState<"str" | "int" | "float">("str");
+  const [isCategorical, setIsCategorical] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [resetHovered, setResetHovered] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (addDatasetModal) {
+    if (open) {
       setForm(initialFormState);
-      setFeatureSearch("");
+      setFeatureName("");
+      setDataType("str");
+      setIsCategorical(false);
+      setSearchQuery("");
+      setParseError(null);
     }
-  }, [addDatasetModal]);
+  }, [open]);
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const fileName = file.name;
-      const extension = fileName.split(".").pop()?.toLowerCase();
-      let fileType = "csv";
-      if (extension === "xlsx") fileType = "xlsx";
-      else if (extension === "parquet") fileType = "parquet";
-      else if (extension === "json") fileType = "json";
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    if (extension !== "csv" && extension !== "xlsx" && extension !== "xls") {
+      setParseError("Only CSV and XLSX files are supported for upload.");
+      return;
+    }
+
+    setIsParsingFile(true);
+    setParseError(null);
+
+    try {
+      const result = await parseDatasetFile(file);
+
+      const features: Feature[] = result.features.map((f) => ({
+        id: crypto.randomUUID(),
+        name: f.name,
+        type: f.data_type,
+        categorical: f.categorical,
+      }));
+
+      setForm({
+        fileName: result.file_name,
+        tableName: "",
+        fileType: result.file_type as DatasetFileType,
+        targetFeature: result.target_feature,
+        featuresCount: result.feature_count.toString(),
+        observationsCount: result.row_count.toString(),
+        features,
+      });
+    } catch (error) {
+      setParseError(error instanceof Error ? error.message : "Failed to parse file");
+    } finally {
+      setIsParsingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleAddFeature = () => {
+    if (featureName.trim()) {
       setForm((prev) => ({
         ...prev,
-        fileName,
-        fileType,
-        tableName: fileName.replace(/\.[^/.]+$/, ""),
+        features: [
+          ...prev.features,
+          {
+            id: crypto.randomUUID(),
+            name: featureName,
+            type: dataType,
+            categorical: isCategorical,
+          },
+        ],
       }));
+      setFeatureName("");
+      setDataType("str");
+      setIsCategorical(false);
     }
   };
 
-  const addFeature = () => {
-    if (!form.newFeatureName.trim()) return;
-    const newFeature: Feature = {
-      id: crypto.randomUUID(),
-      name: form.newFeatureName,
-      type: (form.newFeatureType as Feature["type"]) || "str",
-    };
-    setForm((prev) => ({
-      ...prev,
-      features: [...prev.features, newFeature],
-      newFeatureName: "",
-      newFeatureType: "",
-    }));
-  };
-
-  const removeFeature = (id: string) => {
+  const handleDeleteFeature = (id: string) => {
     setForm((prev) => ({
       ...prev,
       features: prev.features.filter((f) => f.id !== id),
     }));
   };
 
-  const filteredFeatures = form.features.filter((f) =>
-    f.name.toLowerCase().includes(featureSearch.toLowerCase()),
-  );
-
   const handleReset = () => {
     setForm(initialFormState);
-    setFeatureSearch("");
+    setFeatureName("");
+    setDataType("str");
+    setIsCategorical(false);
+    setSearchQuery("");
+    setParseError(null);
   };
 
   const handleSubmit = () => {
-    addDataset({
-      name: form.tableName || form.fileName,
+    if (!form.fileName) return;
+
+    onAdd({
+      name: form.tableName || form.fileName.replace(/\.[^/.]+$/, ""),
       fileName: form.fileName,
       tableName: form.tableName,
-      fileType: form.fileType as "csv" | "parquet" | "json",
-      groupColumn: form.groupColumn,
+      fileType: form.fileType,
       targetFeature: form.targetFeature,
       featuresCount: form.features.length || Number(form.featuresCount) || 0,
       observationsCount: Number(form.observationsCount) || 0,
       features: form.features,
     });
-    closeAddDatasetModal();
+    onClose();
   };
 
+  const filteredFeatures = form.features.filter((f) =>
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <Dialog
-      open={addDatasetModal}
-      onOpenChange={(open) => !open && closeAddDatasetModal()}
-    >
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className={`max-w-[95vw] md:max-w-[min(90vw,1060px)] border-2 ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 md:max-h-[85vh]`}
+        className={`max-w-[95vw] md:max-w-[900px] border-2 ${STYLES.border} ${STYLES.bgCard} p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col`}
       >
-        {/* Close Button */}
         <button
           type="button"
-          onClick={closeAddDatasetModal}
-          className="absolute top-3 right-3 p-1 text-white/60 hover:text-white transition-colors z-10"
+          onClick={onClose}
+          className="absolute right-3 top-3 p-1 text-white/60 hover:text-white transition-colors z-10"
         >
           <X className="w-6 h-6" />
         </button>
 
-        {/* Header */}
-        <div className="mb-5">
-          <h2 className="h1-underline text-2xl font-bold text-white font-display">
-            Add Datasets
-          </h2>
+        <div className="px-4 sm:px-6 pt-4 pb-3 shrink-0">
+          <DialogTitle className="h1-underline text-2xl sm:text-3xl font-bold text-white font-display">
+            Add Dataset
+          </DialogTitle>
         </div>
 
-        {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="w-full lg:w-[420px] shrink-0">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              {/* File Name */}
-              <div className="flex flex-col gap-1">
-                <Label className="text-white text-sm font-display">
-                  File Name
-                </Label>
-                <Input
-                  value={form.fileName}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, fileName: e.target.value }))
-                  }
-                  placeholder="File name"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
-                />
-              </div>
+        <div className="px-4 sm:px-6 pb-4 overflow-y-auto flex-1">
+          {/* Form Fields */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+            {/* File Name */}
+            <div>
+              <Label className="text-white text-sm sm:text-base font-display mb-1 block">
+                File Name
+              </Label>
+              <Input
+                value={form.fileName}
+                onChange={(e) => setForm((prev) => ({ ...prev, fileName: e.target.value }))}
+                placeholder="File name"
+                className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+              />
+            </div>
 
-              {/* Table Name */}
-              <div className="flex flex-col gap-1">
-                <Label className="text-white text-sm font-display">
-                  Table Name
-                </Label>
-                <Input
-                  value={form.tableName}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, tableName: e.target.value }))
-                  }
-                  placeholder="Optional"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
-                />
-              </div>
+            {/* Table Name */}
+            <div>
+              <Label className="text-white text-sm sm:text-base font-display mb-1 block">
+                Table Name
+              </Label>
+              <Input
+                value={form.tableName}
+                onChange={(e) => setForm((prev) => ({ ...prev, tableName: e.target.value }))}
+                placeholder="Optional (for SQLite)"
+                className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+              />
+            </div>
 
-              {/* File Type */}
-              <div className="flex flex-col gap-1">
-                <Label className="text-white text-sm font-display">
-                  File Type
-                </Label>
-                <Select
-                  value={form.fileType}
-                  onValueChange={(v) =>
-                    setForm((prev) => ({ ...prev, fileType: v }))
-                  }
-                >
-                  <SelectTrigger
-                    className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
-                  >
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent
-                    className={`${STYLES.bgCardAlt} ${STYLES.border}`}
-                  >
-                    <SelectItem value="csv" className="text-white">
-                      CSV
-                    </SelectItem>
-                    <SelectItem value="xlsx" className="text-white">
-                      XLSX
-                    </SelectItem>
-                    <SelectItem value="parquet" className="text-white">
-                      Parquet
-                    </SelectItem>
-                    <SelectItem value="json" className="text-white">
-                      JSON
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* File Type */}
+            <div>
+              <Label className="text-white text-sm sm:text-base font-display mb-1 block">
+                File Type
+              </Label>
+              <Select
+                value={form.fileType}
+                onValueChange={(v) => setForm((prev) => ({ ...prev, fileType: v as DatasetFileType }))}
+              >
+                <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 text-sm">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#282828] border-[#404040]">
+                  <SelectItem value="csv" className="text-white">CSV</SelectItem>
+                  <SelectItem value="xlsx" className="text-white">XLSX</SelectItem>
+                  <SelectItem value="sqlite" className="text-white">SQLite</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Group Column */}
-              <div className="flex flex-col gap-1">
-                <Label className="text-white text-sm font-display">
-                  Group Column
-                </Label>
-                <Input
-                  value={form.groupColumn}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      groupColumn: e.target.value,
-                    }))
-                  }
-                  placeholder="Optional"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
-                />
-              </div>
+            {/* Target Feature */}
+            <div>
+              <Label className="text-white text-sm sm:text-base font-display mb-1 block">
+                Target Feature
+              </Label>
+              <Input
+                value={form.targetFeature}
+                onChange={(e) => setForm((prev) => ({ ...prev, targetFeature: e.target.value }))}
+                placeholder="Name"
+                className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+              />
+            </div>
 
-              {/* Target Feature */}
-              <div className="flex flex-col gap-1">
-                <Label className="text-white text-sm font-display">
-                  Target Feature
-                </Label>
-                <Input
-                  value={form.targetFeature}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      targetFeature: e.target.value,
-                    }))
-                  }
-                  placeholder="Name"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
-                />
-              </div>
+            {/* Features (#) */}
+            <div>
+              <Label className="text-white text-sm sm:text-base font-display mb-1 block">
+                Features (#)
+              </Label>
+              <Input
+                value={form.featuresCount}
+                onChange={(e) => setForm((prev) => ({ ...prev, featuresCount: e.target.value }))}
+                placeholder="Ex. 10"
+                className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+              />
+            </div>
 
-              {/* Features (#) */}
-              <div className="flex flex-col gap-1">
-                <Label className="text-white text-sm font-display">
-                  Features (#)
-                </Label>
-                <Input
-                  value={form.featuresCount}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      featuresCount: e.target.value,
-                    }))
-                  }
-                  placeholder="Ex. 10"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm`}
-                />
-              </div>
-
-              {/* Observations (#) */}
-              <div className="flex flex-col gap-1 col-span-2">
-                <Label className="text-white text-sm font-display">
-                  Observations (#)
-                </Label>
-                <Input
-                  value={form.observationsCount}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      observationsCount: e.target.value,
-                    }))
-                  }
-                  placeholder="Ex. 500"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 text-sm w-1/2`}
-                />
-              </div>
+            {/* Observations (#) */}
+            <div>
+              <Label className="text-white text-sm sm:text-base font-display mb-1 block">
+                Observations (#)
+              </Label>
+              <Input
+                value={form.observationsCount}
+                onChange={(e) => setForm((prev) => ({ ...prev, observationsCount: e.target.value }))}
+                placeholder="Ex. 500"
+                className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
+              />
             </div>
           </div>
 
-          {/* Right Side - Features Section */}
-          <div
-            className={`flex-1 min-w-0 border-2 ${STYLES.border} flex flex-col sm:flex-row h-auto sm:h-[300px] overflow-hidden`}
-          >
-            {/* Feature Input */}
-            <div
-              className={`flex flex-row sm:flex-col gap-2 sm:gap-3 p-3 sm:p-4 w-full sm:w-[160px] lg:w-[180px] shrink-0 border-b sm:border-b-0 sm:border-r ${STYLES.border}`}
-            >
-              <div className="flex flex-col gap-1 flex-1 sm:flex-none">
-                <Label className="text-white text-xs sm:text-sm font-display">
+          {/* Feature Table Section */}
+          <div className="flex flex-col md:flex-row border-2 border-[#404040] mb-4">
+            {/* Left - Feature Input */}
+            <div className="p-3 space-y-2 border-b md:border-b-0 md:border-r border-[#404040] bg-[#181818] w-full md:w-[180px]">
+              <div>
+                <Label className="text-white text-sm font-display mb-1 block">
                   Feature Name
                 </Label>
                 <Input
-                  value={form.newFeatureName}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      newFeatureName: e.target.value,
-                    }))
-                  }
+                  value={featureName}
+                  onChange={(e) => setFeatureName(e.target.value)}
                   placeholder="Name"
-                  onKeyDown={(e) => e.key === "Enter" && addFeature()}
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-8 sm:h-9 text-sm`}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddFeature()}
+                  className="bg-[#282828] border-[#404040] text-white h-8 text-sm"
                 />
               </div>
-              <div className="flex flex-col gap-1 w-[90px] sm:w-auto shrink-0">
-                <Label className="text-white text-xs sm:text-sm font-display">
+              <div>
+                <Label className="text-white text-sm font-display mb-1 block">
                   Data Type
                 </Label>
-                <Select
-                  value={form.newFeatureType}
-                  onValueChange={(v) =>
-                    setForm((prev) => ({ ...prev, newFeatureType: v }))
-                  }
-                >
-                  <SelectTrigger
-                    className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-8 sm:h-9 text-sm`}
-                  >
+                <Select value={dataType} onValueChange={(v) => setDataType(v as "str" | "int" | "float")}>
+                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-8 text-sm">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
-                  <SelectContent
-                    className={`${STYLES.bgCardAlt} ${STYLES.border}`}
-                  >
-                    <SelectItem value="str" className="text-white">
-                      str
-                    </SelectItem>
-                    <SelectItem value="int" className="text-white">
-                      int
-                    </SelectItem>
-                    <SelectItem value="float" className="text-white">
-                      float
-                    </SelectItem>
+                  <SelectContent className="bg-[#282828] border-[#404040]">
+                    <SelectItem value="str" className="text-white">str</SelectItem>
+                    <SelectItem value="int" className="text-white">int</SelectItem>
+                    <SelectItem value="float" className="text-white">float</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <button
-                type="button"
-                onClick={addFeature}
-                className="flex items-center justify-center sm:mt-auto self-end sm:self-auto"
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="categorical-modal"
+                  checked={isCategorical}
+                  onCheckedChange={(checked) => setIsCategorical(checked === true)}
+                  className="border-[#404040] data-[state=checked]:bg-[#006b4c] data-[state=checked]:border-[#00a878]"
+                />
+                <Label
+                  htmlFor="categorical-modal"
+                  className="text-white text-sm font-display cursor-pointer"
+                >
+                  Categorical
+                </Label>
+              </div>
+              <Button
+                onClick={handleAddFeature}
+                className="w-10 h-10 bg-[#181818] hover:bg-[#282828] text-white p-2"
               >
-                <Plus className="w-7 h-7 sm:w-8 sm:h-8 text-white/60 hover:text-white" />
-              </button>
+                <img src="/add.svg" alt="Add" className="w-full h-full" />
+              </Button>
             </div>
 
-            {/* Features Table */}
-            <div
-              className={`flex-1 flex flex-col min-w-0 overflow-hidden ${STYLES.bgCard}`}
-            >
-              {/* Header */}
-              <div
-                className={`flex items-center justify-center gap-6 px-3 py-2 ${STYLES.bgDark} shrink-0`}
-              >
-                <span className="text-white text-sm font-display">Name</span>
-                <div className="w-px h-4 bg-white/50" />
-                <span className="text-white text-sm font-display">Type</span>
+            {/* Right - Feature Table */}
+            <div className="flex-1 flex flex-col min-h-[180px] max-h-[220px]">
+              {/* Table Header */}
+              <div className="bg-[#121212] flex items-center px-3 h-8 border-b border-[#404040]">
+                <span className="flex-1 text-white text-sm font-display">Name</span>
+                <span className="w-12 text-white text-sm font-display">Type</span>
+                <span className="w-10 text-white text-sm font-display text-center">Cat</span>
+                <div className="w-6" />
               </div>
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden">
+              {/* Table Body */}
+              <div className="flex-1 overflow-y-auto">
                 {filteredFeatures.map((feature, index) => (
                   <div
                     key={feature.id}
                     className={cn(
-                      "flex items-center px-3 py-2",
-                      index % 2 === 0 ? STYLES.bgCard : STYLES.bgCardAlt,
+                      "flex items-center px-3 h-8",
+                      index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]"
                     )}
                   >
-                    <span className="flex-1 text-white text-sm truncate min-w-0">
+                    <span className="flex-1 text-white text-sm font-display truncate">
                       {feature.name}
                     </span>
-                    <span className="w-12 text-white text-sm text-center shrink-0">
-                      {feature.type}
+                    <span className="w-12 text-white text-sm font-display">{feature.type}</span>
+                    <span className="w-10 text-white text-sm font-display text-center">
+                      {feature.categorical ? "Yes" : "No"}
                     </span>
                     <button
                       type="button"
-                      onClick={() => removeFeature(feature.id)}
-                      className="ml-2 text-white/60 hover:text-white shrink-0"
+                      onClick={() => handleDeleteFeature(feature.id)}
+                      className="w-6 h-6 flex items-center justify-center text-white hover:text-red-500"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
               </div>
 
               {/* Search */}
-              <div
-                className={`relative px-3 py-2 ${STYLES.bgCardAlt} shrink-0`}
-              >
-                <Input
-                  value={featureSearch}
-                  onChange={(e) => setFeatureSearch(e.target.value)}
-                  placeholder="Search"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-8 text-sm pr-8`}
-                />
-                <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+              <div className="border-t border-[#404040] bg-[#282828] p-2">
+                <div className="relative">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search"
+                    className="bg-[#282828] border-[#404040] text-white h-7 pr-8 text-sm"
+                  />
+                  <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60" />
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-white/30" />
+            <span className="text-white text-lg font-display">or</span>
+            <div className="flex-1 h-px bg-white/30" />
+          </div>
+
+          {/* Upload Button */}
+          <div className="text-center space-y-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              onClick={handleUploadClick}
+              disabled={isParsingFile}
+              className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-10 px-8 text-lg font-display disabled:opacity-50"
+            >
+              {isParsingFile ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2 inline" />
+                  Parsing...
+                </>
+              ) : (
+                "Upload"
+              )}
+            </Button>
+            <p className="text-white/60 text-sm font-display">CSV or XLSX files</p>
+            {parseError && (
+              <p className="text-red-400 text-sm font-display">{parseError}</p>
+            )}
+          </div>
         </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-white/30" />
-          <span className="text-white text-lg font-display">or</span>
-          <div className="flex-1 h-px bg-white/30" />
-        </div>
-
-        {/* Upload */}
-        <div className="flex flex-col items-center gap-1">
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            className={`border ${STYLES.border} ${STYLES.bgDark} text-white hover:text-white hover:bg-[#121212]/80 h-10 w-[180px] font-display`}
-          >
-            Upload
-          </Button>
-          <span className="text-white text-sm font-display">
-            CSV or XLSX files
-          </span>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx"
-            onChange={handleFileInputChange}
-            className="hidden"
-          />
-        </div>
-
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-5">
-          <Button
-            variant="outline"
+        {/* Action Buttons */}
+        <div className="px-4 sm:px-6 pb-4 pt-3 border-t border-[#404040] flex justify-end gap-3 shrink-0">
+          <button
+            type="button"
             onClick={handleReset}
-            className={`btn-reset-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 sm:h-10 md:h-11 px-4 sm:px-6 text-sm sm:text-base font-display w-full sm:w-auto`}
+            onMouseEnter={() => setResetHovered(true)}
+            onMouseLeave={() => setResetHovered(false)}
+            className="border-2 h-10 px-6 text-base font-display rounded-md transition-colors"
+            style={{
+              borderColor: resetHovered ? "#FF3D29" : "#404040",
+              backgroundColor: resetHovered ? "rgba(255, 61, 41, 0.2)" : "#121212",
+              color: "white",
+            }}
           >
             Reset
-          </Button>
+          </button>
           <Button
             onClick={handleSubmit}
-            className={`btn-add-hover ${STYLES.bgPrimary} text-white h-9 sm:h-10 md:h-11 px-4 sm:px-6 text-sm sm:text-base font-display w-full sm:w-auto`}
+            disabled={!form.fileName}
+            className="btn-add-hover bg-[#006b4c] text-white h-10 px-6 text-base font-display border border-[#363636] disabled:opacity-50"
           >
             Add Dataset
           </Button>

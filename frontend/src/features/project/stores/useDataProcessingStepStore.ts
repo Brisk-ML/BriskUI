@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PreprocessorType } from "@/types";
+import { usePendingChangesStore } from "@/shared/stores/usePendingChangesStore";
 
 /**
  * Base DataManager config matching Python DataManager class parameters.
@@ -180,6 +181,8 @@ export const useDataProcessingStepStore = create<DataProcessingStepState>(
           },
         };
       });
+      // Mark changes in pending changes store
+      usePendingChangesStore.getState().markChanged();
     },
 
     setActivePreprocessor: (preprocessor) => {
@@ -219,6 +222,8 @@ export const useDataProcessingStepStore = create<DataProcessingStepState>(
           },
         };
       });
+      // Mark changes in pending changes store
+      usePendingChangesStore.getState().markChanged();
     },
 
     removePreprocessorConfig: (datasetId, type) => {
@@ -249,6 +254,8 @@ export const useDataProcessingStepStore = create<DataProcessingStepState>(
           },
         };
       });
+      // Mark changes in pending changes store
+      usePendingChangesStore.getState().markChanged();
     },
 
     getEffectiveDataManager: (datasetId) => {

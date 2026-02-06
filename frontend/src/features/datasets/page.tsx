@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getStoredDatasets, type StoredDatasetConfig } from "@/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Checkbox } from "@/shared/components/ui/checkbox";
@@ -12,88 +13,368 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import type { Feature } from "@/types";
+import {
+  usePendingChangesStore,
+  type DatasetState,
+  type BaseDataManagerConfig,
+} from "@/shared/stores/usePendingChangesStore";
+import { useDataProcessingStepStore } from "@/features/project/stores/useDataProcessingStepStore";
+import { MissingDataConfig } from "@/features/project/components/data-processing/MissingDataConfig";
+import { ScalingConfig } from "@/features/project/components/data-processing/ScalingConfig";
+import { EncodingConfig } from "@/features/project/components/data-processing/EncodingConfig";
+import { FeatureSelectionConfig } from "@/features/project/components/data-processing/FeatureSelectionConfig";
+import type { DatasetFileType, Feature, PreprocessorType } from "@/types";
 import { AddDatasetModal } from "./components/AddDatasetModal";
-import { EditDefaultSplitModal } from "./components/EditDefaultSplitModal";
-import { EditSplittingModal } from "./components/EditSplittingModal";
-import { useDatasetsModalStore } from "./stores/useDatasetsModalStore";
-import { useDatasetsStore } from "./stores/useDatasetsStore";
+import {
+  DataManagerModal,
+  DEFAULT_DATA_MANAGER,
+  type DataManagerConfig,
+} from "./components/DataManagerModal";
 
-const PREPROCESSING_TABS = [
-  "Missing Data",
-  "Scaling",
-  "Encoding",
-  "Feature Selection",
-] as const;
+// Preprocessors
+const PREPROCESSORS: { id: PreprocessorType; label: string }[] = [
+  { id: "missing-data", label: "Missing\nData" },
+  { id: "scaling", label: "Scaling" },
+  { id: "encoding", label: "Encoding" },
+  { id: "feature-selection", label: "Feature\nSelection" },
+];
 
-type PreprocessingTab = (typeof PREPROCESSING_TABS)[number];
+interface FormState {
+  fileName: string;
+  tableName: string;
+  fileType: DatasetFileType;
+  targetFeature: string;
+  featuresCount: string;
+  observationsCount: string;
+  features: Feature[];
+}
+
+const DEFAULT_FORM: FormState = {
+  fileName: "",
+  tableName: "",
+  fileType: "csv",
+  targetFeature: "",
+  featuresCount: "",
+  observationsCount: "",
+  features: [],
+};
 
 export default function DatasetsPage() {
-  const { datasets, selectedDatasetId, selectDataset } = useDatasetsStore();
   const {
-    openAddDatasetModal,
-    openEditSplittingModal,
-    openEditDefaultSplitModal,
-  } = useDatasetsModalStore();
+    datasets,
+    baseDataManager,
+    setDatasets,
+    addDataset,
+    updateDataset,
+    removeDataset,
+    setBaseDataManager,
+  } = usePendingChangesStore();
 
-  const [fileName, setFileName] = useState("File name");
-  const [tableName, setTableName] = useState("Optional");
-  const [fileType, setFileType] = useState<string>("");
-  const [targetFeature, setTargetFeature] = useState("Name");
-  const [featuresCount, setFeaturesCount] = useState("Ex. 10");
-  const [observationsCount, setObservationsCount] = useState("Ex. 500");
+  // Data processing store for preprocessors
+  const {
+    activePreprocessor,
+    setActivePreprocessor,
+    getDatasetPreprocessors,
+    selectDataset: selectDatasetForProcessing,
+  } = useDataProcessingStepStore();
 
+  // Local UI state
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Data manager configs (dataset-specific - local state)
+  const [datasetDataManagers, setDatasetDataManagers] = useState<Record<string, DataManagerConfig>>({});
+
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDataManagerModalOpen, setIsDataManagerModalOpen] = useState(false);
+  const [dataManagerMode, setDataManagerMode] = useState<"default" | "dataset">("default");
+
+  // Feature input states
   const [featureName, setFeatureName] = useState("");
-  const [dataType, setDataType] = useState<string>("");
+  const [dataType, setDataType] = useState<"str" | "int" | "float">("str");
   const [isCategorical, setIsCategorical] = useState(false);
-  const [features, setFeatures] = useState<Feature[]>([
-    { id: "1", name: "Feature 1", type: "str", categorical: false },
-    { id: "2", name: "Feature 2", type: "int", categorical: false },
-    { id: "3", name: "Feature 3", type: "float", categorical: false },
-    { id: "4", name: "Feature 4", type: "str", categorical: true },
-  ]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [activeTab, setActiveTab] = useState<PreprocessingTab>("Missing Data");
+  // Load data from backend on mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getStoredDatasets();
+        
+        // Convert stored datasets to DatasetState format
+        // ID is now file-based (filename or filename:tablename)
+        const loadedDatasets: DatasetState[] = response.datasets.map((d: StoredDatasetConfig) => ({
+          id: d.id, // File-based ID for consistency
+          name: d.file_name.replace(/\.[^/.]+$/, ""), // Remove extension for display name
+          fileName: d.file_name,
+          tableName: d.table_name || "",
+          fileType: d.file_type as DatasetFileType,
+          targetFeature: d.target_feature || "",
+          featuresCount: d.features_count || 0,
+          observationsCount: d.observations_count || 0,
+          features: d.features.map((f) => ({
+            id: crypto.randomUUID(),
+            name: f.name,
+            type: f.data_type as "str" | "int" | "float",
+            categorical: f.categorical,
+          })),
+        }));
+        
+        setDatasets(loadedDatasets);
+        
+        // Also restore preprocessor configs if stored
+        const { datasetConfigs } = useDataProcessingStepStore.getState();
+        for (const d of response.datasets) {
+          if (d.preprocessors && d.preprocessors.length > 0) {
+            // Restore preprocessor configs
+            for (const p of d.preprocessors) {
+              const preprocessorKey = {
+                "missing-data": "missingData",
+                scaling: "scaling",
+                encoding: "encoding",
+                "feature-selection": "featureSelection",
+              }[p.type] as "missingData" | "scaling" | "encoding" | "featureSelection" | undefined;
+              
+              if (preprocessorKey) {
+                useDataProcessingStepStore.getState().addPreprocessorConfig(
+                  d.id,
+                  p.type as "missing-data" | "scaling" | "encoding" | "feature-selection",
+                  p.config as any
+                );
+              }
+            }
+          }
+          
+          // Restore data manager config if stored
+          if (d.data_manager) {
+            useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, {
+              testSize: d.data_manager.test_size,
+              nSplits: d.data_manager.n_splits,
+              splitMethod: d.data_manager.split_method as "shuffle" | "kfold" | undefined,
+              groupColumn: d.data_manager.group_column,
+              stratified: d.data_manager.stratified,
+              randomState: d.data_manager.random_state,
+            });
+          }
+        }
+        
+        // Reset hasChanges after loading initial data
+        usePendingChangesStore.setState({ hasChanges: false });
+      } catch (error) {
+        console.error("Failed to load datasets:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, [setDatasets]);
+
+  // Sync selected dataset with data processing store
+  useEffect(() => {
+    selectDatasetForProcessing(selectedDatasetId);
+  }, [selectedDatasetId, selectDatasetForProcessing]);
+
+  const updateForm = (updates: Partial<FormState>) => {
+    setForm((prev) => ({ ...prev, ...updates }));
+  };
 
   const handleAddFeature = () => {
     if (featureName.trim()) {
-      setFeatures([
-        ...features,
-        {
-          id: crypto.randomUUID(),
-          name: featureName,
-          type: (dataType as Feature["type"]) || "str",
-          categorical: isCategorical,
-        },
-      ]);
+      const newFeature: Feature = {
+        id: crypto.randomUUID(),
+        name: featureName,
+        type: dataType,
+        categorical: isCategorical,
+      };
+      updateForm({ features: [...form.features, newFeature] });
       setFeatureName("");
-      setDataType("");
+      setDataType("str");
       setIsCategorical(false);
     }
   };
 
   const handleDeleteFeature = (id: string) => {
-    setFeatures(features.filter((f) => f.id !== id));
+    updateForm({ features: form.features.filter((f) => f.id !== id) });
   };
 
   const handleSelectDataset = (id: string) => {
-    selectDataset(id);
-    const dataset = datasets.find((d) => d.id === id);
-    if (dataset) {
-      setFileName(dataset.fileName);
-      setTableName(dataset.tableName || "Optional");
-      setFileType(dataset.fileType);
-      setTargetFeature(dataset.targetFeature || "Name");
-      setFeaturesCount(dataset.featuresCount.toString());
-      setObservationsCount(dataset.observationsCount.toString());
-      setFeatures([...dataset.features]);
+    if (selectedDatasetId === id) {
+      // Deselect
+      setSelectedDatasetId(null);
+      setForm(DEFAULT_FORM);
+      setActivePreprocessor(null);
+    } else {
+      // Select and populate form
+      const dataset = datasets.find((d) => d.id === id);
+      if (dataset) {
+        setSelectedDatasetId(id);
+        setForm({
+          fileName: dataset.fileName,
+          tableName: dataset.tableName,
+          fileType: dataset.fileType,
+          targetFeature: dataset.targetFeature,
+          featuresCount: dataset.featuresCount.toString(),
+          observationsCount: dataset.observationsCount.toString(),
+          features: [...dataset.features],
+        });
+        setActivePreprocessor(null);
+      }
     }
   };
 
-  const filteredFeatures = features.filter((f) =>
-    f.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const handleAddDatasetFromModal = (dataset: {
+    name: string;
+    fileName: string;
+    tableName: string;
+    fileType: DatasetFileType;
+    targetFeature: string;
+    featuresCount: number;
+    observationsCount: number;
+    features: Feature[];
+  }) => {
+    // Generate file-based ID for consistency across sessions
+    const datasetId = dataset.fileType === "sqlite" && dataset.tableName
+      ? `${dataset.fileName}:${dataset.tableName}`
+      : dataset.fileName;
+    
+    const newDataset: DatasetState = {
+      id: datasetId,
+      name: dataset.name,
+      fileName: dataset.fileName,
+      tableName: dataset.tableName,
+      fileType: dataset.fileType,
+      targetFeature: dataset.targetFeature,
+      featuresCount: dataset.featuresCount,
+      observationsCount: dataset.observationsCount,
+      features: dataset.features,
+    };
+    addDataset(newDataset);
+  };
+
+  const handleSaveDatasetChanges = () => {
+    if (!selectedDatasetId) return;
+    
+    updateDataset(selectedDatasetId, {
+      fileName: form.fileName,
+      tableName: form.tableName,
+      fileType: form.fileType,
+      targetFeature: form.targetFeature,
+      featuresCount: form.features.length || Number.parseInt(form.featuresCount, 10) || 0,
+      observationsCount: Number.parseInt(form.observationsCount, 10) || 0,
+      features: [...form.features],
+    });
+  };
+
+  const handleOpenEditSplitting = () => {
+    if (selectedDatasetId) {
+      setDataManagerMode("dataset");
+      setIsDataManagerModalOpen(true);
+    }
+  };
+
+  const handleOpenEditDefaultSplit = () => {
+    setDataManagerMode("default");
+    setIsDataManagerModalOpen(true);
+  };
+
+  const handleSaveDataManager = (config: DataManagerConfig) => {
+    if (dataManagerMode === "default") {
+      // Convert to BaseDataManagerConfig format and save to pending changes store
+      const baseConfig: BaseDataManagerConfig = {
+        testSize: config.testSize,
+        nSplits: config.nSplits,
+        splitMethod: config.splitMethod,
+        groupColumn: config.groupColumn,
+        stratified: config.stratified,
+        randomState: config.randomState,
+      };
+      setBaseDataManager(baseConfig);
+    } else if (selectedDatasetId) {
+      // Store locally for UI
+      setDatasetDataManagers((prev) => ({
+        ...prev,
+        [selectedDatasetId]: config,
+      }));
+      
+      // Also update the data processing store so it gets saved
+      useDataProcessingStepStore.getState().updateDatasetDataManager(selectedDatasetId, {
+        testSize: config.testSize,
+        nSplits: config.nSplits,
+        splitMethod: config.splitMethod,
+        groupColumn: config.groupColumn,
+        stratified: config.stratified,
+        randomState: config.randomState,
+      });
+      
+      // Mark changes for dataset-specific configs
+      usePendingChangesStore.getState().markChanged();
+    }
+  };
+
+  const handlePreprocessorClick = (id: PreprocessorType) => {
+    if (!selectedDatasetId) return;
+    setActivePreprocessor(activePreprocessor === id ? null : id);
+  };
+
+  // Get configured preprocessors for the selected dataset
+  const configuredPreprocessors = selectedDatasetId
+    ? getDatasetPreprocessors(selectedDatasetId)
+    : [];
+
+  const filteredFeatures = form.features.filter((f) =>
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Convert base data manager to modal format
+  const baseDataManagerForModal: DataManagerConfig = {
+    testSize: baseDataManager.testSize,
+    nSplits: baseDataManager.nSplits,
+    splitMethod: baseDataManager.splitMethod,
+    groupColumn: baseDataManager.groupColumn,
+    stratified: baseDataManager.stratified,
+    randomState: baseDataManager.randomState,
+  };
+
+  const currentDataManagerConfig = dataManagerMode === "default"
+    ? baseDataManagerForModal
+    : selectedDatasetId
+      ? datasetDataManagers[selectedDatasetId] || { ...baseDataManagerForModal }
+      : DEFAULT_DATA_MANAGER;
+
+  // Render preprocessor config form
+  const renderPreprocessorForm = () => {
+    if (!selectedDatasetId) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-white/60 text-base sm:text-lg lg:text-xl font-display text-center">
+            Select a dataset first
+          </p>
+        </div>
+      );
+    }
+
+    switch (activePreprocessor) {
+      case "missing-data":
+        return <MissingDataConfig datasetId={selectedDatasetId} />;
+      case "scaling":
+        return <ScalingConfig datasetId={selectedDatasetId} />;
+      case "encoding":
+        return <EncodingConfig datasetId={selectedDatasetId} />;
+      case "feature-selection":
+        return <FeatureSelectionConfig datasetId={selectedDatasetId} />;
+      default:
+        return (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-white/60 text-base sm:text-lg lg:text-xl font-display text-center">
+              Select a preprocessor to configure
+            </p>
+          </div>
+        );
+    }
+  };
 
   return (
     <div
@@ -112,20 +393,22 @@ export default function DatasetsPage() {
               {/* Header */}
               <div className="mb-4 sm:mb-6">
                 <h2 className="h1-underline text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white font-display">
-                  Edit Dataset
+                  {selectedDatasetId ? "Edit Dataset" : "Select a Dataset"}
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {/* File Name */}
                 <div>
                   <Label className="text-white text-sm sm:text-base lg:text-lg font-display mb-1 sm:mb-2 block">
                     File Name
                   </Label>
                   <Input
-                    value={fileName}
-                    onChange={(e) => setFileName(e.target.value)}
-                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
+                    value={form.fileName}
+                    onChange={(e) => updateForm({ fileName: e.target.value })}
+                    placeholder="File name"
+                    disabled={!selectedDatasetId}
+                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                   />
                 </div>
 
@@ -135,9 +418,11 @@ export default function DatasetsPage() {
                     Table Name
                   </Label>
                   <Input
-                    value={tableName}
-                    onChange={(e) => setTableName(e.target.value)}
-                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
+                    value={form.tableName}
+                    onChange={(e) => updateForm({ tableName: e.target.value })}
+                    placeholder="Optional (for SQLite)"
+                    disabled={!selectedDatasetId}
+                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                   />
                 </div>
 
@@ -146,20 +431,18 @@ export default function DatasetsPage() {
                   <Label className="text-white text-sm sm:text-base lg:text-lg font-display mb-1 sm:mb-2 block">
                     File Type
                   </Label>
-                  <Select value={fileType} onValueChange={setFileType}>
-                    <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px]">
+                  <Select
+                    value={form.fileType}
+                    onValueChange={(v) => updateForm({ fileType: v as DatasetFileType })}
+                    disabled={!selectedDatasetId}
+                  >
+                    <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] disabled:opacity-50">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#282828] border-[#404040]">
-                      <SelectItem value="csv" className="text-white">
-                        CSV
-                      </SelectItem>
-                      <SelectItem value="xlsx" className="text-white">
-                        XLSX
-                      </SelectItem>
-                      <SelectItem value="sqlite" className="text-white">
-                        SQLite
-                      </SelectItem>
+                      <SelectItem value="csv" className="text-white">CSV</SelectItem>
+                      <SelectItem value="xlsx" className="text-white">XLSX</SelectItem>
+                      <SelectItem value="sqlite" className="text-white">SQLite</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -170,9 +453,11 @@ export default function DatasetsPage() {
                     Target Feature
                   </Label>
                   <Input
-                    value={targetFeature}
-                    onChange={(e) => setTargetFeature(e.target.value)}
-                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
+                    value={form.targetFeature}
+                    onChange={(e) => updateForm({ targetFeature: e.target.value })}
+                    placeholder="Name"
+                    disabled={!selectedDatasetId}
+                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                   />
                 </div>
 
@@ -182,9 +467,11 @@ export default function DatasetsPage() {
                     Features (#)
                   </Label>
                   <Input
-                    value={featuresCount}
-                    onChange={(e) => setFeaturesCount(e.target.value)}
-                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
+                    value={form.featuresCount}
+                    onChange={(e) => updateForm({ featuresCount: e.target.value })}
+                    placeholder="Ex. 10"
+                    disabled={!selectedDatasetId}
+                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                   />
                 </div>
 
@@ -194,9 +481,11 @@ export default function DatasetsPage() {
                     Observations (#)
                   </Label>
                   <Input
-                    value={observationsCount}
-                    onChange={(e) => setObservationsCount(e.target.value)}
-                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
+                    value={form.observationsCount}
+                    onChange={(e) => updateForm({ observationsCount: e.target.value })}
+                    placeholder="Ex. 500"
+                    disabled={!selectedDatasetId}
+                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -214,27 +503,26 @@ export default function DatasetsPage() {
                       onChange={(e) => setFeatureName(e.target.value)}
                       placeholder="Name"
                       onKeyDown={(e) => e.key === "Enter" && handleAddFeature()}
-                      className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
+                      disabled={!selectedDatasetId}
+                      className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                     />
                   </div>
                   <div>
                     <Label className="text-white text-sm sm:text-base lg:text-lg font-display mb-1 sm:mb-2 block">
                       Data Type
                     </Label>
-                    <Select value={dataType} onValueChange={setDataType}>
-                      <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px]">
+                    <Select
+                      value={dataType}
+                      onValueChange={(v) => setDataType(v as "str" | "int" | "float")}
+                      disabled={!selectedDatasetId}
+                    >
+                      <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] disabled:opacity-50">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent className="bg-[#282828] border-[#404040]">
-                        <SelectItem value="str" className="text-white">
-                          str
-                        </SelectItem>
-                        <SelectItem value="int" className="text-white">
-                          int
-                        </SelectItem>
-                        <SelectItem value="float" className="text-white">
-                          float
-                        </SelectItem>
+                        <SelectItem value="str" className="text-white">str</SelectItem>
+                        <SelectItem value="int" className="text-white">int</SelectItem>
+                        <SelectItem value="float" className="text-white">float</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -243,18 +531,23 @@ export default function DatasetsPage() {
                       id="categorical-standalone"
                       checked={isCategorical}
                       onCheckedChange={(checked) => setIsCategorical(checked === true)}
-                      className="border-[#404040] data-[state=checked]:bg-[#006b4c] data-[state=checked]:border-[#00a878]"
+                      disabled={!selectedDatasetId}
+                      className="border-[#404040] data-[state=checked]:bg-[#006b4c] data-[state=checked]:border-[#00a878] disabled:opacity-50"
                     />
                     <Label
                       htmlFor="categorical-standalone"
-                      className="text-white text-sm sm:text-base font-display cursor-pointer"
+                      className={cn(
+                        "text-white text-sm sm:text-base font-display cursor-pointer",
+                        !selectedDatasetId && "opacity-50"
+                      )}
                     >
                       Categorical
                     </Label>
                   </div>
                   <Button
                     onClick={handleAddFeature}
-                    className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-[#181818] hover:bg-[#282828] text-white p-2"
+                    disabled={!selectedDatasetId}
+                    className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-[#181818] hover:bg-[#282828] text-white p-2 disabled:opacity-50"
                   >
                     <img src="/add.svg" alt="Add" className="w-full h-full" />
                   </Button>
@@ -283,7 +576,7 @@ export default function DatasetsPage() {
                         key={feature.id}
                         className={cn(
                           "flex items-center px-3 sm:px-4 h-[32px] sm:h-[36px]",
-                          index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]",
+                          index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]"
                         )}
                       >
                         <span className="flex-1 text-white text-sm sm:text-base font-display truncate">
@@ -320,54 +613,79 @@ export default function DatasetsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Save Button */}
+              {selectedDatasetId && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    onClick={handleSaveDatasetChanges}
+                    className="btn-add-hover bg-[#006b4c] text-white h-10 px-6 text-base font-display border border-[#363636]"
+                  >
+                    Apply Changes
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {/* Right Panel - Edit Data Processing */}
-            <div className="flex-1 bg-[#181818] border-2 border-[#404040] p-3 sm:p-4 lg:p-6">
+            {/* Right Panel - Preprocessors */}
+            <div className="flex-1 bg-[#181818] border-2 border-[#404040] p-3 sm:p-4 lg:p-6 flex flex-col">
               {/* Header */}
-              <div className="mb-4 sm:mb-6">
+              <div className="mb-4 sm:mb-6 shrink-0">
                 <h2 className="h1-underline text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white font-display">
-                  Edit Data Processing
+                  Preprocessors
                 </h2>
               </div>
 
-              {/* Tabs - Scrollable on mobile */}
-              <div className="flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
-                {PREPROCESSING_TABS.map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={cn(
-                      "card-hover-fade px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border text-white font-display text-xs sm:text-sm lg:text-base transition-all duration-300 whitespace-nowrap relative",
-                      activeTab === tab
-                        ? "bg-[#282828] border-white"
-                        : "bg-[#121212] border-[#404040] hover:bg-[#282828]",
-                    )}
-                  >
-                    {tab}
-                  </button>
-                ))}
+              {/* Preprocessor Buttons */}
+              <div className="flex gap-4 flex-wrap justify-center mb-4 shrink-0">
+                {PREPROCESSORS.map((preprocessor) => {
+                  const isActive = activePreprocessor === preprocessor.id;
+                  const isConfigured = configuredPreprocessors.includes(preprocessor.id);
+                  const isDisabled = !selectedDatasetId;
+
+                  return (
+                    <button
+                      key={preprocessor.id}
+                      type="button"
+                      onClick={() => handlePreprocessorClick(preprocessor.id)}
+                      disabled={isDisabled}
+                      className={cn(
+                        "card-hover-fade w-[100px] h-[100px] border-2 flex items-center justify-center relative",
+                        "text-white text-[18px] sm:text-[20px] font-display text-center leading-tight",
+                        "transition-all duration-300 whitespace-pre-line",
+                        isDisabled
+                          ? "bg-[#1a1a1a] border-[#2a2a2a] cursor-not-allowed opacity-50"
+                          : "cursor-pointer",
+                        !isDisabled && isActive
+                          ? "bg-[#006b4c] border-[#00a878] ring-2 ring-white ring-offset-2 ring-offset-[#181818]"
+                          : !isDisabled && isConfigured
+                            ? "bg-[#006b4c] border-[#00a878]"
+                            : !isDisabled && "bg-[#121212] border-[#363636]"
+                      )}
+                    >
+                      {preprocessor.label}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Tab Content */}
-              <div className="border-2 border-[#404040] h-[200px] sm:h-[250px] lg:h-[300px] flex items-center justify-center">
-                <p className="text-white/60 text-base sm:text-lg lg:text-xl font-display text-center px-4">
-                  Select a preprocessor to configure
-                </p>
+              {/* Preprocessor Config Area */}
+              <div className="bg-[#282828] border-2 border-[#363636] flex-1 min-h-[300px] p-4 overflow-y-auto">
+                {renderPreprocessorForm()}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4 sm:mt-6">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4 sm:mt-6 shrink-0">
                 <Button
-                  onClick={openEditSplittingModal}
+                  onClick={handleOpenEditSplitting}
+                  disabled={!selectedDatasetId}
                   variant="outline"
-                  className="border-[#404040] bg-[#121212] text-white hover:bg-[#282828] h-[36px] sm:h-[40px] lg:h-[44px] px-4 sm:px-6 text-sm sm:text-base lg:text-lg font-display"
+                  className="border-[#404040] bg-[#121212] text-white hover:bg-[#282828] h-[36px] sm:h-[40px] lg:h-[44px] px-4 sm:px-6 text-sm sm:text-base lg:text-lg font-display disabled:opacity-50"
                 >
                   Edit Splitting
                 </Button>
                 <Button
-                  onClick={openEditDefaultSplitModal}
+                  onClick={handleOpenEditDefaultSplit}
                   variant="outline"
                   className="border-[#404040] bg-[#121212] text-white hover:bg-[#282828] h-[36px] sm:h-[40px] lg:h-[44px] px-4 sm:px-6 text-sm sm:text-base lg:text-lg font-display"
                 >
@@ -380,69 +698,63 @@ export default function DatasetsPage() {
           {/* Datasets Bar */}
           <div className="bg-[#282828] border-2 border-[#363636] mt-3 sm:mt-4 overflow-hidden">
             <div className="flex gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-x-auto items-center">
-              {/* Existing Dataset Cards */}
-              {datasets.length > 0 ? (
-                datasets.map((dataset) => {
-                  const isSelected = selectedDatasetId === dataset.id;
-                  return (
-                    <button
-                      key={dataset.id}
-                      type="button"
-                      onClick={() => handleSelectDataset(dataset.id)}
-                      className={cn(
-                        "card-hover-fade shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] p-2 sm:p-3 flex flex-col gap-1 sm:gap-2 border transition-colors duration-300 text-left relative",
-                        isSelected
-                          ? "bg-gradient-to-b from-[#1175d5] via-[#181818] via-[40%] to-[#121212] border-[#404040]"
-                          : "bg-[#121212] border-[#363636] hover:bg-[#181818]",
-                      )}
-                    >
-                      <div className="text-white text-base sm:text-lg lg:text-xl font-display truncate">
-                        {dataset.name || "Dataset Name"}
-                      </div>
-                      <div className="h-[1px] bg-white/40 w-full" />
-                      <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                        {dataset.observationsCount} x {dataset.featuresCount}
-                      </div>
-                      <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                        File Type: {dataset.fileType?.toUpperCase() || "CSV"}
-                      </div>
-                    </button>
-                  );
-                })
+              {/* Loading State */}
+              {isLoading ? (
+                <div className="shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] border border-[#363636] bg-[#121212] flex items-center justify-center">
+                  <p className="text-white/60 font-display">Loading...</p>
+                </div>
               ) : (
                 <>
-                  {/* Mock cards when no datasets */}
-                  <div className="shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] p-2 sm:p-3 flex flex-col gap-1 sm:gap-2 border border-[#363636] bg-[#121212]">
-                    <div className="text-white text-base sm:text-lg lg:text-xl font-display">
-                      Dataset Name
-                    </div>
-                    <div className="h-[1px] bg-white/40 w-full" />
-                    <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      518 x 24
-                    </div>
-                    <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      File Type: CSV
-                    </div>
-                  </div>
-                  <div className="shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] p-2 sm:p-3 flex flex-col gap-1 sm:gap-2 border border-[#363636] bg-[#121212]">
-                    <div className="text-white text-base sm:text-lg lg:text-xl font-display">
-                      Testing
-                    </div>
-                    <div className="h-[1px] bg-white/40 w-full" />
-                    <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      447 x 10
-                    </div>
-                    <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      File Type: XLSX
-                    </div>
-                  </div>
+                  {/* Dataset Cards */}
+                  {datasets.map((dataset) => {
+                    const isSelected = selectedDatasetId === dataset.id;
+                    return (
+                      <button
+                        key={dataset.id}
+                        type="button"
+                        onClick={() => handleSelectDataset(dataset.id)}
+                        className={cn(
+                          "card-hover-fade shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] p-2 sm:p-3 flex flex-col gap-1 sm:gap-2 border transition-colors duration-300 text-left relative",
+                          isSelected
+                            ? "bg-gradient-to-b from-[#1175d5] via-[#181818] via-[40%] to-[#121212] border-[#404040]"
+                            : "bg-[#121212] border-[#363636] hover:bg-[#181818]"
+                        )}
+                      >
+                        <div className="text-white text-base sm:text-lg lg:text-xl font-display truncate">
+                          {dataset.name || dataset.fileName || "Dataset"}
+                        </div>
+                        <div className="h-[1px] bg-white/40 w-full" />
+                        <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
+                          {dataset.observationsCount} x {dataset.featuresCount}
+                        </div>
+                        <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
+                          File Type: {dataset.fileType?.toUpperCase() || "CSV"}
+                        </div>
+                        {/* Delete button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeDataset(dataset.id);
+                            if (selectedDatasetId === dataset.id) {
+                              setSelectedDatasetId(null);
+                              setForm(DEFAULT_FORM);
+                            }
+                          }}
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-white/60 hover:text-red-500 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </button>
+                    );
+                  })}
                 </>
               )}
 
               {/* Add Button */}
               <button
                 type="button"
-                onClick={openAddDatasetModal}
+                onClick={() => setIsAddModalOpen(true)}
                 className="shrink-0 w-[140px] sm:w-[160px] lg:w-[200px] h-[130px] sm:h-[150px] lg:h-[180px] border-2 border-dashed border-[#404040] flex items-center justify-center hover:bg-[#181818] transition-colors"
               >
                 <img
@@ -457,9 +769,19 @@ export default function DatasetsPage() {
       </div>
 
       {/* Modals */}
-      <AddDatasetModal />
-      <EditSplittingModal />
-      <EditDefaultSplitModal />
+      <AddDatasetModal
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAdd={handleAddDatasetFromModal}
+      />
+      <DataManagerModal
+        open={isDataManagerModalOpen}
+        onClose={() => setIsDataManagerModalOpen(false)}
+        mode={dataManagerMode}
+        datasetName={selectedDatasetId ? datasets.find((d) => d.id === selectedDatasetId)?.name : undefined}
+        config={currentDataManagerConfig}
+        onSave={handleSaveDataManager}
+      />
     </div>
   );
 }

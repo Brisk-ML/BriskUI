@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { 
-  getExperimentsData, 
+  getExperimentsData,
+  getStoredDatasets,
   type DatasetInfo, 
   type AlgorithmInfo,
+  type StoredDatasetConfig,
 } from "@/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -20,6 +22,7 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { STYLES } from "@/shared/constants/colors";
 import { usePendingChangesStore } from "@/shared/stores/usePendingChangesStore";
 import { useProjectStore } from "@/shared/stores/useProjectStore";
+import { useDataProcessingStepStore } from "@/features/project/stores/useDataProcessingStepStore";
 
 export default function ExperimentsPage() {
   // Form state
@@ -45,6 +48,7 @@ export default function ExperimentsPage() {
     removeExperimentGroup,
     setDefaultAlgorithms,
     setProblemType,
+    setDatasets: setStoreDatasets,
   } = usePendingChangesStore();
 
   // Load data on mount
@@ -60,7 +64,12 @@ export default function ExperimentsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await getExperimentsData();
+      // Fetch experiment data and stored datasets in parallel
+      const [data, storedDatasetsResponse] = await Promise.all([
+        getExperimentsData(),
+        getStoredDatasets(),
+      ]);
+      
       setDatasets(data.datasets);
       setAlgorithms(data.algorithms);
       
@@ -71,6 +80,51 @@ export default function ExperimentsPage() {
         datasets: g.datasets,
         algorithms: g.algorithms,
       })));
+      
+      // Use stored datasets with file-based IDs for consistency
+      setStoreDatasets(storedDatasetsResponse.datasets.map((d: StoredDatasetConfig) => ({
+        id: d.id, // File-based ID
+        name: d.file_name.replace(/\.[^/.]+$/, ""),
+        fileName: d.file_name,
+        tableName: d.table_name || "",
+        fileType: d.file_type as "csv" | "xlsx" | "sqlite",
+        targetFeature: d.target_feature || "",
+        featuresCount: d.features_count || 0,
+        observationsCount: d.observations_count || 0,
+        features: d.features.map((f) => ({
+          id: crypto.randomUUID(),
+          name: f.name,
+          type: f.data_type as "str" | "int" | "float",
+          categorical: f.categorical,
+        })),
+      })));
+      
+      // Restore preprocessor and data manager configs from stored datasets
+      // This ensures save works correctly even if user never visits datasets page
+      for (const d of storedDatasetsResponse.datasets) {
+        // Restore preprocessor configs
+        if (d.preprocessors && d.preprocessors.length > 0) {
+          for (const p of d.preprocessors) {
+            useDataProcessingStepStore.getState().addPreprocessorConfig(
+              d.id,
+              p.type as "missing-data" | "scaling" | "encoding" | "feature-selection",
+              p.config as any
+            );
+          }
+        }
+        
+        // Restore data manager config
+        if (d.data_manager) {
+          useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, {
+            testSize: d.data_manager.test_size,
+            nSplits: d.data_manager.n_splits,
+            splitMethod: d.data_manager.split_method as "shuffle" | "kfold" | undefined,
+            groupColumn: d.data_manager.group_column,
+            stratified: d.data_manager.stratified,
+            randomState: d.data_manager.random_state,
+          });
+        }
+      }
       
       // Set default algorithms from all configured algorithms
       setDefaultAlgorithms(data.algorithms.map((a) => a.name));
@@ -212,8 +266,8 @@ export default function ExperimentsPage() {
                   ) : (
                     datasets.map((dataset) => (
                       <SelectItem
-                        key={dataset.name}
-                        value={dataset.name}
+                        key={dataset.filename}
+                        value={dataset.filename}
                         className="text-white hover:bg-[#363636]"
                       >
                         {dataset.filename}
