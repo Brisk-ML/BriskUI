@@ -323,10 +323,13 @@ export function WorkflowStep() {
         </h2>
 
         {steps.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px]">
-            <p className="text-white/60 text-lg sm:text-xl font-display">
+          <div className="flex flex-col items-center justify-center h-[200px] gap-2">
+            <p className="text-white/60 text-lg sm:text-xl font-display text-center">
               Click an evaluator above to add it to the workflow. Order added =
               order executed.
+            </p>
+            <p className="text-red-400/80 text-sm sm:text-base font-display">
+              At least one evaluator is required to continue
             </p>
           </div>
         ) : (

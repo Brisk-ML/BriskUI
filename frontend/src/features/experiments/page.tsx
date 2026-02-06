@@ -230,7 +230,7 @@ export default function ExperimentsPage() {
             {/* Name Input */}
             <div className="flex flex-col gap-1 sm:gap-2 w-full md:w-[180px] lg:w-[200px]">
               <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display">
-                Name
+                Name <span className="text-red-400">*</span>
               </Label>
               <Input
                 value={name}
@@ -243,7 +243,7 @@ export default function ExperimentsPage() {
             {/* Datasets Dropdown */}
             <div className="flex flex-col gap-1 sm:gap-2 w-full md:w-[180px] lg:w-[200px]">
               <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display">
-                Datasets
+                Dataset <span className="text-red-400">*</span>
               </Label>
               <HoverSelect
                 value={selectedDataset}
@@ -278,7 +278,7 @@ export default function ExperimentsPage() {
           {/* Algorithms Section */}
           <div className="mb-4 sm:mb-6">
             <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display block mb-1 sm:mb-2">
-              Algorithms
+              Algorithms <span className="text-red-400">*</span>
             </Label>
             <div className="bg-[#282828] border-2 border-[#404040] p-2 sm:p-3 lg:p-4 max-h-[200px] sm:max-h-[240px] lg:max-h-[284px] overflow-y-auto">
               {algorithms.length === 0 ? (
@@ -322,7 +322,7 @@ export default function ExperimentsPage() {
             </Button>
             <Button
               onClick={handleAddOrUpdateGroup}
-              disabled={!name.trim() || selectedAlgorithms.length === 0}
+              disabled={!name.trim() || !selectedDataset || selectedAlgorithms.length === 0}
               className="btn-add-hover bg-[#006b4c] text-white h-[40px] sm:h-[45px] lg:h-[50px] text-base sm:text-lg lg:text-xl xl:text-[28px] px-4 sm:px-6 lg:px-8 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] disabled:opacity-50"
             >
               {editingGroupName ? "Update Group" : "Add Group"}

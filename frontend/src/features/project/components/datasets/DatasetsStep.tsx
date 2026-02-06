@@ -152,7 +152,7 @@ export function DatasetsStep() {
             {/* File Name */}
             <div className="w-full lg:w-[200px]">
               <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
-                File Name
+                File Name <span className="text-red-400">*</span>
               </Label>
               <Input
                 value={form.fileName}
@@ -423,9 +423,12 @@ export function DatasetsStep() {
       {/* Datasets Bar */}
       <div className="bg-[#282828] border-2 border-[#363636] h-auto sm:h-[300px] overflow-hidden">
         {datasets.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] sm:h-full">
+          <div className="flex flex-col items-center justify-center h-[200px] sm:h-full gap-2">
             <p className="text-white text-[24px] sm:text-[28px] font-display">
               No datasets added
+            </p>
+            <p className="text-red-400/80 text-sm sm:text-base font-display">
+              At least one dataset is required to continue
             </p>
           </div>
         ) : (

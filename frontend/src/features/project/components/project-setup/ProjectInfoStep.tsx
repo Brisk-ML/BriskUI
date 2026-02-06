@@ -73,7 +73,7 @@ export function ProjectInfoStep() {
             {/* Name */}
             <div className="space-y-1 sm:space-y-1.5 lg:space-y-2">
               <Label className="text-white text-base sm:text-lg md:text-xl lg:text-[28px] font-normal font-display block">
-                Name
+                Name <span className="text-red-400">*</span>
               </Label>
               <Input
                 value={projectInfo.projectName}
@@ -116,7 +116,7 @@ export function ProjectInfoStep() {
             {/* Problem Type */}
             <div className="space-y-1 sm:space-y-1.5 lg:space-y-2">
               <Label className="text-white text-base sm:text-lg md:text-xl lg:text-[28px] font-normal font-display block">
-                Problem Type
+                Problem Type <span className="text-red-400">*</span>
               </Label>
               <HoverSelect
                 value={problemType}

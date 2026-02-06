@@ -70,12 +70,17 @@ export function AlgorithmWrappersList({ mode = "wizard" }: AlgorithmWrappersList
 
         <div className="p-2 overflow-y-auto h-[calc(100%-60px)] sm:h-[calc(100%-73px)]">
           {filteredWrappers.length === 0 ? (
-            <div className="flex items-center justify-center h-full px-4">
+            <div className="flex flex-col items-center justify-center h-full px-4 gap-2">
               <p className="text-white/60 text-[16px] sm:text-[20px] lg:text-[24px] font-display text-center">
                 {searchQuery
                   ? "No algorithms match your search"
                   : "No algorithms added yet. Select from the grid above to add."}
               </p>
+              {!searchQuery && mode === "wizard" && (
+                <p className="text-red-400/80 text-sm sm:text-base font-display">
+                  At least one algorithm is required to continue
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">

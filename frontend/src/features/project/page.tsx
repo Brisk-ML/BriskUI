@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   DEFAULT_SETUP_STEPS,
   ProgressTracker,
@@ -13,11 +13,27 @@ import { ReportStep } from "./components/report/ReportStep";
 import { SaveStep } from "./components/sync/SyncStep";
 import { WorkflowStep } from "./components/workflow/WorkflowStep";
 import { useProjectWizardStore } from "./stores/useProjectWizardStore";
+import { useDatasetsStepStore } from "./stores/useDatasetsStepStore";
+import { useAlgorithmsStepStore } from "./stores/useAlgorithmsStepStore";
+import { useExperimentsStepStore } from "./stores/useExperimentsStepStore";
+import { useWorkflowStepStore } from "./stores/useWorkflowStepStore";
 
 export default function ProjectWizardPage() {
-  const { currentStep, nextStep, prevStep, totalSteps, mode, loadFromBackend } =
+  const { currentStep, nextStep, prevStep, totalSteps, mode, loadFromBackend, projectInfo, problemType } =
     useProjectWizardStore();
   const { projectName, projectPath, projectDescription } = useProjectStore();
+  
+  // Subscribe to stores for reactive validation
+  const datasets = useDatasetsStepStore((s) => s.datasets);
+  const algorithms = useAlgorithmsStepStore((s) => s.wrappers);
+  const experimentGroups = useExperimentsStepStore((s) => s.groups);
+  const workflowSteps = useWorkflowStepStore((s) => s.steps);
+  
+  // Force re-render when validation-relevant data changes
+  const [, setRenderTrigger] = useState(0);
+  useEffect(() => {
+    setRenderTrigger((v) => v + 1);
+  }, [datasets.length, algorithms.length, experimentGroups.length, workflowSteps.length, projectInfo.projectName, problemType]);
 
   // Initialize wizard with existing project data (only in edit mode)
   useEffect(() => {
@@ -35,6 +51,38 @@ export default function ProjectWizardPage() {
       });
     }
   }, [mode, projectName, projectPath, projectDescription, loadFromBackend]);
+
+  // Step validation function
+  const isStepValid = (step: number): boolean => {
+    switch (step) {
+      case 1: // Project Setup - Name required (problemType always has a default value)
+        return projectInfo.projectName.trim() !== "";
+      
+      case 2: // Datasets - At least one dataset required
+        return datasets.length > 0;
+      
+      case 3: // Data Processing - No required fields
+        return true;
+      
+      case 4: // Algorithms - At least one algorithm required
+        return algorithms.length > 0;
+      
+      case 5: // Experiments - At least one experiment group required
+        return experimentGroups.length > 0;
+      
+      case 6: // Workflow - At least one evaluator required
+        return workflowSteps.length > 0;
+      
+      case 7: // Report - No required fields
+        return true;
+      
+      case 8: // Save - No validation needed
+        return true;
+      
+      default:
+        return true;
+    }
+  };
 
   // Render the step component based on current step number
   const renderStepContent = () => {
@@ -61,8 +109,9 @@ export default function ProjectWizardPage() {
   };
 
   // Navigation controls - can't go back from step 1, can't go forward from last step
+  // Also can't go forward if current step is invalid
   const canGoBack = currentStep > 1;
-  const canGoNext = currentStep < totalSteps;
+  const canGoNext = currentStep < totalSteps && isStepValid(currentStep);
 
   return (
     <div
@@ -105,18 +154,27 @@ export default function ProjectWizardPage() {
       )}
 
       {/* Right Arrow - fixed position, responsive size */}
-      {canGoNext && (
+      {/* Show when not last step, but visually indicate if disabled */}
+      {currentStep < totalSteps && (
         <button
           type="button"
-          onClick={nextStep}
-          className="group hidden lg:flex fixed right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 w-[80px] h-[80px] lg:w-[100px] lg:h-[100px] xl:w-[120px] xl:h-[120px] 2xl:w-[140px] 2xl:h-[140px] items-center justify-center z-10 cursor-pointer"
+          onClick={canGoNext ? nextStep : undefined}
+          disabled={!canGoNext}
+          className={`group hidden lg:flex fixed right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 w-[80px] h-[80px] lg:w-[100px] lg:h-[100px] xl:w-[120px] xl:h-[120px] 2xl:w-[140px] 2xl:h-[140px] items-center justify-center z-10 ${
+            canGoNext ? "cursor-pointer" : "cursor-not-allowed"
+          }`}
           aria-label="Next step"
+          aria-disabled={!canGoNext}
         >
-          <div className="pointer-events-none absolute inset-0 -right-8 lg:-right-10 xl:-right-12 2xl:-right-[76px] -top-4 lg:-top-6 xl:-top-8 2xl:-top-12 -bottom-4 lg:-bottom-6 xl:-bottom-8 2xl:-bottom-12 arrow-glow opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className={`pointer-events-none absolute inset-0 -right-8 lg:-right-10 xl:-right-12 2xl:-right-[76px] -top-4 lg:-top-6 xl:-top-8 2xl:-top-12 -bottom-4 lg:-bottom-6 xl:-bottom-8 2xl:-bottom-12 arrow-glow opacity-0 transition-opacity duration-300 ${canGoNext ? "group-hover:opacity-100" : ""}`} />
           <img
             src="/arrow-right.svg"
             alt="Next"
-            className="relative z-10 w-full h-full scale-[0.96] transition-transform duration-300 group-hover:scale-100"
+            className={`relative z-10 w-full h-full transition-all duration-300 ${
+              canGoNext 
+                ? "scale-[0.96] group-hover:scale-100 opacity-100" 
+                : "scale-[0.90] opacity-30"
+            }`}
           />
         </button>
       )}
@@ -138,11 +196,16 @@ export default function ProjectWizardPage() {
         ) : (
           <div />
         )}
-        {canGoNext ? (
+        {currentStep < totalSteps ? (
           <button
             type="button"
-            onClick={nextStep}
-            className="btn-add-hover pointer-events-auto flex items-center justify-center bg-[#006b4c] text-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg shadow-lg"
+            onClick={canGoNext ? nextStep : undefined}
+            disabled={!canGoNext}
+            className={`pointer-events-auto flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg shadow-lg transition-all ${
+              canGoNext 
+                ? "btn-add-hover bg-[#006b4c] text-white" 
+                : "bg-[#404040] text-white/50 cursor-not-allowed"
+            }`}
           >
             <span className="text-xs sm:text-sm font-medium mr-1.5 sm:mr-2">
               Next
@@ -150,7 +213,7 @@ export default function ProjectWizardPage() {
             <img
               src="/arrow-right.svg"
               alt="Next"
-              className="w-4 h-4 sm:w-5 sm:h-5"
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${!canGoNext ? "opacity-50" : ""}`}
             />
           </button>
         ) : (

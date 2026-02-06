@@ -45,7 +45,7 @@ export function ProgressTracker({
                       ${isPending ? "opacity-40" : ""}
                     `}
                   >
-                    {step.number}
+                    {!isCompleted && step.number}
                   </div>
 
                   {/* Label */}

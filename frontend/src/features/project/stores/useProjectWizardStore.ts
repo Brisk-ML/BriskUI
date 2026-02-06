@@ -4,6 +4,10 @@ import {
   updateProjectSettings,
   type ProjectSettings,
 } from "@/api";
+import { useDatasetsStepStore } from "./useDatasetsStepStore";
+import { useAlgorithmsStepStore } from "./useAlgorithmsStepStore";
+import { useExperimentsStepStore } from "./useExperimentsStepStore";
+import { useWorkflowStepStore } from "./useWorkflowStepStore";
 
 /**
  * Wizard mode determines whether we're creating a new project
@@ -59,6 +63,10 @@ export interface ProjectWizardState {
   createdDirectoryName: string | null;
   createdProjectPath: string | null;
 
+  // Validation
+  isStepValid: (step: number) => boolean;
+  canNavigateToNext: () => boolean;
+
   // Actions
   syncProjectInfo: () => Promise<void>;
   loadFromBackend: (settings: ProjectSettings) => void;
@@ -95,6 +103,46 @@ export const useProjectWizardStore = create<ProjectWizardState>((set, get) => ({
     if (currentStep > 1) {
       set({ currentStep: currentStep - 1 });
     }
+  },
+
+  // Step validation
+  isStepValid: (step: number) => {
+    const { projectInfo } = get();
+    
+    switch (step) {
+      case 1: // Project Setup - Name and Problem Type required (problemType always has a default value)
+        return projectInfo.projectName.trim() !== "";
+      
+      case 2: // Datasets - At least one dataset required
+        return useDatasetsStepStore.getState().datasets.length > 0;
+      
+      case 3: // Data Processing - No required fields
+        return true;
+      
+      case 4: // Algorithms - At least one algorithm required
+        return useAlgorithmsStepStore.getState().wrappers.length > 0;
+      
+      case 5: // Experiments - At least one experiment group required
+        // Note: Form validation (name, dataset, algorithms) is done when adding
+        return useExperimentsStepStore.getState().groups.length > 0;
+      
+      case 6: // Workflow - At least one evaluator required
+        return useWorkflowStepStore.getState().steps.length > 0;
+      
+      case 7: // Report - No required fields
+        return true;
+      
+      case 8: // Save - No validation needed
+        return true;
+      
+      default:
+        return true;
+    }
+  },
+
+  canNavigateToNext: () => {
+    const { currentStep, isStepValid } = get();
+    return isStepValid(currentStep);
   },
 
   // Wizard mode

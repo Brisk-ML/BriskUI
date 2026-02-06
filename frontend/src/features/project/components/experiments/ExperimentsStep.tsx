@@ -219,7 +219,7 @@ export function ExperimentsStep() {
           {/* Name */}
           <div>
             <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
-              Name
+              Name <span className="text-red-400">*</span>
             </Label>
             <Input
               value={groupName}
@@ -232,7 +232,7 @@ export function ExperimentsStep() {
           {/* Datasets */}
           <div>
             <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
-              Dataset
+              Dataset <span className="text-red-400">*</span>
             </Label>
             <HoverSelect
               value={selectedDatasetId}
@@ -267,7 +267,7 @@ export function ExperimentsStep() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display">
-              Algorithms
+              Algorithms <span className="text-red-400">*</span>
             </Label>
             {algorithms.length > 0 && (
               <div className="flex gap-2">
@@ -344,9 +344,12 @@ export function ExperimentsStep() {
         className={`${STYLES.bgCardAlt} border-2 ${STYLES.borderSecondary} h-[200px] sm:h-[250px] overflow-hidden`}
       >
         {groups.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex flex-col items-center justify-center h-full gap-2">
             <p className="text-white text-[24px] sm:text-[28px] font-display">
               No groups added
+            </p>
+            <p className="text-red-400/80 text-sm sm:text-base font-display">
+              At least one experiment group is required to continue
             </p>
           </div>
         ) : (
