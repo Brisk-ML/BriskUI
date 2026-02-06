@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChromePicker, type ColorResult } from "react-color";
-import { getPlotSettings, writeSettingsFile, getExperimentsData, type PlotSettingsData } from "@/api";
+import { AlertTriangle } from "lucide-react";
+import { getPlotSettings, writeSettingsFile, getExperimentsData, moveProject, type PlotSettingsData } from "@/api";
 import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
@@ -9,6 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -132,12 +134,19 @@ export function EditProjectModal() {
   const [plotSettings, setPlotSettings] = useState<PlotSettingsData>(DEFAULT_PLOT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Move confirmation state
+  const [showMoveConfirm, setShowMoveConfirm] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  const [moveSuccess, setMoveSuccess] = useState<{ newPath: string } | null>(null);
 
   useEffect(() => {
     if (editModal) {
       setLocalPath(projectPath);
       setLocalDescription(projectDescription);
       setSaveError(null);
+      setShowMoveConfirm(false);
+      setMoveSuccess(null);
       
       // Load plot settings
       getPlotSettings()
@@ -146,18 +155,19 @@ export function EditProjectModal() {
     }
   }, [editModal, projectPath, projectDescription]);
 
-  const handleSave = async () => {
+  // Check if path has changed
+  const pathHasChanged = localPath.trim() !== projectPath.trim() && localPath.trim() !== "";
+
+  const saveWithoutMove = async () => {
     setIsSaving(true);
     setSaveError(null);
     try {
-      // Save project info
-      await setProjectInfo({ path: localPath, description: localDescription });
+      // Save project info without changing path
+      await setProjectInfo({ path: projectPath, description: localDescription });
       
       // Save plot settings to settings.py
-      // We need to get the current experiment data to preserve it when writing settings.py
       const experimentsData = await getExperimentsData();
       
-      // Build experiment group configs
       const experimentGroups = experimentsData.experiment_groups.map((g) => ({
         name: g.name,
         description: g.description || "",
@@ -167,7 +177,6 @@ export function EditProjectModal() {
         use_default_data_manager: true,
       }));
       
-      // Write settings file with plot settings
       await writeSettingsFile({
         problem_type: projectType,
         default_algorithms: experimentsData.algorithms.map((a) => a.name),
@@ -192,14 +201,153 @@ export function EditProjectModal() {
     }
   };
 
+  const handleMoveProject = async () => {
+    setIsMoving(true);
+    setSaveError(null);
+    try {
+      // Move the project and update description in one operation
+      const moveResult = await moveProject({
+        new_path: localPath.trim(),
+        new_description: localDescription,  // Save description to new location
+      });
+      
+      if (moveResult.success) {
+        // Show success message with instructions
+        setMoveSuccess({ newPath: moveResult.new_path });
+        setShowMoveConfirm(false);
+      }
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to move project");
+      setShowMoveConfirm(false);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    // If path changed, show confirmation first
+    if (pathHasChanged) {
+      setShowMoveConfirm(true);
+      return;
+    }
+    
+    // Otherwise just save normally
+    await saveWithoutMove();
+  };
+
+  const handleMoveCancel = async () => {
+    // User chose not to move, save other changes without path
+    setShowMoveConfirm(false);
+    await saveWithoutMove();
+  };
+
   const updatePlotSetting = <K extends keyof PlotSettingsData>(key: K, value: PlotSettingsData[K]) => {
     setPlotSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
     <>
+      {/* Move Confirmation Dialog */}
+      <Dialog open={showMoveConfirm} onOpenChange={setShowMoveConfirm}>
+        <DialogContent
+          showCloseButton={false}
+          className={`max-w-[95vw] sm:max-w-[500px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 rounded-none`}
+        >
+          <DialogHeader className="mb-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-yellow-500" />
+              <DialogTitle className="text-xl font-bold text-[#ebebeb] font-display">
+                Move Project?
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-white/70 text-sm mt-2">
+              This will move the entire project directory to a new location.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mb-6">
+            <div className="p-3 bg-[#181818] border border-[#404040] rounded">
+              <p className="text-white/60 text-xs mb-1">From:</p>
+              <p className="text-white text-sm font-mono break-all">{projectPath}</p>
+            </div>
+            <div className="p-3 bg-[#181818] border border-[#404040] rounded">
+              <p className="text-white/60 text-xs mb-1">To:</p>
+              <p className="text-white text-sm font-mono break-all">{localPath}</p>
+            </div>
+            <p className="text-white/70 text-sm">
+              Parent directories will be created if they don't exist. After the move, the UI will need to be restarted from the new location.
+            </p>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={handleMoveCancel}
+              disabled={isMoving}
+              className={`btn-cancel-hover border ${STYLES.border} ${STYLES.bgDark} text-white h-9 text-sm`}
+            >
+              Don't Move (Save Other Changes)
+            </Button>
+            <Button
+              onClick={handleMoveProject}
+              disabled={isMoving}
+              className="btn-add-hover bg-yellow-600 hover:bg-yellow-700 text-white h-9 text-sm"
+            >
+              {isMoving ? "Moving..." : "Move Project"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move Success Dialog */}
+      <Dialog open={!!moveSuccess} onOpenChange={() => setMoveSuccess(null)}>
+        <DialogContent
+          showCloseButton={false}
+          className={`max-w-[95vw] sm:max-w-[550px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 rounded-none`}
+        >
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold text-green-400 font-display">
+              Project Moved Successfully
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mb-6">
+            <p className="text-white/90 text-sm">
+              Your project has been moved to:
+            </p>
+            <div className="p-3 bg-[#181818] border border-green-600/50 rounded">
+              <p className="text-green-400 text-sm font-mono break-all">{moveSuccess?.newPath}</p>
+            </div>
+            <div className="p-4 bg-yellow-600/20 border border-yellow-600/50 rounded">
+              <p className="text-yellow-200 text-sm font-medium mb-2">
+                Important: Restart Required
+              </p>
+              <p className="text-white/70 text-sm">
+                Please restart the UI by running:
+              </p>
+              <code className="block mt-2 p-2 bg-[#181818] text-green-400 text-xs font-mono rounded">
+                brisk ui {moveSuccess?.newPath}
+              </code>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setMoveSuccess(null);
+                closeEditModal();
+              }}
+              className="btn-add-hover bg-[#1175d5] text-white h-9 text-sm w-full sm:w-auto"
+            >
+              Got It
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Main Edit Project Dialog */}
       <Dialog
-        open={editModal}
+        open={editModal && !showMoveConfirm && !moveSuccess}
         onOpenChange={(open) => !open && closeEditModal()}
       >
         <DialogContent
@@ -225,6 +373,11 @@ export function EditProjectModal() {
                   placeholder="path/to/project"
                   className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base h-9 sm:h-10 placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50 rounded-none`}
                 />
+                {pathHasChanged && (
+                  <p className="text-yellow-500 text-xs mt-1">
+                    Changing the path will move the project directory to the new location
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

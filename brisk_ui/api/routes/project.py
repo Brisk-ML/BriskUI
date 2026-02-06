@@ -196,6 +196,98 @@ async def update_project_settings(
     )
 
 
+class MoveProjectRequest(pydantic.BaseModel):
+    """Request model for moving project to a new location."""
+    new_path: str
+    new_description: str | None = None  # Optionally update description during move
+
+
+class MoveProjectResponse(pydantic.BaseModel):
+    """Response model for project move operation."""
+    success: bool
+    old_path: str
+    new_path: str
+    message: str
+
+
+@router.post("/move", response_model=MoveProjectResponse)
+async def move_project(
+    request: fastapi.Request,
+    data: MoveProjectRequest,
+):
+    """Move the project directory to a new location.
+    
+    This will:
+    1. Create parent directories if they don't exist
+    2. Move the entire project directory to the new path
+    3. Update project.json with the new path
+    
+    After this operation, the backend needs to be restarted with the new path.
+    """
+    import pathlib
+    
+    settings = request.app.state.settings
+    old_path = settings.project_path
+    new_path = pathlib.Path(data.new_path)
+    
+    # Normalize paths for comparison
+    old_path_resolved = old_path.resolve()
+    new_path_resolved = new_path.resolve()
+    
+    # Check if paths are the same
+    if old_path_resolved == new_path_resolved:
+        return MoveProjectResponse(
+            success=True,
+            old_path=str(old_path),
+            new_path=str(new_path),
+            message="Paths are the same, no move needed",
+        )
+    
+    # Check if new path already exists
+    if new_path.exists():
+        raise fastapi.HTTPException(
+            status_code=400,
+            detail=f"Destination path already exists: {new_path}"
+        )
+    
+    # Check if new path is inside old path (would cause issues)
+    try:
+        new_path_resolved.relative_to(old_path_resolved)
+        raise fastapi.HTTPException(
+            status_code=400,
+            detail="Cannot move project into a subdirectory of itself"
+        )
+    except ValueError:
+        pass  # Not a subdirectory, which is what we want
+    
+    # Create parent directories if they don't exist
+    new_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        # Move the entire project directory
+        shutil.move(str(old_path), str(new_path))
+        
+        # Update project.json with new path and optionally description
+        config_service = ProjectConfigService(new_path)
+        config_data = config_service.read()
+        config_data["project_path"] = str(new_path)
+        if data.new_description is not None:
+            config_data["project_description"] = data.new_description
+        config_service.write(config_data)
+        
+        return MoveProjectResponse(
+            success=True,
+            old_path=str(old_path),
+            new_path=str(new_path),
+            message=f"Project moved successfully. Please restart the UI with the new path: {new_path}",
+        )
+    except OSError as e:
+        raise fastapi.HTTPException(
+            status_code=500,
+            detail=f"Failed to move project: {str(e)}"
+        )
+
+
 class DataManagerConfig(pydantic.BaseModel):
     """DataManager configuration model matching Python DataManager class."""
     test_size: float = 0.2

@@ -211,6 +211,26 @@ export async function deleteProject(): Promise<DeleteResponse> {
   return apiClient.delete<DeleteResponse>("/project");
 }
 
+export interface MoveProjectRequest {
+  new_path: string;
+  new_description?: string;  // Optionally update description during move
+}
+
+export interface MoveProjectResponse {
+  success: boolean;
+  old_path: string;
+  new_path: string;
+  message: string;
+}
+
+/**
+ * Move the project directory to a new location.
+ * After this operation, the backend needs to be restarted with the new path.
+ */
+export async function moveProject(data: MoveProjectRequest): Promise<MoveProjectResponse> {
+  return apiClient.post<MoveProjectResponse>("/project/move", data);
+}
+
 /**
  * Write the data.py file with BASE_DATA_MANAGER configuration.
  */
