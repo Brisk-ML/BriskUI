@@ -285,6 +285,28 @@ export async function getWorkflowData(): Promise<WorkflowDataResponse> {
   return apiClient.get<WorkflowDataResponse>("/project/workflow-data");
 }
 
+// ============================================================================
+// Plot Settings API
+// ============================================================================
+
+export interface PlotSettingsData {
+  file_format: string;
+  transparent: boolean;
+  width: number;
+  height: number;
+  dpi: number;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+}
+
+/**
+ * Get plot settings from settings.py file.
+ */
+export async function getPlotSettings(): Promise<PlotSettingsData> {
+  return apiClient.get<PlotSettingsData>("/project/plot-settings");
+}
+
 /**
  * Get project statistics (groups, experiments, datasets, algorithms, metrics).
  */

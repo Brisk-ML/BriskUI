@@ -963,6 +963,96 @@ async def get_workflow_data(settings: Settings = fastapi.Depends(get_settings)):
     )
 
 
+# --- Plot Settings API ---
+
+class PlotSettingsResponse(pydantic.BaseModel):
+    """Response model for plot settings."""
+    file_format: str = "png"
+    transparent: bool = False
+    width: int = 10
+    height: int = 8
+    dpi: int = 300
+    primary_color: str = "#1175D5"
+    secondary_color: str = "#00A878"
+    accent_color: str = "#DE6B48"
+
+
+def _parse_plot_settings_from_file(content: str) -> PlotSettingsResponse:
+    """Parse PlotSettings from settings.py content."""
+    result = PlotSettingsResponse()
+    
+    # Look for PlotSettings(...) instantiation
+    plot_settings_match = re.search(r'PlotSettings\s*\(([^)]*)\)', content, re.DOTALL)
+    if not plot_settings_match:
+        return result
+    
+    args_str = plot_settings_match.group(1)
+    
+    # Parse individual arguments
+    # file_format="png"
+    fmt_match = re.search(r'file_format\s*=\s*["\']([^"\']+)["\']', args_str)
+    if fmt_match:
+        result.file_format = fmt_match.group(1)
+    
+    # transparent=True/False
+    trans_match = re.search(r'transparent\s*=\s*(True|False)', args_str)
+    if trans_match:
+        result.transparent = trans_match.group(1) == "True"
+    
+    # width=10
+    width_match = re.search(r'width\s*=\s*(\d+)', args_str)
+    if width_match:
+        result.width = int(width_match.group(1))
+    
+    # height=8
+    height_match = re.search(r'height\s*=\s*(\d+)', args_str)
+    if height_match:
+        result.height = int(height_match.group(1))
+    
+    # dpi=300
+    dpi_match = re.search(r'dpi\s*=\s*(\d+)', args_str)
+    if dpi_match:
+        result.dpi = int(dpi_match.group(1))
+    
+    # primary_color="#..."
+    primary_match = re.search(r'primary_color\s*=\s*["\']([^"\']+)["\']', args_str)
+    if primary_match:
+        result.primary_color = primary_match.group(1)
+    
+    # secondary_color="#..."
+    secondary_match = re.search(r'secondary_color\s*=\s*["\']([^"\']+)["\']', args_str)
+    if secondary_match:
+        result.secondary_color = secondary_match.group(1)
+    
+    # accent_color="#..."
+    accent_match = re.search(r'accent_color\s*=\s*["\']([^"\']+)["\']', args_str)
+    if accent_match:
+        result.accent_color = accent_match.group(1)
+    
+    return result
+
+
+@router.get("/plot-settings", response_model=PlotSettingsResponse)
+async def get_plot_settings(settings: Settings = fastapi.Depends(get_settings)):
+    """Get plot settings from settings.py file.
+    
+    Returns default values if settings.py doesn't exist or doesn't have PlotSettings.
+    """
+    project_dir = settings.project_path
+    if not project_dir:
+        return PlotSettingsResponse()
+    
+    settings_file = project_dir / "settings.py"
+    if not settings_file.exists():
+        return PlotSettingsResponse()
+    
+    try:
+        content = settings_file.read_text()
+        return _parse_plot_settings_from_file(content)
+    except Exception:
+        return PlotSettingsResponse()
+
+
 class ExperimentGroupDataConfig(pydantic.BaseModel):
     """DataManager config for an experiment group (data_config parameter)."""
     test_size: float | None = None
