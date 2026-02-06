@@ -143,7 +143,7 @@ export function DatasetsStep() {
   return (
     <div className="w-full max-w-[1055px] px-4 xl:px-0 flex flex-col gap-4 sm:gap-6 mx-auto">
       {/* Add Datasets Form */}
-      <div className="bg-[#181818] border-2 border-[#404040] px-4 sm:px-6 py-4 max-h-[550px] overflow-y-auto">
+      <div className="bg-[#181818] border-2 border-[#404040] px-4 sm:px-6 py-4">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <h1 className="h1-underline text-2xl sm:text-3xl lg:text-4xl font-bold text-white font-display">
@@ -250,11 +250,11 @@ export function DatasetsStep() {
           </div>
 
           {/* Right Side - Features Table */}
-          <div className="border-2 border-[#404040] flex flex-col lg:flex-row h-auto lg:h-[351px]">
+          <div className="border-2 border-[#404040] flex flex-col lg:flex-row h-auto lg:h-[300px]">
             {/* Input Section */}
-            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 border-b-2 lg:border-b-0 lg:border-r-2 border-[#404040] bg-[#181818] lg:w-[320px]">
+            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3 border-b-2 lg:border-b-0 lg:border-r-2 border-[#404040] bg-[#181818] lg:w-[220px] flex flex-col">
               <div>
-                <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
+                <Label className="text-white text-base sm:text-lg font-display mb-1 block">
                   Feature Name
                 </Label>
                 <Input
@@ -264,18 +264,18 @@ export function DatasetsStep() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAddFeature();
                   }}
-                  className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60 w-full lg:w-[200px]"
+                  className="bg-[#282828] border-[#404040] text-white h-9 text-sm sm:text-base placeholder:text-white/60 w-full"
                 />
               </div>
               <div>
-                <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
+                <Label className="text-white text-base sm:text-lg font-display mb-1 block">
                   Data Type
                 </Label>
                 <Select
                   value={dataType}
                   onValueChange={(v: "str" | "int" | "float") => setDataType(v)}
                 >
-                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] w-full lg:w-[200px] text-base sm:text-[18px]">
+                  <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-9 w-full text-sm sm:text-base">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#282828] border-[#404040]">
@@ -291,7 +291,7 @@ export function DatasetsStep() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Checkbox
                   id="categorical"
                   checked={isCategorical}
@@ -300,21 +300,21 @@ export function DatasetsStep() {
                 />
                 <Label
                   htmlFor="categorical"
-                  className="text-white text-base sm:text-lg lg:text-[20px] font-display cursor-pointer"
+                  className="text-white text-sm sm:text-base font-display cursor-pointer"
                 >
                   Categorical
                 </Label>
               </div>
               <Button
                 onClick={handleAddFeature}
-                className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] p-3 sm:p-4 lg:p-5 flex items-center justify-center"
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-[#282828] hover:bg-[#1175d5]/20 hover:border-[#1175d5] text-white border border-[#404040] p-2 flex items-center justify-center transition-colors"
               >
                 <img src="/add.svg" alt="Add" className="w-full h-full" />
               </Button>
             </div>
 
             {/* Table Section */}
-            <div className="flex-1 bg-white overflow-hidden flex flex-col min-h-[280px] lg:min-h-0">
+            <div className="flex-1 bg-[#181818] overflow-hidden flex flex-col min-h-[240px] lg:min-h-0">
               {/* Table Header */}
               <div className="bg-[#121212] flex items-center px-4 h-[40px] border-b border-[#404040]">
                 <span className="flex-1 text-white text-lg sm:text-xl lg:text-[24px] font-display">
@@ -375,72 +375,72 @@ export function DatasetsStep() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 my-4 sm:my-6">
-          <div className="flex-1 h-[1px] bg-white/40" />
-          <span className="text-white text-[24px] sm:text-[28px] font-display">
-            or
-          </span>
-          <div className="flex-1 h-[1px] bg-white/40" />
-        </div>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleFileChange}
+          className="hidden"
+        />
 
-        {/* Upload Button */}
-        <div className="text-center space-y-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <Button
-            onClick={handleUploadClick}
-            disabled={isParsingFile}
-            className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-[50px] px-8 text-[24px] sm:text-[28px] font-display disabled:opacity-50"
-          >
-            {isParsingFile ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin mr-2 inline" />
-                Parsing...
-              </>
-            ) : (
-              "Upload"
-            )}
-          </Button>
-          <p className="text-white/60 text-[20px] sm:text-[24px] font-display">
-            CSV or XLSX files
-          </p>
-          {parseError && (
-            <p className="text-red-400 text-[18px] sm:text-[20px] font-display">
+        {/* Parse error message */}
+        {parseError && (
+          <div className="mt-4">
+            <p className="text-red-400 text-[16px] sm:text-[18px] font-display">
               {parseError}
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6 justify-end flex-wrap">
-          <button
-            type="button"
-            onClick={handleReset}
-            onMouseEnter={() => setResetHovered(true)}
-            onMouseLeave={() => setResetHovered(false)}
-            className="border-2 h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display rounded-md transition-colors"
-            style={{
-              borderColor: resetHovered ? "#FF3D29" : "#404040",
-              backgroundColor: resetHovered
-                ? "rgba(255, 61, 41, 0.2)"
-                : "#121212",
-              color: "white",
-            }}
-          >
-            {selectedDatasetId ? "Cancel Edit" : "Reset"}
-          </button>
-          <Button
-            onClick={handleAddOrUpdateDataset}
-            className="btn-add-hover bg-[#006b4c] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-xl sm:text-2xl lg:text-[28px] font-display border border-[#363636]"
-          >
-            {selectedDatasetId ? "Update Dataset" : "Add Dataset"}
-          </Button>
+        <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6 justify-between items-center flex-wrap">
+          {/* Left side - Upload button with note */}
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleUploadClick}
+              disabled={isParsingFile}
+              className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display disabled:opacity-50"
+            >
+              {isParsingFile ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2 inline" />
+                  Parsing...
+                </>
+              ) : (
+                "Upload"
+              )}
+            </Button>
+            <span className="text-white/60 text-sm sm:text-base lg:text-lg font-display">
+              CSV or XLSX
+            </span>
+          </div>
+
+          {/* Right side - Reset and Add buttons */}
+          <div className="flex gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={handleReset}
+              onMouseEnter={() => setResetHovered(true)}
+              onMouseLeave={() => setResetHovered(false)}
+              className="border-2 h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display rounded-md transition-colors"
+              style={{
+                borderColor: resetHovered ? "#FF3D29" : "#404040",
+                backgroundColor: resetHovered
+                  ? "rgba(255, 61, 41, 0.2)"
+                  : "#121212",
+                color: "white",
+              }}
+            >
+              {selectedDatasetId ? "Cancel" : "Reset"}
+            </button>
+            <Button
+              onClick={handleAddOrUpdateDataset}
+              className="btn-add-hover bg-[#006b4c] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display border border-[#363636]"
+            >
+              {selectedDatasetId ? "Update Dataset" : "Add Dataset"}
+            </Button>
+          </div>
         </div>
       </div>
 
