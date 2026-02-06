@@ -13,9 +13,10 @@ export interface Feature {
   id: string;
   name: string;
   type: FeatureDataType;
+  categorical: boolean;
 }
 
-export type DatasetFileType = "csv" | "parquet" | "json" | "xlsx";
+export type DatasetFileType = "csv" | "xlsx" | "sqlite";
 
 export interface Dataset {
   id: string;

@@ -1,9 +1,11 @@
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useRef, useState } from "react";
+import { parseDatasetFile } from "@/api";
 import { useDatasetsStepStore } from "@/features/project/stores/useDatasetsStepStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import {
@@ -13,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import type { DatasetFileType } from "@/types";
+import type { DatasetFileType, Feature } from "@/types";
 
 export function DatasetsStep() {
   const {
@@ -32,8 +34,11 @@ export function DatasetsStep() {
   // Local state for feature input
   const [featureName, setFeatureName] = useState("");
   const [dataType, setDataType] = useState<"str" | "int" | "float">("str");
+  const [isCategorical, setIsCategorical] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [resetHovered, setResetHovered] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,20 +46,50 @@ export function DatasetsStep() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const name = file.name;
-      const extension = name.split(".").pop()?.toLowerCase();
-      let newFileType: DatasetFileType = "csv";
-      if (extension === "parquet") newFileType = "parquet";
-      else if (extension === "json") newFileType = "json";
+    if (!file) return;
 
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    
+    // Only support CSV and XLSX for parsing
+    if (extension !== "csv" && extension !== "xlsx" && extension !== "xls") {
+      setParseError("Only CSV and XLSX files are supported for upload.");
+      return;
+    }
+
+    setIsParsingFile(true);
+    setParseError(null);
+
+    try {
+      const result = await parseDatasetFile(file);
+      
+      // Convert parsed features to our Feature type
+      const features: Feature[] = result.features.map((f) => ({
+        id: crypto.randomUUID(),
+        name: f.name,
+        type: f.data_type,
+        categorical: f.categorical,
+      }));
+
+      // Populate the form with parsed data (skip tableName - only for SQLite)
       setForm({
-        fileName: name,
-        tableName: name.replace(/\.[^/.]+$/, ""),
-        fileType: newFileType,
+        fileName: result.file_name,
+        tableName: "",
+        fileType: result.file_type as DatasetFileType,
+        targetFeature: result.target_feature,
+        featuresCount: result.feature_count.toString(),
+        observationsCount: result.row_count.toString(),
+        features,
       });
+    } catch (error) {
+      setParseError(error instanceof Error ? error.message : "Failed to parse file");
+    } finally {
+      setIsParsingFile(false);
+      // Reset the file input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -64,9 +99,11 @@ export function DatasetsStep() {
         id: crypto.randomUUID(),
         name: featureName,
         type: dataType,
+        categorical: isCategorical,
       });
       setFeatureName("");
       setDataType("str");
+      setIsCategorical(false);
     }
   };
 
@@ -78,7 +115,9 @@ export function DatasetsStep() {
     resetForm();
     setFeatureName("");
     setDataType("str");
+    setIsCategorical(false);
     setSearchQuery("");
+    setParseError(null);
   };
 
   const handleAddOrUpdateDataset = () => {
@@ -160,27 +199,14 @@ export function DatasetsStep() {
                   <SelectItem value="csv" className="text-white">
                     CSV
                   </SelectItem>
-                  <SelectItem value="parquet" className="text-white">
-                    Parquet
+                  <SelectItem value="xlsx" className="text-white">
+                    XLSX
                   </SelectItem>
-                  <SelectItem value="json" className="text-white">
-                    JSON
+                  <SelectItem value="sqlite" className="text-white">
+                    SQLite
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Group Column */}
-            <div className="w-full lg:w-[200px]">
-              <Label className="text-white text-lg sm:text-xl lg:text-[24px] font-display mb-2 block">
-                Group Column
-              </Label>
-              <Input
-                value={form.groupColumn}
-                onChange={(e) => setForm({ groupColumn: e.target.value })}
-                placeholder="Optional"
-                className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
-              />
             </div>
 
             {/* Target Feature */}
@@ -265,6 +291,20 @@ export function DatasetsStep() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="categorical"
+                  checked={isCategorical}
+                  onCheckedChange={(checked) => setIsCategorical(checked === true)}
+                  className="border-[#404040] data-[state=checked]:bg-[#006b4c] data-[state=checked]:border-[#00a878]"
+                />
+                <Label
+                  htmlFor="categorical"
+                  className="text-white text-base sm:text-lg lg:text-[20px] font-display cursor-pointer"
+                >
+                  Categorical
+                </Label>
+              </div>
               <Button
                 onClick={handleAddFeature}
                 className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] p-3 sm:p-4 lg:p-5 flex items-center justify-center"
@@ -282,6 +322,9 @@ export function DatasetsStep() {
                 </span>
                 <span className="w-16 sm:w-20 text-white text-lg sm:text-xl lg:text-[24px] font-display">
                   Type
+                </span>
+                <span className="w-12 sm:w-16 text-white text-lg sm:text-xl lg:text-[24px] font-display text-center">
+                  Cat
                 </span>
                 <div className="w-8" />
               </div>
@@ -301,6 +344,9 @@ export function DatasetsStep() {
                     </span>
                     <span className="w-16 sm:w-20 text-white text-base sm:text-[18px] font-display">
                       {feature.type}
+                    </span>
+                    <span className="w-12 sm:w-16 text-white text-base sm:text-[18px] font-display text-center">
+                      {feature.categorical ? "Yes" : "No"}
                     </span>
                     <button
                       type="button"
@@ -343,19 +389,32 @@ export function DatasetsStep() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.xlsx,.xls,.parquet,.json"
+            accept=".csv,.xlsx,.xls"
             onChange={handleFileChange}
             className="hidden"
           />
           <Button
             onClick={handleUploadClick}
-            className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-[50px] px-8 text-[24px] sm:text-[28px] font-display"
+            disabled={isParsingFile}
+            className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-[50px] px-8 text-[24px] sm:text-[28px] font-display disabled:opacity-50"
           >
-            Upload
+            {isParsingFile ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin mr-2 inline" />
+                Parsing...
+              </>
+            ) : (
+              "Upload"
+            )}
           </Button>
           <p className="text-white/60 text-[20px] sm:text-[24px] font-display">
             CSV or XLSX files
           </p>
+          {parseError && (
+            <p className="text-red-400 text-[18px] sm:text-[20px] font-display">
+              {parseError}
+            </p>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -417,9 +476,6 @@ export function DatasetsStep() {
                   <div className="text-white text-lg sm:text-[24px] font-display leading-normal min-h-[24px] sm:h-[30px] text-left">
                     {dataset.observationsCount || "0"} x{" "}
                     {dataset.featuresCount || "0"}
-                  </div>
-                  <div className="text-white text-lg sm:text-[24px] font-display leading-normal text-left">
-                    Group: {dataset.groupColumn || "None"}
                   </div>
                   <div className="text-white text-lg sm:text-[24px] font-display leading-normal text-left">
                     File Type: {dataset.fileType?.toUpperCase() || "CSV"}

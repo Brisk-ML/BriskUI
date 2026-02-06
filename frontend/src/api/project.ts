@@ -137,10 +137,18 @@ export interface PlotSettingsPayload {
   accent_color?: string;
 }
 
+export interface CategoricalFeaturesEntry {
+  dataset_file_name: string;
+  table_name?: string | null;
+  features: string[];
+}
+
 export interface WriteSettingsFileRequest {
   problem_type: "classification" | "regression";
   default_algorithms: string[];
   experiment_groups: ExperimentGroupConfig[];
+  /** Optional categorical features mapping per dataset. */
+  categorical_features?: CategoricalFeaturesEntry[];
   /** Optional; only non-default keys are written as PlotSettings(...). */
   plot_settings?: PlotSettingsPayload;
 }
@@ -352,4 +360,48 @@ export interface ExperimentsDataResponse {
  */
 export async function getExperimentsData(): Promise<ExperimentsDataResponse> {
   return apiClient.get<ExperimentsDataResponse>("/project/experiments-data");
+}
+
+// ============================================================================
+// Dataset File Parsing API
+// ============================================================================
+
+export interface FeatureInfo {
+  name: string;
+  data_type: "str" | "int" | "float";
+  categorical: boolean;
+}
+
+export interface ParsedDatasetInfo {
+  file_name: string;
+  file_type: "csv" | "xlsx";
+  features: FeatureInfo[];
+  target_feature: string;
+  feature_count: number;
+  row_count: number;
+}
+
+/**
+ * Parse a dataset file and return metadata without loading full file into memory.
+ * Supports CSV and XLSX files.
+ */
+export async function parseDatasetFile(file: File): Promise<ParsedDatasetInfo> {
+  const API_BASE = import.meta.env.DEV
+    ? "http://localhost:8050/api"
+    : "/api";
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/project/parse-dataset-file`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: "Failed to parse file" }));
+    throw new Error(errorData.detail || "Failed to parse file");
+  }
+
+  return response.json();
 }

@@ -21,6 +21,7 @@ export {
   getFileContent,
   downloadFile,
   getExperimentsData,
+  parseDatasetFile,
 } from "./project";
 export type {
   ProblemType,
@@ -41,6 +42,7 @@ export type {
   PreprocessorEntry,
   ExperimentGroupDataConfig,
   ExperimentGroupConfig,
+  CategoricalFeaturesEntry,
   WriteSettingsFileRequest,
   WriteSettingsFileResponse,
   WorkflowStepConfig,
@@ -54,6 +56,8 @@ export type {
   AlgorithmInfo,
   ExperimentGroupInfo,
   ExperimentsDataResponse,
+  FeatureInfo,
+  ParsedDatasetInfo,
 } from "./project";
 
 export { getServerStatus, validatePath, switchToEditMode } from "./status";

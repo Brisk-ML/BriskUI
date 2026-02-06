@@ -775,11 +775,19 @@ class PlotSettingsPayload(pydantic.BaseModel):
     accent_color: str | None = None
 
 
+class CategoricalFeaturesEntry(pydantic.BaseModel):
+    """Entry for categorical features mapping."""
+    dataset_file_name: str  # e.g., "data.csv" or "data.sqlite"
+    table_name: str | None = None  # for SQLite, the table name
+    features: list[str]  # list of categorical feature names
+
+
 class WriteSettingsFileRequest(pydantic.BaseModel):
     """Request model for writing settings.py file."""
     problem_type: str  # "classification" or "regression"
     default_algorithms: list[str]  # list of all algorithm names
     experiment_groups: list[ExperimentGroupConfig]
+    categorical_features: list[CategoricalFeaturesEntry] | None = None  # optional categorical features mapping
     plot_settings: PlotSettingsPayload | None = None
 
 
@@ -974,6 +982,23 @@ async def write_settings_file(
         plot_settings_var = f"\n    plot_settings = PlotSettings({kwargs_str})\n"
         config_plot_arg = ",\n        plot_settings=plot_settings"
 
+    # Build categorical_features dict if provided
+    categorical_features_arg = ""
+    if data.categorical_features:
+        cat_entries = []
+        for entry in data.categorical_features:
+            if not entry.features:  # skip if no features
+                continue
+            features_str = ", ".join(f'"{f}"' for f in entry.features)
+            if entry.table_name:
+                # SQLite: key is tuple (filename, table_name)
+                cat_entries.append(f'            ("{entry.dataset_file_name}", "{entry.table_name}"): [{features_str}]')
+            else:
+                # CSV/XLSX: key is just filename
+                cat_entries.append(f'            "{entry.dataset_file_name}": [{features_str}]')
+        if cat_entries:
+            categorical_features_arg = ",\n        categorical_features={\n" + ",\n".join(cat_entries) + "\n        }"
+
     file_content = f'''# settings.py
 from brisk.configuration.configuration import Configuration
 from brisk.configuration.configuration_manager import ConfigurationManager
@@ -982,7 +1007,7 @@ from brisk.configuration.configuration_manager import ConfigurationManager
 def create_configuration() -> ConfigurationManager:
 {plot_settings_var}    config = Configuration(
         default_workflow="{data.problem_type}",
-        default_algorithms=[{algorithms_str}]{config_plot_arg}
+        default_algorithms=[{algorithms_str}]{categorical_features_arg}{config_plot_arg}
     )
 
 {groups_code}
@@ -1612,4 +1637,202 @@ async def get_experiments_data(request: fastapi.Request):
         datasets=datasets,
         algorithms=algorithms,
         experiment_groups=experiment_groups,
+    )
+
+
+# ============================================================================
+# Dataset File Parsing API
+# ============================================================================
+
+class FeatureInfo(pydantic.BaseModel):
+    """Information about a single feature/column in a dataset."""
+    name: str
+    data_type: str  # "str", "int", or "float"
+    categorical: bool = False  # User will mark this manually
+
+
+class ParsedDatasetInfo(pydantic.BaseModel):
+    """Parsed metadata from a dataset file."""
+    file_name: str
+    file_type: str  # "csv" or "xlsx"
+    features: list[FeatureInfo]
+    target_feature: str  # Last column name
+    feature_count: int
+    row_count: int  # Estimated row count
+
+
+def _infer_dtype(values: list) -> str:
+    """Infer data type from a sample of values.
+    
+    Returns "int", "float", or "str".
+    """
+    # Filter out None/empty values
+    valid_values = [v for v in values if v is not None and str(v).strip() != ""]
+    
+    if not valid_values:
+        return "str"
+    
+    # Try int first
+    try:
+        for v in valid_values:
+            int(v)
+        return "int"
+    except (ValueError, TypeError):
+        pass
+    
+    # Try float
+    try:
+        for v in valid_values:
+            float(v)
+        return "float"
+    except (ValueError, TypeError):
+        pass
+    
+    return "str"
+
+
+@router.post("/parse-dataset-file", response_model=ParsedDatasetInfo)
+async def parse_dataset_file(
+    file: fastapi.UploadFile = fastapi.File(...),
+):
+    """Parse a dataset file and return metadata without loading full file into memory.
+    
+    Supports CSV and XLSX files. Reads only the first few rows to infer column types.
+    The target feature is assumed to be the last column.
+    """
+    if not file.filename:
+        raise fastapi.HTTPException(status_code=400, detail="No filename provided")
+    
+    file_ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
+    
+    if file_ext not in ("csv", "xlsx", "xls"):
+        raise fastapi.HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file_ext}. Only CSV and XLSX are supported."
+        )
+    
+    try:
+        if file_ext == "csv":
+            return await _parse_csv_file(file)
+        else:  # xlsx or xls
+            return await _parse_xlsx_file(file)
+    except Exception as e:
+        raise fastapi.HTTPException(
+            status_code=500,
+            detail=f"Failed to parse file: {str(e)}"
+        )
+
+
+async def _parse_csv_file(file: fastapi.UploadFile) -> ParsedDatasetInfo:
+    """Parse CSV file metadata without loading entire file."""
+    import csv
+    import io
+    
+    # Read the file content - we need to do this to process it
+    content = await file.read()
+    
+    # Now parse just the first few rows for column info
+    text_content = content.decode('utf-8')
+    reader = csv.reader(io.StringIO(text_content))
+    
+    # Get header
+    try:
+        header = next(reader)
+    except StopIteration:
+        raise fastapi.HTTPException(status_code=400, detail="Empty file")
+    
+    if not header:
+        raise fastapi.HTTPException(status_code=400, detail="No columns found")
+    
+    # Read sample rows for type inference (up to 100 rows) and count total rows
+    sample_rows = []
+    row_count = 0
+    for row in reader:
+        row_count += 1
+        if len(sample_rows) < 100:
+            sample_rows.append(row)
+    
+    # Infer types for each column
+    features: list[FeatureInfo] = []
+    for col_idx, col_name in enumerate(header):
+        col_values = [row[col_idx] for row in sample_rows if col_idx < len(row)]
+        dtype = _infer_dtype(col_values)
+        features.append(FeatureInfo(name=col_name.strip(), data_type=dtype))
+    
+    target_feature = header[-1].strip() if header else ""
+    
+    # feature_count excludes the target column
+    return ParsedDatasetInfo(
+        file_name=file.filename or "unknown.csv",
+        file_type="csv",
+        features=features,
+        target_feature=target_feature,
+        feature_count=len(features) - 1,
+        row_count=row_count,
+    )
+
+
+async def _parse_xlsx_file(file: fastapi.UploadFile) -> ParsedDatasetInfo:
+    """Parse XLSX file metadata without loading entire file."""
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        raise fastapi.HTTPException(
+            status_code=500,
+            detail="openpyxl is required for XLSX parsing. Install with: pip install openpyxl"
+        )
+    
+    import io
+    
+    # Read file content
+    content = await file.read()
+    
+    # Load workbook in read-only mode for memory efficiency
+    wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    ws = wb.active
+    
+    if ws is None:
+        raise fastapi.HTTPException(status_code=400, detail="No active worksheet found")
+    
+    # Get header row (first row)
+    header = []
+    first_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+    if first_row is None:
+        raise fastapi.HTTPException(status_code=400, detail="Empty file")
+    
+    header = [str(cell) if cell is not None else "" for cell in first_row]
+    header = [h.strip() for h in header if h.strip()]
+    
+    if not header:
+        raise fastapi.HTTPException(status_code=400, detail="No columns found")
+    
+    # Read sample rows for type inference (rows 2-101)
+    sample_rows = []
+    for row in ws.iter_rows(min_row=2, max_row=101, values_only=True):
+        sample_rows.append(list(row))
+    
+    # Count total rows (this requires iterating but in read-only mode it's efficient)
+    row_count = 0
+    for _ in ws.iter_rows(min_row=2, values_only=True):
+        row_count += 1
+    
+    wb.close()
+    
+    # Infer types for each column
+    features: list[FeatureInfo] = []
+    for col_idx, col_name in enumerate(header):
+        col_values = [row[col_idx] for row in sample_rows if col_idx < len(row)]
+        dtype = _infer_dtype(col_values)
+        features.append(FeatureInfo(name=col_name, data_type=dtype))
+    
+    target_feature = header[-1] if header else ""
+    
+    # feature_count excludes the target column
+    return ParsedDatasetInfo(
+        file_name=file.filename or "unknown.xlsx",
+        file_type="xlsx",
+        features=features,
+        target_feature=target_feature,
+        feature_count=len(features) - 1,
+        row_count=row_count,
     )

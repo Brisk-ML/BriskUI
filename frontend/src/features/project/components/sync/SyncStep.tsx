@@ -9,11 +9,13 @@ import {
   writeSettingsFile,
   writeWorkflowFile,
   switchToEditMode,
+  type CategoricalFeaturesEntry,
 } from "@/api";
 import { Button } from "@/shared/components/ui/button";
 import { useProjectWizardStore } from "@/features/project/stores/useProjectWizardStore";
 import { useDataProcessingStepStore } from "@/features/project/stores/useDataProcessingStepStore";
 import { useAlgorithmsStepStore } from "@/features/project/stores/useAlgorithmsStepStore";
+import { useDatasetsStepStore } from "@/features/project/stores/useDatasetsStepStore";
 import { useExperimentsStepStore } from "@/features/project/stores/useExperimentsStepStore";
 import { useWorkflowStepStore } from "@/features/project/stores/useWorkflowStepStore";
 import {
@@ -38,6 +40,7 @@ export function SaveStep() {
   } = useProjectWizardStore();
   const { baseDataManager, datasetConfigs } = useDataProcessingStepStore();
   const { wrappers } = useAlgorithmsStepStore();
+  const { datasets } = useDatasetsStepStore();
   const { groups: experimentGroups } = useExperimentsStepStore();
   const { steps: workflowSteps } = useWorkflowStepStore();
   const { plotSettings, colors } = useReportStepStore();
@@ -140,6 +143,15 @@ export function SaveStep() {
         if (accentColor && accentColor !== defs.accent_color) plotSettingsPayload.accent_color = accentColor;
         const hasPlotSettings = Object.keys(plotSettingsPayload).length > 0;
 
+        // Build categorical features mapping from datasets
+        const categoricalFeatures: CategoricalFeaturesEntry[] = datasets
+          .filter((d) => d.features.some((f) => f.categorical))
+          .map((d) => ({
+            dataset_file_name: d.fileName,
+            table_name: d.tableName || null,
+            features: d.features.filter((f) => f.categorical).map((f) => f.name),
+          }));
+
         await writeSettingsFile({
           problem_type: problemType,
           default_algorithms: wrappers.map((w) => w.name),
@@ -197,6 +209,7 @@ export function SaveStep() {
                   : undefined,
             };
           }),
+          categorical_features: categoricalFeatures.length > 0 ? categoricalFeatures : undefined,
           plot_settings: hasPlotSettings ? plotSettingsPayload : undefined,
         });
       }

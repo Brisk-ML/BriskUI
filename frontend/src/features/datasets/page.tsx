@@ -2,6 +2,7 @@ import { Search, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import {
@@ -38,18 +39,18 @@ export default function DatasetsPage() {
   const [fileName, setFileName] = useState("File name");
   const [tableName, setTableName] = useState("Optional");
   const [fileType, setFileType] = useState<string>("");
-  const [groupColumn, setGroupColumn] = useState("Optional");
   const [targetFeature, setTargetFeature] = useState("Name");
   const [featuresCount, setFeaturesCount] = useState("Ex. 10");
   const [observationsCount, setObservationsCount] = useState("Ex. 500");
 
   const [featureName, setFeatureName] = useState("");
   const [dataType, setDataType] = useState<string>("");
+  const [isCategorical, setIsCategorical] = useState(false);
   const [features, setFeatures] = useState<Feature[]>([
-    { id: "1", name: "Feature 1", type: "str" },
-    { id: "2", name: "Feature 2", type: "int" },
-    { id: "3", name: "Feature 3", type: "float" },
-    { id: "4", name: "Feature 4", type: "str" },
+    { id: "1", name: "Feature 1", type: "str", categorical: false },
+    { id: "2", name: "Feature 2", type: "int", categorical: false },
+    { id: "3", name: "Feature 3", type: "float", categorical: false },
+    { id: "4", name: "Feature 4", type: "str", categorical: true },
   ]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -63,10 +64,12 @@ export default function DatasetsPage() {
           id: crypto.randomUUID(),
           name: featureName,
           type: (dataType as Feature["type"]) || "str",
+          categorical: isCategorical,
         },
       ]);
       setFeatureName("");
       setDataType("");
+      setIsCategorical(false);
     }
   };
 
@@ -81,7 +84,6 @@ export default function DatasetsPage() {
       setFileName(dataset.fileName);
       setTableName(dataset.tableName || "Optional");
       setFileType(dataset.fileType);
-      setGroupColumn(dataset.groupColumn || "Optional");
       setTargetFeature(dataset.targetFeature || "Name");
       setFeaturesCount(dataset.featuresCount.toString());
       setObservationsCount(dataset.observationsCount.toString());
@@ -152,26 +154,14 @@ export default function DatasetsPage() {
                       <SelectItem value="csv" className="text-white">
                         CSV
                       </SelectItem>
-                      <SelectItem value="parquet" className="text-white">
-                        Parquet
+                      <SelectItem value="xlsx" className="text-white">
+                        XLSX
                       </SelectItem>
-                      <SelectItem value="json" className="text-white">
-                        JSON
+                      <SelectItem value="sqlite" className="text-white">
+                        SQLite
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                {/* Group Column */}
-                <div>
-                  <Label className="text-white text-sm sm:text-base lg:text-lg font-display mb-1 sm:mb-2 block">
-                    Group Column
-                  </Label>
-                  <Input
-                    value={groupColumn}
-                    onChange={(e) => setGroupColumn(e.target.value)}
-                    className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60"
-                  />
                 </div>
 
                 {/* Target Feature */}
@@ -248,6 +238,20 @@ export default function DatasetsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="categorical-standalone"
+                      checked={isCategorical}
+                      onCheckedChange={(checked) => setIsCategorical(checked === true)}
+                      className="border-[#404040] data-[state=checked]:bg-[#006b4c] data-[state=checked]:border-[#00a878]"
+                    />
+                    <Label
+                      htmlFor="categorical-standalone"
+                      className="text-white text-sm sm:text-base font-display cursor-pointer"
+                    >
+                      Categorical
+                    </Label>
+                  </div>
                   <Button
                     onClick={handleAddFeature}
                     className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-[#181818] hover:bg-[#282828] text-white p-2"
@@ -265,6 +269,9 @@ export default function DatasetsPage() {
                     </span>
                     <span className="w-12 sm:w-16 text-white text-sm sm:text-base lg:text-lg font-display">
                       Type
+                    </span>
+                    <span className="w-10 sm:w-12 text-white text-sm sm:text-base lg:text-lg font-display text-center">
+                      Cat
                     </span>
                     <div className="w-6 sm:w-8" />
                   </div>
@@ -284,6 +291,9 @@ export default function DatasetsPage() {
                         </span>
                         <span className="w-12 sm:w-16 text-white text-sm sm:text-base font-display">
                           {feature.type}
+                        </span>
+                        <span className="w-10 sm:w-12 text-white text-sm sm:text-base font-display text-center">
+                          {feature.categorical ? "Yes" : "No"}
                         </span>
                         <button
                           type="button"
@@ -394,9 +404,6 @@ export default function DatasetsPage() {
                         {dataset.observationsCount} x {dataset.featuresCount}
                       </div>
                       <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                        Group: {dataset.groupColumn || "None"}
-                      </div>
-                      <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
                         File Type: {dataset.fileType?.toUpperCase() || "CSV"}
                       </div>
                     </button>
@@ -414,9 +421,6 @@ export default function DatasetsPage() {
                       518 x 24
                     </div>
                     <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      Group: None
-                    </div>
-                    <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
                       File Type: CSV
                     </div>
                   </div>
@@ -429,10 +433,7 @@ export default function DatasetsPage() {
                       447 x 10
                     </div>
                     <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      Group: ID
-                    </div>
-                    <div className="text-white/70 text-sm sm:text-base lg:text-lg font-display">
-                      File Type: SQL
+                      File Type: XLSX
                     </div>
                   </div>
                 </>

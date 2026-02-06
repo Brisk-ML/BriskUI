@@ -127,6 +127,17 @@ export interface DataProcessingStepState {
   // Get preprocessors configured for a dataset
   getDatasetPreprocessors: (datasetId: string) => PreprocessorType[];
 
+  // Get specific preprocessor config for a dataset
+  getPreprocessorConfig: (
+    datasetId: string,
+    type: PreprocessorType,
+  ) =>
+    | MissingDataPreprocessorConfig
+    | ScalingPreprocessorConfig
+    | EncodingPreprocessorConfig
+    | FeatureSelectionPreprocessorConfig
+    | null;
+
   // Reset store
   reset: () => void;
 }
@@ -262,6 +273,21 @@ export const useDataProcessingStepStore = create<DataProcessingStepState>(
     getDatasetPreprocessors: (datasetId) => {
       const { datasetConfigs } = get();
       return datasetConfigs[datasetId]?.configuredPreprocessors || [];
+    },
+
+    getPreprocessorConfig: (datasetId, type) => {
+      const { datasetConfigs } = get();
+      const config = datasetConfigs[datasetId];
+      if (!config) return null;
+
+      const preprocessorKey = {
+        "missing-data": "missingData",
+        scaling: "scaling",
+        encoding: "encoding",
+        "feature-selection": "featureSelection",
+      }[type] as keyof DatasetPreprocessors;
+
+      return config.preprocessors[preprocessorKey] || null;
     },
 
     reset: () => {
