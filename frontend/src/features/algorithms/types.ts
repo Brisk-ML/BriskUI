@@ -3,8 +3,14 @@
 // Hyperparameter value can be string, number, boolean, or null
 export type HyperparameterValue = string | number | boolean | null;
 
-// Record of hyperparameter name to value
+// Record of hyperparameter name to single value (for default_params)
 export type HyperparameterValues = Record<string, HyperparameterValue>;
+
+// Array of values for hyperparameter search space
+export type HyperparameterArrayValue = (string | number | boolean)[];
+
+// Record of hyperparameter name to array of values (for search space)
+export type HyperparameterSearchSpace = Record<string, HyperparameterArrayValue>;
 
 // Option for select-type hyperparameter fields
 export interface HyperparameterOption {
@@ -18,9 +24,9 @@ export interface AlgorithmWrapper {
   name: string; // Short name (e.g., "ridge")
   displayName: string; // Display name (e.g., "Ridge Regression")
   className: string; // Python class name (e.g., "Ridge")
-  useDefaults: boolean; // Toggle between defaults and custom hyperparameters
-  hyperparameters: HyperparameterValues; // Custom hyperparameter values
-  hasHyperparameterGrid: boolean; // Whether hyperparameter grid is configured
+  useDefaults: boolean; // Whether using catalog defaults for default_params
+  defaultParams: HyperparameterValues; // Default parameter values (single values)
+  searchSpace: HyperparameterSearchSpace; // Search space for hyperparameter tuning (arrays)
 }
 
 export interface HyperparameterField {

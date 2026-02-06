@@ -73,6 +73,7 @@ export interface AlgorithmWrapperConfig {
   class_name: string;
   class_module: string;
   default_params: Record<string, string | number | boolean | null>;
+  search_space: Record<string, (string | number | boolean)[]>;
   use_defaults: boolean;
 }
 

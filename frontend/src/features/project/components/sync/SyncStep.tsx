@@ -77,6 +77,7 @@ export function SaveStep() {
             class_name: w.className,
             class_module: w.classModule,
             default_params: w.defaultParams as Record<string, string | number | boolean | null>,
+            search_space: w.searchSpace || {},
             use_defaults: w.useDefaults,
           })),
         });

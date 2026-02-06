@@ -25,6 +25,14 @@ function formatHyperparameterValue(value: unknown): string {
   return String(value);
 }
 
+function formatSearchSpaceValue(values: unknown[]): string {
+  if (!values || values.length === 0) return "-";
+  return values.map((v) => {
+    if (typeof v === "boolean") return v ? "True" : "False";
+    return String(v);
+  }).join(", ");
+}
+
 export function ViewAlgorithmModal({
   open,
   onClose,
@@ -34,6 +42,9 @@ export function ViewAlgorithmModal({
   if (!wrapper) return null;
 
   const hyperparameterEntries = Object.entries(wrapper.defaultParams);
+  const searchSpaceEntries = Object.entries(wrapper.searchSpace || {}).filter(
+    ([, values]) => values && values.length > 0
+  );
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -83,10 +94,18 @@ export function ViewAlgorithmModal({
             </div>
             <div>
               <span className="text-white/60 text-xs sm:text-sm font-display">
-                Custom Parameters
+                Custom Defaults
               </span>
               <p className="text-white text-sm sm:text-base font-display">
-                {!wrapper.useDefaults && Object.keys(wrapper.defaultParams).length > 0 ? "Yes" : "No"}
+                {!wrapper.useDefaults ? "Yes" : "No"}
+              </p>
+            </div>
+            <div>
+              <span className="text-white/60 text-xs sm:text-sm font-display">
+                Search Space Configured
+              </span>
+              <p className="text-white text-sm sm:text-base font-display">
+                {searchSpaceEntries.length > 0 ? "Yes" : "No"}
               </p>
             </div>
           </div>
@@ -96,10 +115,10 @@ export function ViewAlgorithmModal({
               <div className="h-[1px] bg-white/40" />
               <div>
                 <span className="text-white/60 text-[12px] sm:text-sm font-display block mb-2">
-                  Parameters
+                  Default Parameters
                 </span>
                 <div
-                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 rounded space-y-2 sm:space-y-2.5 max-h-[200px] sm:max-h-[240px] lg:max-h-[280px] overflow-y-auto min-h-[120px] sm:min-h-[140px]`}
+                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 rounded space-y-2 sm:space-y-2.5 max-h-[150px] sm:max-h-[180px] overflow-y-auto`}
                 >
                   <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                     {hyperparameterEntries.map(([key, value]) => (
@@ -112,6 +131,36 @@ export function ViewAlgorithmModal({
                         </span>
                         <span className="text-white text-[12px] sm:text-sm font-display whitespace-nowrap text-right">
                           {formatHyperparameterValue(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {searchSpaceEntries.length > 0 && (
+            <>
+              <div className="h-[1px] bg-white/40" />
+              <div>
+                <span className="text-white/60 text-[12px] sm:text-sm font-display block mb-2">
+                  Search Space
+                </span>
+                <div
+                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 rounded space-y-2 sm:space-y-2.5 max-h-[150px] sm:max-h-[180px] overflow-y-auto`}
+                >
+                  <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
+                    {searchSpaceEntries.map(([key, values]) => (
+                      <div
+                        key={key}
+                        className="flex flex-nowrap justify-between items-center gap-4"
+                      >
+                        <span className="text-white/80 capitalize text-[12px] sm:text-sm font-display whitespace-nowrap shrink-0">
+                          {key.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-white text-[12px] sm:text-sm font-display text-right">
+                          [{formatSearchSpaceValue(values)}]
                         </span>
                       </div>
                     ))}

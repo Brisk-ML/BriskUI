@@ -301,6 +301,7 @@ class AlgorithmWrapperConfig(pydantic.BaseModel):
     class_name: str  # Python class name (e.g., "Ridge")
     class_module: str  # Python module (e.g., "sklearn.linear_model")
     default_params: dict[str, str | int | float | bool | None] = {}
+    search_space: dict[str, list[str | int | float | bool]] = {}  # Hyperparameter search space (arrays)
     use_defaults: bool = True
 
 
@@ -374,6 +375,12 @@ async def write_algorithms_file(
             params_dict_str = _format_params_dict(wrapper.default_params)
             params_parts.append(f'        default_params={params_dict_str}')
         
+        # Add search_space if there are any hyperparameter search values
+        if wrapper.search_space:
+            search_space_str = _format_search_space_dict(wrapper.search_space)
+            if search_space_str != "{}":
+                params_parts.append(f'        hyperparameters={search_space_str}')
+        
         params_str = ",\n".join(params_parts)
         wrapper_strs.append(f"    AlgorithmWrapper(\n{params_str},\n    )")
     
@@ -417,6 +424,39 @@ def _format_params_dict(params: dict[str, str | int | float | bool | None]) -> s
             parts.append(f'"{key}": None')
         else:
             parts.append(f'"{key}": {value}')
+    
+    return "{" + ", ".join(parts) + "}"
+
+
+def _format_search_space_dict(search_space: dict[str, list[str | int | float | bool]]) -> str:
+    """Format a search space dict as a Python dict literal with lists.
+    
+    The search space values are arrays that define the hyperparameter search space
+    for sklearn GridSearchCV or similar hyperparameter tuning.
+    """
+    if not search_space:
+        return "{}"
+    
+    parts = []
+    for key, values in search_space.items():
+        if not values:  # Skip empty lists
+            continue
+        
+        # Format the list values
+        formatted_values = []
+        for v in values:
+            if isinstance(v, str):
+                formatted_values.append(f'"{v}"')
+            elif isinstance(v, bool):
+                formatted_values.append(str(v))
+            else:
+                formatted_values.append(str(v))
+        
+        list_str = "[" + ", ".join(formatted_values) + "]"
+        parts.append(f'"{key}": {list_str}')
+    
+    if not parts:
+        return "{}"
     
     return "{" + ", ".join(parts) + "}"
 

@@ -38,11 +38,11 @@ export function HyperparameterForm({
       case "text":
       case "number":
         return (
-          <div key={field.name} className="w-full sm:w-[220px] lg:w-[240px]">
-            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block whitespace-nowrap">
+          <div key={field.name} className="w-full">
+            <Label className="text-white text-[16px] sm:text-[18px] lg:text-[20px] font-display mb-2 block">
               {field.label}
               {defaultLabel && (
-                <span className="text-white/60 font-normal text-sm ml-1">
+                <span className="text-white/60 font-normal text-sm ml-2">
                   {defaultLabel}
                 </span>
               )}
@@ -84,11 +84,11 @@ export function HyperparameterForm({
 
       case "select":
         return (
-          <div key={field.name} className="w-full sm:w-[220px] lg:w-[240px]">
-            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block whitespace-nowrap">
+          <div key={field.name} className="w-full">
+            <Label className="text-white text-[16px] sm:text-[18px] lg:text-[20px] font-display mb-2 block">
               {field.label}
               {defaultLabel && (
-                <span className="text-white/60 font-normal text-sm ml-1">
+                <span className="text-white/60 font-normal text-sm ml-2">
                   {defaultLabel}
                 </span>
               )}
@@ -105,7 +105,7 @@ export function HyperparameterForm({
                 }
               }}
             >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[140px] lg:w-[150px] text-[16px] sm:text-[18px]">
+              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[200px] text-[16px] sm:text-[18px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#282828] border-[#404040]">
@@ -130,11 +130,11 @@ export function HyperparameterForm({
 
       case "boolean":
         return (
-          <div key={field.name} className="w-full sm:w-[220px] lg:w-[240px]">
-            <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block whitespace-nowrap">
+          <div key={field.name} className="w-full">
+            <Label className="text-white text-[16px] sm:text-[18px] lg:text-[20px] font-display mb-2 block">
               {field.label}
               {defaultLabel && (
-                <span className="text-white/60 font-normal text-sm ml-1">
+                <span className="text-white/60 font-normal text-sm ml-2">
                   {defaultLabel}
                 </span>
               )}
@@ -143,7 +143,7 @@ export function HyperparameterForm({
               value={String(value)}
               onValueChange={(val) => onChange(field.name, val === "true")}
             >
-              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[140px] lg:w-[150px] text-[16px] sm:text-[18px]">
+              <SelectTrigger className="bg-[#282828] border-[#404040] text-white h-[36px] sm:h-[40px] w-full sm:w-[200px] text-[16px] sm:text-[18px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#282828] border-[#404040]">
@@ -169,7 +169,7 @@ export function HyperparameterForm({
   };
 
   return (
-    <div className="flex flex-wrap gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-3 sm:gap-y-4">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {fields.map(renderField)}
     </div>
   );

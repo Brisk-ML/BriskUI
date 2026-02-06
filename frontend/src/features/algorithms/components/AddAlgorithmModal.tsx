@@ -19,14 +19,19 @@ import type {
   AlgorithmCatalogItem,
   HyperparameterValue,
   HyperparameterValues,
+  HyperparameterSearchSpace,
+  HyperparameterArrayValue,
 } from "../types";
 import {
   getDefaultHyperparameters,
   validateHyperparameters,
 } from "../utils/hyperparameters";
 import { HyperparameterForm } from "./HyperparameterForm";
+import { SearchSpaceForm } from "./SearchSpaceForm";
 
 export type AddAlgorithmMode = "wizard" | "standalone";
+
+type TabType = "custom" | "search";
 
 interface AddAlgorithmModalProps {
   open: boolean;
@@ -54,27 +59,27 @@ export function AddAlgorithmModal({
 
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [useDefaults, setUseDefaults] = useState(true);
-  const [hyperparameters, setHyperparameters] = useState<HyperparameterValues>(
-    {},
-  );
+  const [activeTab, setActiveTab] = useState<TabType>("defaults");
+  const [defaultParams, setDefaultParams] = useState<HyperparameterValues>({});
+  const [searchSpace, setSearchSpace] = useState<HyperparameterSearchSpace>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open && algorithm) {
       setName(algorithm.shortName);
       setDisplayName(algorithm.name);
-      setUseDefaults(true);
-      setHyperparameters(getDefaultHyperparameters(algorithm.id));
+      setActiveTab("custom");
+      setDefaultParams(getDefaultHyperparameters(algorithm.id));
+      setSearchSpace({});
       setErrors({});
     }
   }, [open, algorithm]);
 
-  const handleHyperparameterChange = (
+  const handleDefaultParamChange = (
     fieldName: string,
     value: HyperparameterValue,
   ) => {
-    setHyperparameters((prev) => ({
+    setDefaultParams((prev) => ({
       ...prev,
       [fieldName]: value,
     }));
@@ -85,6 +90,16 @@ export function AddAlgorithmModal({
         return newErrors;
       });
     }
+  };
+
+  const handleSearchSpaceChange = (
+    fieldName: string,
+    value: HyperparameterArrayValue,
+  ) => {
+    setSearchSpace((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
   };
 
   const handleAdd = () => {
@@ -102,11 +117,10 @@ export function AddAlgorithmModal({
       newErrors.displayName = "Display Name is required";
     }
 
-    if (!useDefaults) {
-      const validation = validateHyperparameters(algorithm.id, hyperparameters);
-      if (!validation.valid) {
-        Object.assign(newErrors, validation.errors);
-      }
+    // Validate default params
+    const validation = validateHyperparameters(algorithm.id, defaultParams);
+    if (!validation.valid) {
+      Object.assign(newErrors, validation.errors);
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -117,6 +131,18 @@ export function AddAlgorithmModal({
     // Get the class module from the mapping
     const classModule = SKLEARN_CLASS_MODULES[algorithm.className] || "sklearn";
 
+    // Check if user modified defaults (compare with catalog defaults)
+    const catalogDefaults = getDefaultHyperparameters(algorithm.id);
+    const useDefaults = JSON.stringify(defaultParams) === JSON.stringify(catalogDefaults);
+
+    // Filter out empty search space entries
+    const filteredSearchSpace: HyperparameterSearchSpace = {};
+    for (const [key, val] of Object.entries(searchSpace)) {
+      if (val && val.length > 0) {
+        filteredSearchSpace[key] = val;
+      }
+    }
+
     const result = addWrapper({
       algorithmId: algorithm.id,
       name: trimmedName,
@@ -124,9 +150,8 @@ export function AddAlgorithmModal({
       className: algorithm.className,
       classModule,
       useDefaults,
-      defaultParams: useDefaults
-        ? getDefaultHyperparameters(algorithm.id)
-        : hyperparameters,
+      defaultParams,
+      searchSpace: filteredSearchSpace,
     });
 
     if (!result.success) {
@@ -143,7 +168,7 @@ export function AddAlgorithmModal({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className={`max-w-[95vw] sm:max-w-[500px] lg:max-w-[550px] border-2 ${STYLES.border} ${STYLES.bgCard} p-0 gap-0`}
+        className={`max-w-[95vw] sm:max-w-[550px] lg:max-w-[600px] border-2 ${STYLES.border} ${STYLES.bgCard} p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col`}
       >
         <button
           type="button"
@@ -153,13 +178,13 @@ export function AddAlgorithmModal({
           <X className="size-5 sm:size-6" />
         </button>
 
-        <div className="px-3 sm:px-[18px] pt-[8px] pb-3 sm:pb-4">
+        <div className="px-3 sm:px-[18px] pt-[8px] pb-3 sm:pb-4 shrink-0">
           <DialogTitle className="h1-underline text-[24px] sm:text-[30px] lg:text-[36px] font-bold text-[#ebebeb] font-display">
             Add {algorithm.name}
           </DialogTitle>
         </div>
 
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3 sm:space-y-4">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3 sm:space-y-4 overflow-y-auto flex-1">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
               <Label className="text-white text-[18px] sm:text-[22px] lg:text-[24px] font-display mb-2 block">
@@ -215,25 +240,26 @@ export function AddAlgorithmModal({
 
           <div className="h-[1px] bg-white/40" />
 
+          {/* Tab buttons */}
           <div className="flex items-center gap-1 sm:gap-2 border border-[#404040] p-1 sm:p-2">
             <button
               type="button"
-              onClick={() => setUseDefaults(true)}
+              onClick={() => setActiveTab("custom")}
               className={cn(
-                "flex-1 h-[32px] sm:h-[35px] lg:h-[38px] flex items-center justify-center text-[13px] sm:text-[16px] lg:text-[18px] font-display text-white transition-colors shrink-0 px-2",
-                useDefaults
+                "flex-1 h-[32px] sm:h-[35px] lg:h-[38px] flex items-center justify-center text-[12px] sm:text-[14px] lg:text-[16px] font-display text-white transition-colors shrink-0 px-2",
+                activeTab === "custom"
                   ? `${STYLES.bgDark} ring-2 ring-white ring-offset-1 sm:ring-offset-2 ${STYLES.ringOffset}`
                   : STYLES.bgCardAlt,
               )}
             >
-              Defaults
+              Default Values
             </button>
             <button
               type="button"
-              onClick={() => setUseDefaults(false)}
+              onClick={() => setActiveTab("search")}
               className={cn(
-                "flex-[2] h-[32px] sm:h-[35px] lg:h-[38px] flex items-center justify-center text-[13px] sm:text-[16px] lg:text-[18px] font-display text-white transition-colors shrink-0 px-2",
-                !useDefaults
+                "flex-1 h-[32px] sm:h-[35px] lg:h-[38px] flex items-center justify-center text-[12px] sm:text-[14px] lg:text-[16px] font-display text-white transition-colors shrink-0 px-2",
+                activeTab === "search"
                   ? `${STYLES.bgDark} ring-2 ring-white ring-offset-1 sm:ring-offset-2 ${STYLES.ringOffset}`
                   : STYLES.bgCardAlt,
               )}
@@ -242,55 +268,50 @@ export function AddAlgorithmModal({
             </button>
           </div>
 
-          {useDefaults && algorithm.hyperparameters.length > 0 && (
+          {/* Custom defaults tab - editable single values */}
+          {activeTab === "custom" && (
             <div className="pt-2 sm:pt-3">
-              <p className="text-white/60 text-[12px] sm:text-sm font-display mb-2">
-                Default values:
+              <p className="text-white/60 text-[12px] sm:text-sm font-display mb-3">
+                Set custom default values for the algorithm:
               </p>
-              <div className="bg-[#121212] border border-[#404040] p-2 sm:p-3 rounded space-y-1.5 max-h-[120px] sm:max-h-[140px] lg:max-h-[160px] overflow-y-auto text-[12px] sm:text-sm">
-                {algorithm.hyperparameters.map((field) => {
-                  const def =
-                    getDefaultHyperparameters(algorithm.id)[field.name] ??
-                    field.defaultValue;
-                  const display =
-                    def !== null && def !== undefined && def !== ""
-                      ? typeof def === "boolean"
-                        ? def
-                          ? "True"
-                          : "False"
-                        : String(def)
-                      : (field.placeholder ?? "—");
-                  return (
-                    <div
-                      key={field.name}
-                      className="flex flex-nowrap justify-between items-center gap-4 text-[12px] sm:text-sm font-display"
-                    >
-                      <span className="text-white/80 capitalize whitespace-nowrap shrink-0">
-                        {field.label.replace(/_/g, " ")}
-                      </span>
-                      <span className="text-white truncate text-right min-w-0">
-                        {display}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {algorithm.hyperparameters.length > 0 ? (
+                <HyperparameterForm
+                  fields={algorithm.hyperparameters}
+                  values={defaultParams}
+                  onChange={handleDefaultParamChange}
+                  errors={errors}
+                />
+              ) : (
+                <p className="text-white/60 text-sm font-display">
+                  This algorithm has no configurable hyperparameters.
+                </p>
+              )}
             </div>
           )}
 
-          {!useDefaults && (
+          {/* Hyperparameters tab - arrays of values for tuning */}
+          {activeTab === "search" && (
             <div className="pt-2 sm:pt-3">
-              <HyperparameterForm
-                fields={algorithm.hyperparameters}
-                values={hyperparameters}
-                onChange={handleHyperparameterChange}
-                errors={errors}
-              />
+              <p className="text-white/60 text-[12px] sm:text-sm font-display mb-3">
+                Define the hyperparameter search space. Select multiple values for each parameter:
+              </p>
+              {algorithm.hyperparameters.length > 0 ? (
+                <SearchSpaceForm
+                  fields={algorithm.hyperparameters}
+                  values={searchSpace}
+                  onChange={handleSearchSpaceChange}
+                  errors={errors}
+                />
+              ) : (
+                <p className="text-white/60 text-sm font-display">
+                  This algorithm has no configurable hyperparameters.
+                </p>
+              )}
             </div>
           )}
         </div>
 
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex justify-end">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex justify-end shrink-0 border-t border-[#404040] pt-3">
           <Button
             onClick={handleAdd}
             className={`btn-add-hover ${STYLES.bgPrimary} text-white h-[42px] sm:h-[50px] px-6 sm:px-8 text-[20px] sm:text-[24px] lg:text-[28px] font-display border ${STYLES.borderSecondary}`}

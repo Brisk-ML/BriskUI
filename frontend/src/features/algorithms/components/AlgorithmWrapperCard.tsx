@@ -18,7 +18,10 @@ export function AlgorithmWrapperCard({
   className,
 }: AlgorithmWrapperCardProps) {
   const Comp = onClick ? "button" : "div";
-  const hasCustomParams = !wrapper.useDefaults && Object.keys(wrapper.defaultParams).length > 0;
+  const hasCustomDefaults = !wrapper.useDefaults;
+  const hasSearchSpace = wrapper.searchSpace && Object.keys(wrapper.searchSpace).some(
+    (key) => wrapper.searchSpace[key] && wrapper.searchSpace[key].length > 0
+  );
   
   return (
     <Comp
@@ -41,16 +44,21 @@ export function AlgorithmWrapperCard({
         <div className="h-[1px] bg-white w-[85%] mx-auto mt-auto" />
       </div>
 
-      <div className="flex flex-col gap-1 sm:gap-2 px-2 pb-2 pt-1 flex-1 min-h-0 text-[#b3b3b3]">
+      <div className="flex flex-col gap-0.5 sm:gap-1 px-2 pb-2 pt-1 flex-1 min-h-0 text-[#b3b3b3]">
         <p className="text-[14px] sm:text-[16px] lg:text-[18px] font-display leading-normal truncate">
           {wrapper.name}
         </p>
         <p className="text-[14px] sm:text-[16px] lg:text-[18px] font-display leading-normal truncate">
           {wrapper.className}
         </p>
-        <p className="text-[13px] sm:text-[14px] lg:text-[16px] font-display leading-normal mt-auto pt-1">
-          Custom Params: {hasCustomParams ? "Yes" : "No"}
-        </p>
+        <div className="mt-auto pt-1 space-y-0.5">
+          <p className="text-[12px] sm:text-[13px] lg:text-[14px] font-display leading-normal">
+            Custom: {hasCustomDefaults ? "Yes" : "No"}
+          </p>
+          <p className="text-[12px] sm:text-[13px] lg:text-[14px] font-display leading-normal">
+            Search: {hasSearchSpace ? "Yes" : "No"}
+          </p>
+        </div>
       </div>
     </Comp>
   );

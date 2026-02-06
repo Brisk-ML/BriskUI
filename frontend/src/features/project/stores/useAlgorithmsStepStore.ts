@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { HyperparameterValues } from "@/features/algorithms/types";
+import type { HyperparameterValues, HyperparameterSearchSpace } from "@/features/algorithms/types";
 
 /**
  * Algorithm wrapper configuration for the wizard.
@@ -12,8 +12,9 @@ export interface WizardAlgorithmWrapper {
   displayName: string; // Human-readable name
   className: string; // Python class name (e.g., "Ridge")
   classModule: string; // Python module (e.g., "sklearn.linear_model")
-  defaultParams: HyperparameterValues; // Default parameters
-  useDefaults: boolean; // Whether using catalog defaults
+  defaultParams: HyperparameterValues; // Default parameters (single values)
+  searchSpace: HyperparameterSearchSpace; // Hyperparameter search space (arrays)
+  useDefaults: boolean; // Whether using catalog defaults for default_params
 }
 
 export interface AlgorithmsStepState {
