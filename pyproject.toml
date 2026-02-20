@@ -1,0 +1,32 @@
+[project]
+name = "briskui"
+version = "0.1.0"
+description = "GUI for the Brisk package."
+authors = [
+    {name = "Braeden Fieguth",email = "bfieguth@uoguelph.ca"},
+    {name = "Zheqi Tao",email = "ztao02@uoguelph.ca"}
+]
+license = {text = "MIT"}
+requires-python = ">3.10"
+dependencies = [
+    "brisk-ml @ file:///home/braeden/Documents/Python%20Projects/brisk"
+]
+
+[tool.poetry]
+packages = [
+    { include = "brisk_ui" },
+    { include = "dev" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+brisk-ml = {develop = true}
+uvicorn = {extras = ["standard"], version = "*"}
+
+[tool.poetry.scripts]
+brisk-ui-dev = "dev.run_dev:main"
+build-frontend = "dev.build_frontend:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

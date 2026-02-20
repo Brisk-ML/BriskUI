@@ -1,0 +1,301 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    height: 100dvh;
+  }
+
+  html {
+    height: -webkit-fill-available;
+  }
+
+  body {
+    height: -webkit-fill-available;
+  }
+
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 18%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 173 80% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 173 80% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 25%;
+    --input: 0 0% 18%;
+    --ring: 173 80% 40%;
+
+    --radius: 0.5rem;
+
+    --font-display: 'Montserrat', system-ui, sans-serif;
+    --font-mono: 'Inconsolata', 'Courier New', monospace;
+  }
+}
+
+@theme {
+  --color-bg-primary: #121212;
+  --color-bg-secondary: #181818;
+  --color-bg-dashboard: #282828;
+  --color-bg-tertiary: #1a1a1a;
+
+    --color-border-primary: #404040;
+    --color-border-secondary: #363636;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #d1d5db;
+  --color-text-tertiary: #9ca3af;
+
+  --color-accent-50: #f0fdfa;
+  --color-accent-100: #ccfbf1;
+  --color-accent-200: #99f6e4;
+  --color-accent-300: #5eead4;
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;
+  --color-accent-600: #0d9488;
+  --color-accent-700: #0f766e;
+  --color-accent-800: #115e59;
+  --color-accent-900: #134e4a;
+
+  --font-family-display: var(--font-display);
+  --font-family-body: var(--font-display);
+  --font-family-mono: var(--font-mono);
+
+  --spacing-page-x: 1rem;
+  --spacing-page-x-sm: 1.5rem;
+  --spacing-page-x-md: 2rem;
+  --spacing-page-x-lg: 3rem;
+  --spacing-section: 1rem;
+  --spacing-section-md: 1.5rem;
+  --spacing-section-lg: 2.35rem;
+  --spacing-gap: 1rem;
+  --spacing-gap-md: 1.5rem;
+  --spacing-gap-lg: 2.94rem;
+}
+
+@layer base {
+  body {
+    background: linear-gradient(179.89deg, #282828 -7%, #121212 39.26%);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-display);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #404040 #1a1a1a;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #505050;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-in-bottom {
+    animation: slideInBottom 0.3s ease-out;
+  }
+
+  .arrow-glow {
+    background: radial-gradient(
+      circle at calc(100% + 120px) 50%,
+      rgba(17, 117, 213, 1) 0%,
+      rgba(17, 117, 213, 1) 80px,
+      rgba(17, 117, 213, 0.9) 160px,
+      rgba(17, 117, 213, 0.7) 260px,
+      rgba(17, 117, 213, 0.4) 380px,
+      transparent 480px
+    );
+  }
+
+  .arrow-glow-left {
+    background: radial-gradient(
+      circle at calc(0% - 120px) 50%,
+      rgba(17, 117, 213, 1) 0%,
+      rgba(17, 117, 213, 1) 80px,
+      rgba(17, 117, 213, 0.9) 160px,
+      rgba(17, 117, 213, 0.7) 260px,
+      rgba(17, 117, 213, 0.4) 380px,
+      transparent 480px
+    );
+  }
+
+  .h1-underline {
+    position: relative;
+    display: inline-block;
+  }
+
+  .h1-underline::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: white;
+    opacity: 0.8;
+  }
+
+  .card-hover-fade {
+    position: relative;
+  }
+  .card-hover-fade::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(17, 117, 213, 0.5) 0%,
+      rgba(17, 117, 213, 0.1) 40%,
+      #121212 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .card-hover-fade:hover::before {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInBottom {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .container-responsive {
+    width: 100%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--spacing-page-x);
+    padding-right: var(--spacing-page-x);
+  }
+
+  @media (min-width: 640px) {
+    .container-responsive {
+      padding-left: var(--spacing-page-x-sm);
+      padding-right: var(--spacing-page-x-sm);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .container-responsive {
+      padding-left: var(--spacing-page-x-md);
+      padding-right: var(--spacing-page-x-md);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-responsive {
+      max-width: 1920px;
+      padding-left: var(--spacing-page-x-lg);
+      padding-right: var(--spacing-page-x-lg);
+    }
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.btn-reset-hover:hover {
+  border-color: #ff3d29 !important;
+  background-color: #ff3d29 !important;
+  color: white !important;
+}
+
+.btn-delete-hover:hover {
+  border-color: #ff3d29 !important;
+  background-color: rgba(255, 61, 41, 0.2) !important;
+  color: white !important;
+}
+
+.btn-cancel-hover:hover {
+  border-color: #1175d5 !important;
+  background-color: rgba(17, 117, 213, 0.2) !important;
+  color: white !important;
+}
+
+.btn-add-hover:hover {
+  background-color: #005a3f !important;
+}
+
+/* HoverSelect item gradient effect - fades in from right */
+.hover-select-item:hover .hover-select-gradient {
+  opacity: 1 !important;
+}
+
+.hover-select-gradient {
+  background: linear-gradient(
+    to right,
+    rgba(17, 117, 213, 0.4) 0%,
+    rgba(17, 117, 213, 0.2) 40%,
+    transparent 100%
+  );
+}
