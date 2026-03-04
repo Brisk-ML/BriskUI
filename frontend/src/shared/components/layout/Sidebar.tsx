@@ -83,14 +83,11 @@ export function Sidebar() {
           )}
           title="Brisk"
         >
-          <span
-            className={cn(
-              "text-white font-bold tracking-[-0.52px] leading-tight font-display whitespace-nowrap",
-              "text-[13px] md:text-[14px] lg:text-base xl:text-[27.5px]",
-            )}
-          >
-            Brisk
-          </span>
+          <img
+            src="/brisk-wordmark-light.svg"
+            alt="Brisk"
+            className="h-5 md:h-6 lg:h-7 xl:h-9 w-auto"
+          />
         </Link>
 
         {/* Navigation Groups */}
@@ -100,7 +97,7 @@ export function Sidebar() {
             className="flex flex-col gap-1 md:gap-2 lg:gap-3 xl:gap-[32px] shrink-0 w-full items-stretch"
           >
             {/* Divider */}
-            <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-all duration-300" />
+            <div className="h-0 border-t border-white/20 shrink-0 ml-4 lg:ml-5 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-[width] duration-300" />
 
             {/* Navigation Items */}
             {group.items.map((item) => {
@@ -178,7 +175,7 @@ export function Sidebar() {
         {/* Results section with divider */}
         <div className="shrink-0 w-full flex flex-col gap-1 md:gap-2 lg:gap-3 xl:gap-[32px]">
           {/* Divider above results */}
-          <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-all duration-300" />
+          <div className="h-0 border-t border-white/20 shrink-0 ml-4 lg:ml-5 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-[width] duration-300" />
 
           {/* Results item */}
           <div className="relative group/item">
@@ -233,7 +230,7 @@ export function Sidebar() {
         {/* Settings section with divider */}
         <div className="shrink-0 w-full flex flex-col gap-1 md:gap-2 lg:gap-3 xl:gap-[32px]">
           {/* Divider above settings */}
-          <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-all duration-300" />
+          <div className="h-0 border-t border-white/20 shrink-0 ml-4 lg:ml-5 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-[width] duration-300" />
 
           {/* Settings item */}
           <div className="relative group/item">
