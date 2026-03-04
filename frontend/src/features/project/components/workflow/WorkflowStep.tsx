@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, ChevronUp, X } from "lucide-react";
+import { ArrowRight, GripVertical, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -152,7 +152,7 @@ function AddEvaluatorModal({
                     triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
                   />
                 ) : field.type === "metrics" ? (
-                  <div className="flex flex-wrap gap-2 p-2 rounded border border-[#404040] bg-[#181818] max-h-[140px] overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 p-2 border border-[#404040] bg-[#181818] max-h-[140px] overflow-y-auto">
                     {metricsOptions.map((opt) => {
                       const selected = (currentArgs[field.name] as string[] | undefined) ?? [];
                       const checked = selected.includes(opt.value);
@@ -239,7 +239,14 @@ function AddEvaluatorModal({
             ))}
           </div>
 
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className={`${STYLES.bgCardAlt} border ${STYLES.border} text-white h-10 sm:h-11 md:h-12 px-6 text-base sm:text-lg font-display hover:bg-[#303030] transition-colors`}
+            >
+              Cancel
+            </Button>
             <Button
               type="button"
               onClick={handleAdd}
@@ -256,7 +263,7 @@ function AddEvaluatorModal({
 
 export function WorkflowStep() {
   const { problemType } = useProjectWizardStore();
-  const { steps, addStep, removeStep, moveStep } = useWorkflowStepStore();
+  const { steps, addStep, removeStep, setSteps } = useWorkflowStepStore();
 
   const evaluators = useMemo(
     () => getWorkflowEvaluatorsForProblemType(problemType),
@@ -266,6 +273,16 @@ export function WorkflowStep() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEvaluator, setSelectedEvaluator] =
     useState<WorkflowEvaluatorDef | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const handleDragEnter = (index: number) => {
+    if (dragIndex === null || dragIndex === index) return;
+    const reordered = [...steps];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(index, 0, moved);
+    setSteps(reordered);
+    setDragIndex(index);
+  };
 
   const handleCardClick = (evaluator: WorkflowEvaluatorDef) => {
     setSelectedEvaluator(evaluator);
@@ -325,7 +342,7 @@ export function WorkflowStep() {
         {steps.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[200px] gap-2">
             <p className="text-white/60 text-lg sm:text-xl font-display text-center">
-              Click an evaluator above to add it to the workflow. Order added =
+              Click an evaluator above to add it to the workflow. Order added is the
               order executed.
             </p>
             <p className="text-red-400/80 text-sm sm:text-base font-display">
@@ -340,12 +357,11 @@ export function WorkflowStep() {
                   step={step}
                   evaluators={evaluators}
                   onRemove={() => removeStep(step.id)}
-                  onMoveUp={index > 0 ? () => moveStep(step.id, "up") : undefined}
-                  onMoveDown={
-                    index < steps.length - 1
-                      ? () => moveStep(step.id, "down")
-                      : undefined
-                  }
+                  onDragStart={() => setDragIndex(index)}
+                  onDragEnter={() => handleDragEnter(index)}
+                  onDragEnd={() => setDragIndex(null)}
+                  onDragOver={(e) => e.preventDefault()}
+                  isDragging={dragIndex === index}
                 />
                 {index < steps.length - 1 && (
                   <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/40 flex-shrink-0" />
@@ -371,14 +387,20 @@ function StepCard({
   step,
   evaluators,
   onRemove,
-  onMoveUp,
-  onMoveDown,
+  onDragStart,
+  onDragEnter,
+  onDragEnd,
+  onDragOver,
+  isDragging,
 }: {
   step: WorkflowStepType;
   evaluators: WorkflowEvaluatorDef[];
   onRemove: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  onDragStart: () => void;
+  onDragEnter: () => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  isDragging: boolean;
 }) {
   const def = evaluators.find((e) => e.id === step.evaluatorId);
   const displayName = def?.name ?? step.methodName;
@@ -386,50 +408,38 @@ function StepCard({
 
   return (
     <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnter={onDragEnter}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
       className={cn(
-        "card-hover-fade relative border-2 border-[#404040] bg-[#282828] p-3 sm:p-4 w-[150px] sm:w-[170px]",
+        "card-hover-fade relative border-2 border-[#404040] bg-[#282828] p-3 sm:p-4 w-[200px] sm:w-[240px]",
+        "cursor-grab active:cursor-grabbing select-none",
+        isDragging && "opacity-50",
       )}
     >
       <button
         type="button"
         onClick={onRemove}
-        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10"
+        className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors z-10"
+        title="Remove step"
       >
-        <X className="w-3.5 h-3.5 text-white" />
+        <X className="w-5 h-5" />
       </button>
 
-      <div className="flex flex-col gap-1">
-        <div className="text-white text-sm sm:text-base font-display font-bold truncate pr-6">
-          {displayName}
-        </div>
-        {filename && (
-          <div className="text-white/50 text-xs font-display truncate">
-            {filename}
+      <div className="flex items-start gap-2">
+        <GripVertical className="w-4 h-4 text-white/30 mt-0.5 flex-shrink-0" />
+        <div className="flex flex-col gap-1">
+          <div className="text-white text-sm sm:text-base font-display font-bold pr-6">
+            {displayName}
           </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1 mt-2">
-        {onMoveUp && (
-          <button
-            type="button"
-            onClick={onMoveUp}
-            className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10"
-            title="Move up"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </button>
-        )}
-        {onMoveDown && (
-          <button
-            type="button"
-            onClick={onMoveDown}
-            className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10"
-            title="Move down"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        )}
+          {filename && (
+            <div className="text-white/50 text-xs font-display truncate">
+              {filename}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

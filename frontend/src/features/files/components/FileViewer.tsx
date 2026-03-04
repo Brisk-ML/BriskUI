@@ -94,7 +94,7 @@ export function FileViewer({ onSyncClick }: FileViewerProps) {
             <div className="absolute right-2 sm:right-3 lg:right-4 top-2 sm:top-2.5 lg:top-3 flex items-center gap-3 sm:gap-3.5 lg:gap-4">
               <button
                 onClick={handleDownload}
-                className="size-10 sm:size-11 lg:size-12 flex items-center justify-center hover:bg-[#181818]/30 transition-colors rounded"
+                className="size-10 sm:size-11 lg:size-12 flex items-center justify-center hover:bg-[#181818]/30 transition-colors"
                 title="Download file"
                 type="button"
               >
@@ -106,7 +106,7 @@ export function FileViewer({ onSyncClick }: FileViewerProps) {
               </button>
               <button
                 onClick={handleCopy}
-                className="size-10 sm:size-11 lg:size-12 flex items-center justify-center hover:bg-[#181818]/30 transition-colors rounded relative"
+                className="size-10 sm:size-11 lg:size-12 flex items-center justify-center hover:bg-[#181818]/30 transition-colors relative"
                 title="Copy file content"
                 type="button"
               >

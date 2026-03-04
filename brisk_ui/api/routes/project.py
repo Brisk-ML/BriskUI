@@ -6,12 +6,16 @@ Reads and writes project configuration from the .brisk/project.json file.
 import os
 import re
 import shutil
+import sqlite3
 
 import fastapi
 import pydantic
 
 from brisk_ui.config import Settings
 from brisk_ui.services.project_config import ProjectConfigService
+
+# Temp storage for files uploaded during create mode (before project dir exists)
+_pending_uploads: dict[str, bytes] = {}
 
 
 def get_settings(request: fastapi.Request) -> Settings:
@@ -132,11 +136,26 @@ async def create_project(
                 detail=f"Project directory already exists: {project_dir}"
             )
         
-        # Create the project directory and .brisk subdirectory
+        # Create the project directory, .brisk subdirectory, and datasets directory
         brisk_dir = project_dir / ".brisk"
         brisk_dir.mkdir(parents=True, exist_ok=True)
+        (project_dir / "datasets").mkdir(exist_ok=True)
         
-        # Use the new project directory for config service
+        # Create empty brisk.sqlite database
+        sqlite3.connect(str(brisk_dir / "brisk.sqlite")).close()
+        
+        # Flush any files uploaded during the wizard into the new datasets/ dir
+        global _pending_uploads
+        if _pending_uploads:
+            datasets_dir = project_dir / "datasets"
+            for fname, content in _pending_uploads.items():
+                (datasets_dir / fname).write_bytes(content)
+            _pending_uploads = {}
+        
+        # Switch to the new project immediately so subsequent writes target it
+        os.environ["BRISK_UI_CREATE_MODE"] = "false"
+        request.app.state.settings = Settings(project_path=project_dir)
+        
         config_service = ProjectConfigService(project_dir)
         actual_project_path = str(project_dir)
     else:
@@ -144,6 +163,13 @@ async def create_project(
         dir_name = settings.project_path.name
         brisk_dir = settings.project_path / ".brisk"
         brisk_dir.mkdir(parents=True, exist_ok=True)
+        (settings.project_path / "datasets").mkdir(exist_ok=True)
+        
+        # Create empty brisk.sqlite database if it doesn't exist
+        db_path = brisk_dir / "brisk.sqlite"
+        if not db_path.exists():
+            sqlite3.connect(str(db_path)).close()
+        
         config_service = ProjectConfigService(settings.project_path)
         actual_project_path = data.project_path or str(settings.project_path)
     
@@ -288,6 +314,164 @@ async def move_project(
         )
 
 
+# ============================================================================
+# Safe zone helpers for preserving user code
+# ============================================================================
+
+import pathlib
+
+SAFE_ZONE_MARKER = "# ---- BRISK UI MANAGED BELOW (do not edit) ----"
+
+
+def _merge_with_safe_zone(existing_path: pathlib.Path, new_content: str) -> str:
+    """Preserve user code above the safe zone marker.
+
+    If the file already exists:
+      - Content above the marker is kept exactly as-is.
+      - Everything from the marker down is replaced with the new content.
+      - If no marker is found, the entire existing file is treated as user
+        code and placed above a new marker + generated content.
+    If the file does not exist, return marker + new content.
+    """
+    if not existing_path.exists():
+        return f"{SAFE_ZONE_MARKER}\n{new_content}"
+
+    existing = existing_path.read_text()
+    marker_idx = existing.find(SAFE_ZONE_MARKER)
+
+    if marker_idx == -1:
+        user_code = existing.rstrip("\n")
+        if user_code:
+            return f"{user_code}\n\n{SAFE_ZONE_MARKER}\n{new_content}"
+        return f"{SAFE_ZONE_MARKER}\n{new_content}"
+
+    user_code = existing[:marker_idx].rstrip("\n")
+    if user_code:
+        return f"{user_code}\n\n{SAFE_ZONE_MARKER}\n{new_content}"
+    return f"{SAFE_ZONE_MARKER}\n{new_content}"
+
+
+def _extract_existing_wrappers(content: str) -> list[dict]:
+    """Extract AlgorithmWrapper definitions from existing algorithms.py.
+
+    Returns a list of dicts with ``name`` (the wrapper's name= value) and
+    ``text`` (the complete ``AlgorithmWrapper(...)`` source including indentation).
+    Uses a balanced-parentheses counter so nested dicts/lists are handled.
+    """
+    results: list[dict] = []
+    search_start = 0
+    while True:
+        idx = content.find("AlgorithmWrapper(", search_start)
+        if idx == -1:
+            break
+        # Walk back to capture leading whitespace
+        line_start = content.rfind("\n", 0, idx)
+        line_start = 0 if line_start == -1 else line_start + 1
+        leading = content[line_start:idx]
+
+        # Find the matching closing paren using a depth counter
+        paren_start = idx + len("AlgorithmWrapper")
+        depth = 0
+        i = paren_start
+        while i < len(content):
+            ch = content[i]
+            if ch in ("(", "[", "{"):
+                depth += 1
+            elif ch in (")", "]", "}"):
+                depth -= 1
+                if depth == 0:
+                    break
+            elif ch == '"' or ch == "'":
+                quote = ch
+                i += 1
+                while i < len(content) and content[i] != quote:
+                    if content[i] == "\\":
+                        i += 1
+                    i += 1
+            i += 1
+
+        full_text = leading + content[idx:i + 1]
+
+        # Extract the name= value
+        name_match = re.search(r'name\s*=\s*["\']([^"\']+)["\']', full_text)
+        name = name_match.group(1) if name_match else ""
+
+        results.append({"name": name, "text": full_text})
+        search_start = i + 1
+
+    return results
+
+
+def _merge_algorithm_wrappers(
+    existing_path: pathlib.Path, new_content: str, ui_wrapper_names: list[str]
+) -> str:
+    """Merge unknown AlgorithmWrapper instances from existing algorithms.py.
+
+    If the file exists, any AlgorithmWrapper whose ``name`` is NOT in
+    ``ui_wrapper_names`` is appended into the generated ``ALGORITHM_CONFIG``.
+    Extra import lines from above the managed zone are also preserved.
+    """
+    if not existing_path.exists():
+        return new_content
+
+    existing = existing_path.read_text()
+
+    # Strip managed-zone marker to get just the managed section
+    marker_idx = existing.find(SAFE_ZONE_MARKER)
+    managed_section = existing[marker_idx + len(SAFE_ZONE_MARKER):] if marker_idx != -1 else existing
+
+    existing_wrappers = _extract_existing_wrappers(managed_section)
+    ui_names_lower = {n.lower() for n in ui_wrapper_names}
+    unknown_wrappers = [
+        w for w in existing_wrappers if w["name"].lower() not in ui_names_lower
+    ]
+
+    if not unknown_wrappers:
+        return new_content
+
+    # Collect extra import lines from the managed section that aren't in new_content
+    extra_imports: list[str] = []
+    for line in managed_section.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(("from ", "import ")) and stripped not in new_content:
+            extra_imports.append(stripped)
+
+    # Append unknown wrappers into ALGORITHM_CONFIG before the closing ")"
+    closing = "\n)"
+    closing_idx = new_content.rfind(closing)
+    if closing_idx == -1:
+        closing = ")"
+        closing_idx = new_content.rfind(closing)
+
+    if closing_idx != -1:
+        unknown_text = ",\n".join(w["text"] for w in unknown_wrappers)
+        new_content = (
+            new_content[:closing_idx].rstrip()
+            + ",\n"
+            + unknown_text
+            + "\n"
+            + new_content[closing_idx:]
+        )
+
+    # Prepend extra imports after the existing import block
+    if extra_imports:
+        import_block_end = 0
+        for line in new_content.splitlines(keepends=True):
+            stripped = line.strip()
+            if stripped.startswith(("from ", "import ", "#")) or stripped == "":
+                import_block_end += len(line)
+            else:
+                break
+        extra_block = "\n".join(extra_imports) + "\n"
+        new_content = new_content[:import_block_end] + extra_block + new_content[import_block_end:]
+
+    return new_content
+
+
+# ============================================================================
+# File write models and endpoints
+# ============================================================================
+
 class DataManagerConfig(pydantic.BaseModel):
     """DataManager configuration model matching Python DataManager class."""
     test_size: float = 0.2
@@ -309,82 +493,50 @@ class WriteDataFileResponse(pydantic.BaseModel):
     file_path: str
 
 
-@router.post("/data-file", response_model=WriteDataFileResponse)
-async def write_data_file(
-    request: fastapi.Request,
-    data: WriteDataFileRequest,
-):
-    """Write the data.py file with BASE_DATA_MANAGER configuration.
-    
-    Creates a data.py file in the project directory with the DataManager
-    configuration specified by the user.
-    """
-    settings = request.app.state.settings
-    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
-    
-    # In create mode, we need to find the actual project directory
-    # by looking at what was created
-    if create_mode:
-        # Find the most recently created project directory
-        subdirs = [d for d in settings.project_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
-        if subdirs:
-            # Get most recent
-            project_dir = max(subdirs, key=lambda d: d.stat().st_mtime)
-        else:
-            raise fastapi.HTTPException(
-                status_code=400,
-                detail="No project directory found. Create project first."
-            )
-    else:
-        project_dir = settings.project_path
-    
-    data_file_path = project_dir / "data.py"
-    
-    # Build the DataManager instantiation string
+def _generate_data_content(data: WriteDataFileRequest) -> str:
+    """Generate data.py file content from configuration."""
     dm = data.base_data_manager
     params = []
-    
-    # Always include test_size
+
     params.append(f"    test_size = {dm.test_size}")
-    
-    # Include n_splits if not default
     if dm.n_splits != 5:
         params.append(f"    n_splits = {dm.n_splits}")
-    
-    # Include split_method if not default
     if dm.split_method != "shuffle":
         params.append(f'    split_method = "{dm.split_method}"')
-    
-    # Include group_column if set
     if dm.group_column:
         params.append(f'    group_column = "{dm.group_column}"')
-    
-    # Include stratified if True
     if dm.stratified:
         params.append(f"    stratified = {dm.stratified}")
-    
-    # Include random_state if set
     if dm.random_state is not None:
         params.append(f"    random_state = {dm.random_state}")
-    
+
     params_str = ",\n".join(params)
-    
-    file_content = f'''# data.py
+
+    return f'''# data.py
 from brisk.data.data_manager import DataManager
 
 BASE_DATA_MANAGER = DataManager(
 {params_str}
 )
 '''
-    
+
+
+@router.post("/data-file", response_model=WriteDataFileResponse)
+async def write_data_file(
+    request: fastapi.Request,
+    data: WriteDataFileRequest,
+):
+    """Write the data.py file with BASE_DATA_MANAGER configuration."""
+    settings = request.app.state.settings
+    project_dir = settings.project_path
+    data_file_path = project_dir / "data.py"
+    raw_content = _generate_data_content(data)
+    file_content = _merge_with_safe_zone(data_file_path, raw_content)
+
     try:
         with open(data_file_path, "w") as f:
             f.write(file_content)
-        
-        return WriteDataFileResponse(
-            success=True,
-            file_path=str(data_file_path)
-        )
+        return WriteDataFileResponse(success=True, file_path=str(data_file_path))
     except Exception as e:
         raise fastapi.HTTPException(
             status_code=500,
@@ -414,52 +566,21 @@ class WriteAlgorithmsFileResponse(pydantic.BaseModel):
     file_path: str
 
 
-@router.post("/algorithms-file", response_model=WriteAlgorithmsFileResponse)
-async def write_algorithms_file(
-    request: fastapi.Request,
-    data: WriteAlgorithmsFileRequest,
-):
-    """Write the algorithms.py file with ALGORITHM_CONFIG.
-    
-    Creates an algorithms.py file in the project directory with the
-    AlgorithmWrapper instances specified by the user.
-    """
-    settings = request.app.state.settings
-    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
-    
-    # In create mode, we need to find the actual project directory
-    if create_mode:
-        subdirs = [d for d in settings.project_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
-        if subdirs:
-            project_dir = max(subdirs, key=lambda d: d.stat().st_mtime)
-        else:
-            raise fastapi.HTTPException(
-                status_code=400,
-                detail="No project directory found. Create project first."
-            )
-    else:
-        project_dir = settings.project_path
-    
-    algorithms_file_path = project_dir / "algorithms.py"
-    
-    # Collect unique imports needed
+def _generate_algorithms_content(data: WriteAlgorithmsFileRequest) -> str:
+    """Generate algorithms.py file content from configuration."""
     imports_by_module: dict[str, set[str]] = {}
     for wrapper in data.wrappers:
         if wrapper.class_module not in imports_by_module:
             imports_by_module[wrapper.class_module] = set()
         imports_by_module[wrapper.class_module].add(wrapper.class_name)
-    
-    # Build import statements
+
     import_lines = ["from brisk.configuration.algorithm_wrapper import AlgorithmWrapper"]
     import_lines.append("import brisk")
-    
     for module, classes in sorted(imports_by_module.items()):
         classes_str = ", ".join(sorted(classes))
         import_lines.append(f"from {module} import {classes_str}")
-    
     imports_str = "\n".join(import_lines)
-    
-    # Build AlgorithmWrapper instantiations
+
     wrapper_strs = []
     for wrapper in data.wrappers:
         params_parts = [
@@ -467,39 +588,45 @@ async def write_algorithms_file(
             f'        display_name="{wrapper.display_name}"',
             f'        algorithm_class={wrapper.class_name}',
         ]
-        
-        # Add default_params if there are any and not using defaults
         if wrapper.default_params and not wrapper.use_defaults:
             params_dict_str = _format_params_dict(wrapper.default_params)
             params_parts.append(f'        default_params={params_dict_str}')
-        
-        # Add search_space if there are any hyperparameter search values
         if wrapper.search_space:
             search_space_str = _format_search_space_dict(wrapper.search_space)
             if search_space_str != "{}":
                 params_parts.append(f'        hyperparameters={search_space_str}')
-        
         params_str = ",\n".join(params_parts)
         wrapper_strs.append(f"    AlgorithmWrapper(\n{params_str},\n    )")
-    
+
     wrappers_str = ",\n".join(wrapper_strs)
-    
-    file_content = f'''# algorithms.py
+
+    return f'''# algorithms.py
 {imports_str}
 
 ALGORITHM_CONFIG = brisk.AlgorithmCollection(
 {wrappers_str}
 )
 '''
-    
+
+
+@router.post("/algorithms-file", response_model=WriteAlgorithmsFileResponse)
+async def write_algorithms_file(
+    request: fastapi.Request,
+    data: WriteAlgorithmsFileRequest,
+):
+    """Write the algorithms.py file with ALGORITHM_CONFIG."""
+    settings = request.app.state.settings
+    project_dir = settings.project_path
+    algorithms_file_path = project_dir / "algorithms.py"
+    raw_content = _generate_algorithms_content(data)
+    ui_names = [w.name for w in data.wrappers]
+    merged = _merge_algorithm_wrappers(algorithms_file_path, raw_content, ui_names)
+    file_content = _merge_with_safe_zone(algorithms_file_path, merged)
+
     try:
         with open(algorithms_file_path, "w") as f:
             f.write(file_content)
-        
-        return WriteAlgorithmsFileResponse(
-            success=True,
-            file_path=str(algorithms_file_path)
-        )
+        return WriteAlgorithmsFileResponse(success=True, file_path=str(algorithms_file_path))
     except Exception as e:
         raise fastapi.HTTPException(
             status_code=500,
@@ -559,17 +686,9 @@ def _format_search_space_dict(search_space: dict[str, list[str | int | float | b
     return "{" + ", ".join(parts) + "}"
 
 
-def _get_project_dir(settings, create_mode: bool):
-    """Get the project directory based on mode."""
-    if create_mode:
-        subdirs = [d for d in settings.project_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
-        if subdirs:
-            return max(subdirs, key=lambda d: d.stat().st_mtime)
-        else:
-            raise fastapi.HTTPException(
-                status_code=400,
-                detail="No project directory found. Create project first."
-            )
+def _get_project_dir(settings, create_mode: bool = False):
+    """Get the project directory. Settings.project_path is always up-to-date
+    because create_project updates it immediately after project creation."""
     return settings.project_path
 
 
@@ -584,44 +703,38 @@ class WriteMetricsFileResponse(pydantic.BaseModel):
     file_path: str
 
 
-@router.post("/metrics-file", response_model=WriteMetricsFileResponse)
-async def write_metrics_file(
-    request: fastapi.Request,
-    data: WriteMetricsFileRequest,
-):
-    """Write the metrics.py file based on problem type.
-    
-    Creates a metrics.py file in the project directory with the default
-    metrics for the specified problem type.
-    """
-    settings = request.app.state.settings
-    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
-    
-    project_dir = _get_project_dir(settings, create_mode)
-    metrics_file_path = project_dir / "metrics.py"
-    
-    # Select metrics based on problem type
+def _generate_metrics_content(data: WriteMetricsFileRequest) -> str:
+    """Generate metrics.py file content from configuration."""
     if data.problem_type == "classification":
         metrics_line = "*brisk.CLASSIFICATION_METRICS"
     else:
         metrics_line = "*brisk.REGRESSION_METRICS"
-    
-    file_content = f'''# metrics.py
+
+    return f'''# metrics.py
 import brisk
 
 METRIC_CONFIG = brisk.MetricManager(
     {metrics_line}
 )
 '''
-    
+
+
+@router.post("/metrics-file", response_model=WriteMetricsFileResponse)
+async def write_metrics_file(
+    request: fastapi.Request,
+    data: WriteMetricsFileRequest,
+):
+    """Write the metrics.py file based on problem type."""
+    settings = request.app.state.settings
+    project_dir = settings.project_path
+    metrics_file_path = project_dir / "metrics.py"
+    raw_content = _generate_metrics_content(data)
+    file_content = _merge_with_safe_zone(metrics_file_path, raw_content)
+
     try:
         with open(metrics_file_path, "w") as f:
             f.write(file_content)
-        
-        return WriteMetricsFileResponse(
-            success=True,
-            file_path=str(metrics_file_path)
-        )
+        return WriteMetricsFileResponse(success=True, file_path=str(metrics_file_path))
     except Exception as e:
         raise fastapi.HTTPException(
             status_code=500,
@@ -643,9 +756,7 @@ async def write_evaluators_file(request: fastapi.Request):
     for custom evaluator registration.
     """
     settings = request.app.state.settings
-    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
-    
-    project_dir = _get_project_dir(settings, create_mode)
+    project_dir = settings.project_path
     evaluators_file_path = project_dir / "evaluators.py"
     
     file_content = '''# evaluators.py
@@ -826,26 +937,12 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
     return ""
 
 
-@router.post("/workflow-file", response_model=WriteWorkflowFileResponse)
-async def write_workflow_file(
-    request: fastapi.Request,
-    data: WriteWorkflowFileRequest,
-):
-    """Write the workflow file to workflows/<problem_type>.py.
-    
-    Creates a workflow file with class Regression or Classification
-    and def workflow(self, X_train, X_test, y_train, y_test, output_dir, feature_names).
-    """
-    settings = request.app.state.settings
-    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
-    project_dir = _get_project_dir(settings, create_mode)
-    workflows_dir = project_dir / "workflows"
-    workflows_dir.mkdir(parents=True, exist_ok=True)
+def _generate_workflow_content(data: WriteWorkflowFileRequest) -> str:
+    """Generate workflow file content from configuration."""
     problem_type = data.problem_type
     if problem_type not in ("classification", "regression"):
         problem_type = "regression"
     class_name = problem_type.capitalize()
-    workflow_file_path = workflows_dir / f"{problem_type}.py"
 
     step_lines = []
     for step in data.steps:
@@ -855,7 +952,7 @@ async def write_workflow_file(
 
     body = "\n".join(step_lines) if step_lines else "        pass"
 
-    file_content = f'''# workflow.py
+    return f'''# workflow.py
 # Define the workflow for training and evaluating models
 
 from brisk.training.workflow import Workflow
@@ -865,13 +962,29 @@ class {class_name}(Workflow):
     def workflow(self, X_train, X_test, y_train, y_test, output_dir, feature_names):
 {body}
 '''
+
+
+@router.post("/workflow-file", response_model=WriteWorkflowFileResponse)
+async def write_workflow_file(
+    request: fastapi.Request,
+    data: WriteWorkflowFileRequest,
+):
+    """Write the workflow file to workflows/<problem_type>.py."""
+    settings = request.app.state.settings
+    project_dir = settings.project_path
+    workflows_dir = project_dir / "workflows"
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    problem_type = data.problem_type
+    if problem_type not in ("classification", "regression"):
+        problem_type = "regression"
+    workflow_file_path = workflows_dir / f"{problem_type}.py"
+    raw_content = _generate_workflow_content(data)
+    file_content = _merge_with_safe_zone(workflow_file_path, raw_content)
+
     try:
         with open(workflow_file_path, "w") as f:
             f.write(file_content)
-        return WriteWorkflowFileResponse(
-            success=True,
-            file_path=str(workflow_file_path)
-        )
+        return WriteWorkflowFileResponse(success=True, file_path=str(workflow_file_path))
     except Exception as e:
         raise fastapi.HTTPException(
             status_code=500,
@@ -1262,23 +1375,8 @@ def _format_preprocessors_list(preprocessors: list[dict], problem_type: str) -> 
     return "[\n" + "\n".join(ordered) + "\n        ]"
 
 
-@router.post("/settings-file", response_model=WriteSettingsFileResponse)
-async def write_settings_file(
-    request: fastapi.Request,
-    data: WriteSettingsFileRequest,
-):
-    """Write the settings.py file with Configuration.
-    
-    Creates a settings.py file in the project directory with the
-    Configuration and experiment groups.
-    """
-    settings = request.app.state.settings
-    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
-    
-    project_dir = _get_project_dir(settings, create_mode)
-    settings_file_path = project_dir / "settings.py"
-    
-    # PlotSettings: only include non-default kwargs (Brisk PlotSettings defaults)
+def _generate_settings_content(data: WriteSettingsFileRequest) -> str:
+    """Generate settings.py file content from configuration."""
     _plot_defaults = {
         "file_format": "png",
         "transparent": False,
@@ -1309,34 +1407,24 @@ async def write_settings_file(
         if ps.accent_color is not None and ps.accent_color != _plot_defaults["accent_color"]:
             plot_kwargs["accent_color"] = ps.accent_color
 
-    # Format algorithm list
     algorithms_str = ", ".join(f'"{a}"' for a in data.default_algorithms)
-    
-    # Check if any group needs preprocessor imports
+
     needs_preprocessors_import = any(
         group.data_config and group.data_config.preprocessors
         for group in data.experiment_groups
     )
-    
-    # Build experiment group calls
+
     group_strs = []
     for group in data.experiment_groups:
         parts = [f'        name="{group.name}"']
-        
         if group.description:
             parts.append(f'        description="{group.description}"')
-        
-        # Format datasets - tuple if table name exists
         if group.dataset_table_name:
             parts.append(f'        datasets=[("{group.dataset_file_name}", "{group.dataset_table_name}")]')
         else:
             parts.append(f'        datasets=["{group.dataset_file_name}"]')
-        
-        # Algorithms
         alg_str = ", ".join(f'"{a}"' for a in group.algorithms)
         parts.append(f'        algorithms=[{alg_str}]')
-        
-        # data_config - include when not using default data manager params, or when preprocessors are present
         dc = group.data_config
         has_dc_params = dc and (
             dc.test_size is not None or dc.n_splits is not None or dc.split_method is not None
@@ -1364,12 +1452,11 @@ async def write_settings_file(
             if dc_parts:
                 dc_str = ", ".join(dc_parts)
                 parts.append(f'        data_config={{{dc_str}}}')
-        
         params_str = ",\n".join(parts)
         group_strs.append(f"    config.add_experiment_group(\n{params_str},\n    )")
-    
+
     groups_code = "\n\n".join(group_strs)
-    
+
     preprocessors_import = ""
     if needs_preprocessors_import:
         preprocessors_import = "\nfrom brisk.data.preprocessing import (\n    MissingDataPreprocessor,\n    ScalingPreprocessor,\n    CategoricalEncodingPreprocessor,\n    FeatureSelectionPreprocessor,\n)\n"
@@ -1386,24 +1473,21 @@ async def write_settings_file(
         plot_settings_var = f"\n    plot_settings = PlotSettings({kwargs_str})\n"
         config_plot_arg = ",\n        plot_settings=plot_settings"
 
-    # Build categorical_features dict if provided
     categorical_features_arg = ""
     if data.categorical_features:
         cat_entries = []
         for entry in data.categorical_features:
-            if not entry.features:  # skip if no features
+            if not entry.features:
                 continue
             features_str = ", ".join(f'"{f}"' for f in entry.features)
             if entry.table_name:
-                # SQLite: key is tuple (filename, table_name)
                 cat_entries.append(f'            ("{entry.dataset_file_name}", "{entry.table_name}"): [{features_str}]')
             else:
-                # CSV/XLSX: key is just filename
                 cat_entries.append(f'            "{entry.dataset_file_name}": [{features_str}]')
         if cat_entries:
             categorical_features_arg = ",\n        categorical_features={\n" + ",\n".join(cat_entries) + "\n        }"
 
-    file_content = f'''# settings.py
+    return f'''# settings.py
 from brisk.configuration.configuration import Configuration
 from brisk.configuration.configuration_manager import ConfigurationManager
 {preprocessors_import}{plot_settings_import}
@@ -1418,20 +1502,132 @@ def create_configuration() -> ConfigurationManager:
 
     return config.build()
 '''
-    
+
+
+@router.post("/settings-file", response_model=WriteSettingsFileResponse)
+async def write_settings_file(
+    request: fastapi.Request,
+    data: WriteSettingsFileRequest,
+):
+    """Write the settings.py file with Configuration."""
+    settings = request.app.state.settings
+    project_dir = settings.project_path
+    settings_file_path = project_dir / "settings.py"
+    raw_content = _generate_settings_content(data)
+    file_content = _merge_with_safe_zone(settings_file_path, raw_content)
+
     try:
         with open(settings_file_path, "w") as f:
             f.write(file_content)
-        
-        return WriteSettingsFileResponse(
-            success=True,
-            file_path=str(settings_file_path)
-        )
+        return WriteSettingsFileResponse(success=True, file_path=str(settings_file_path))
     except Exception as e:
         raise fastapi.HTTPException(
             status_code=500,
             detail=f"Failed to write settings.py: {str(e)}"
         )
+
+
+# ============================================================================
+# Preview endpoint
+# ============================================================================
+
+class PreviewFilesRequest(pydantic.BaseModel):
+    """Combined request for previewing all generated files."""
+    data_file: WriteDataFileRequest | None = None
+    algorithms_file: WriteAlgorithmsFileRequest | None = None
+    metrics_file: WriteMetricsFileRequest | None = None
+    settings_file: WriteSettingsFileRequest | None = None
+    workflow_file: WriteWorkflowFileRequest | None = None
+
+
+class PreviewFilesResponse(pydantic.BaseModel):
+    """Response containing generated file contents."""
+    files: dict[str, str]
+
+
+def _read_existing_file(path: pathlib.Path) -> str | None:
+    """Read an existing file and return its content, or None if missing/empty."""
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            return path.read_text()
+    except OSError:
+        pass
+    return None
+
+
+@router.post("/preview-files", response_model=PreviewFilesResponse)
+async def preview_files(
+    request: fastapi.Request,
+    data: PreviewFilesRequest,
+):
+    """Generate file contents without writing to disk.
+
+    For each file type: if the request includes config data, generate a preview
+    with safe-zone merging. Otherwise, fall back to the current on-disk content
+    so the Files page always shows all managed files regardless of which pages
+    have been visited.
+    """
+    settings = request.app.state.settings
+    project_dir = settings.project_path
+    files: dict[str, str] = {}
+
+    # data.py
+    if data.data_file:
+        raw = _generate_data_content(data.data_file)
+        files["data.py"] = _merge_with_safe_zone(project_dir / "data.py", raw)
+    else:
+        existing = _read_existing_file(project_dir / "data.py")
+        if existing is not None:
+            files["data.py"] = existing
+
+    # algorithms.py
+    if data.algorithms_file:
+        raw = _generate_algorithms_content(data.algorithms_file)
+        ui_names = [w.name for w in data.algorithms_file.wrappers]
+        merged = _merge_algorithm_wrappers(project_dir / "algorithms.py", raw, ui_names)
+        files["algorithms.py"] = _merge_with_safe_zone(project_dir / "algorithms.py", merged)
+    else:
+        existing = _read_existing_file(project_dir / "algorithms.py")
+        if existing is not None:
+            files["algorithms.py"] = existing
+
+    # metrics.py
+    if data.metrics_file:
+        raw = _generate_metrics_content(data.metrics_file)
+        files["metrics.py"] = _merge_with_safe_zone(project_dir / "metrics.py", raw)
+    else:
+        existing = _read_existing_file(project_dir / "metrics.py")
+        if existing is not None:
+            files["metrics.py"] = existing
+
+    # settings.py
+    if data.settings_file:
+        raw = _generate_settings_content(data.settings_file)
+        files["settings.py"] = _merge_with_safe_zone(project_dir / "settings.py", raw)
+    else:
+        existing = _read_existing_file(project_dir / "settings.py")
+        if existing is not None:
+            files["settings.py"] = existing
+
+    # workflow files
+    if data.workflow_file:
+        problem_type = data.workflow_file.problem_type
+        if problem_type not in ("classification", "regression"):
+            problem_type = "regression"
+        filename = f"workflows/{problem_type}.py"
+        raw = _generate_workflow_content(data.workflow_file)
+        files[filename] = _merge_with_safe_zone(
+            project_dir / "workflows" / f"{problem_type}.py", raw
+        )
+    else:
+        workflows_dir = project_dir / "workflows"
+        if workflows_dir.is_dir():
+            for wf_path in sorted(workflows_dir.glob("*.py")):
+                existing = _read_existing_file(wf_path)
+                if existing is not None:
+                    files[f"workflows/{wf_path.name}"] = existing
+
+    return PreviewFilesResponse(files=files)
 
 
 class DeleteResponse(pydantic.BaseModel):
@@ -1491,7 +1687,7 @@ class ProjectStats(pydantic.BaseModel):
     experiments: int = 0
     datasets: int = 0
     algorithms: int = 0
-    metrics: int = 0
+    workflow_steps: int = 0
 
 
 def _count_experiment_groups_and_experiments(settings_content: str) -> tuple[int, int]:
@@ -1581,26 +1777,10 @@ def _count_algorithm_wrappers(algorithms_content: str) -> int:
     return len(re.findall(pattern, algorithms_content))
 
 
-def _count_metrics(metrics_content: str) -> int:
-    """Count metrics in metrics.py.
-    
-    Handles both explicit metric definitions and brisk.REGRESSION_METRICS/CLASSIFICATION_METRICS.
-    """
-    count = 0
-    
-    # Check for brisk built-in metric collections
-    if '*brisk.REGRESSION_METRICS' in metrics_content or '*brisk.regression_metrics' in metrics_content.lower():
-        # Brisk has 6 default regression metrics
-        count += 6
-    if '*brisk.CLASSIFICATION_METRICS' in metrics_content or '*brisk.classification_metrics' in metrics_content.lower():
-        # Brisk has 5 default classification metrics
-        count += 5
-    
-    # Count explicit Metric(...) or MetricWrapper(...) definitions
-    explicit_pattern = r'(?:Metric|MetricWrapper)\s*\('
-    count += len(re.findall(explicit_pattern, metrics_content))
-    
-    return count
+def _count_workflow_steps(workflow_content: str) -> int:
+    """Count self.method_name() calls inside the workflow method body."""
+    pattern = r'self\.\w+\s*\('
+    return len(re.findall(pattern, workflow_content))
 
 
 @router.get("/stats", response_model=ProjectStats)
@@ -1628,8 +1808,10 @@ async def get_project_stats(request: fastapi.Request):
         except Exception:
             pass
     
-    # Count datasets
-    stats.datasets = _count_datasets(project_path)
+    # Count datasets from project.json
+    config_service = ProjectConfigService(project_path)
+    config_data = config_service.read()
+    stats.datasets = len(config_data.get("datasets", []))
     
     # Parse algorithms.py
     algorithms_file = project_path / "algorithms.py"
@@ -1640,12 +1822,14 @@ async def get_project_stats(request: fastapi.Request):
         except Exception:
             pass
     
-    # Parse metrics.py
-    metrics_file = project_path / "metrics.py"
-    if metrics_file.exists():
+    # Count workflow steps from workflow file
+    config_data_for_type = config_service.read()
+    project_type = config_data_for_type.get("project_type", "classification")
+    workflow_file = project_path / "workflows" / f"{project_type}.py"
+    if workflow_file.exists():
         try:
-            content = metrics_file.read_text()
-            stats.metrics = _count_metrics(content)
+            content = workflow_file.read_text()
+            stats.workflow_steps = _count_workflow_steps(content)
         except Exception:
             pass
     
@@ -1707,11 +1891,13 @@ async def get_project_files(request: fastapi.Request):
     
     files: list[ProjectFileInfo] = []
     
-    # Add standard files
+    # Add standard files (skip evaluators.py if missing or empty)
     for file_id, filename in PROJECT_FILES:
         file_path = project_path / filename
         exists = file_path.exists()
         size = file_path.stat().st_size if exists else 0
+        if filename == "evaluators.py" and (not exists or size == 0):
+            continue
         files.append(ProjectFileInfo(
             id=file_id,
             name=filename,
@@ -1996,26 +2182,20 @@ async def get_experiments_data(request: fastapi.Request):
     settings = request.app.state.settings
     project_path = settings.project_path
     
-    # Get datasets from datasets folder
+    # Get datasets from project.json
     datasets: list[DatasetInfo] = []
-    datasets_dir = project_path / "datasets"
-    if datasets_dir.exists():
-        for item in datasets_dir.iterdir():
-            if item.is_file():
-                suffix = item.suffix.lower()
-                if suffix in ('.csv', '.xlsx', '.xls'):
-                    datasets.append(DatasetInfo(
-                        name=item.stem,  # filename without extension
-                        filename=item.name,
-                        file_type=suffix[1:],  # remove the dot
-                    ))
-                elif suffix in ('.sqlite', '.db', '.sqlite3'):
-                    # For SQLite, we'd need to list tables - for now just list the file
-                    datasets.append(DatasetInfo(
-                        name=item.stem,
-                        filename=item.name,
-                        file_type="sqlite",
-                    ))
+    config_service = ProjectConfigService(project_path)
+    config_data = config_service.read()
+    for stored in config_data.get("datasets", []):
+        file_name = stored.get("file_name", "")
+        if not file_name:
+            continue
+        name = file_name.rsplit(".", 1)[0] if "." in file_name else file_name
+        datasets.append(DatasetInfo(
+            name=name,
+            filename=file_name,
+            file_type=stored.get("file_type", "csv"),
+        ))
     
     # Get algorithms from algorithms.py
     algorithms: list[AlgorithmInfo] = []
@@ -2097,12 +2277,14 @@ def _infer_dtype(values: list) -> str:
 
 @router.post("/parse-dataset-file", response_model=ParsedDatasetInfo)
 async def parse_dataset_file(
+    request: fastapi.Request,
     file: fastapi.UploadFile = fastapi.File(...),
 ):
-    """Parse a dataset file and return metadata without loading full file into memory.
+    """Parse a dataset file and return metadata, and save it to datasets/ directory.
     
     Supports CSV and XLSX files. Reads only the first few rows to infer column types.
     The target feature is assumed to be the last column.
+    Also saves the file to the project's datasets/ directory if the project path exists.
     """
     if not file.filename:
         raise fastapi.HTTPException(status_code=400, detail="No filename provided")
@@ -2115,16 +2297,37 @@ async def parse_dataset_file(
             detail=f"Unsupported file type: {file_ext}. Only CSV and XLSX are supported."
         )
     
+    # Read the raw content so we can both parse and save
+    raw_content = await file.read()
+    await file.seek(0)
+    
     try:
         if file_ext == "csv":
-            return await _parse_csv_file(file)
+            result = await _parse_csv_file(file)
         else:  # xlsx or xls
-            return await _parse_xlsx_file(file)
+            result = await _parse_xlsx_file(file)
     except Exception as e:
         raise fastapi.HTTPException(
             status_code=500,
             detail=f"Failed to parse file: {str(e)}"
         )
+    
+    # Save file: in create mode, hold in memory until project is created;
+    # in edit mode, write directly to datasets/ directory
+    create_mode = os.environ.get("BRISK_UI_CREATE_MODE", "false") == "true"
+    if create_mode:
+        global _pending_uploads
+        _pending_uploads[file.filename] = raw_content
+    else:
+        settings = request.app.state.settings
+        datasets_dir = settings.project_path / "datasets"
+        try:
+            datasets_dir.mkdir(parents=True, exist_ok=True)
+            (datasets_dir / file.filename).write_bytes(raw_content)
+        except Exception:
+            pass
+    
+    return result
 
 
 async def _parse_csv_file(file: fastapi.UploadFile) -> ParsedDatasetInfo:
@@ -2364,56 +2567,33 @@ def _list_dataset_files(project_path) -> list[dict]:
 
 @router.get("/datasets", response_model=StoredDatasetsResponse)
 async def get_datasets(request: fastapi.Request):
-    """Get datasets by merging file system with stored configuration.
+    """Get datasets from project.json stored configuration.
     
-    - Lists files in datasets/ directory
-    - Loads stored configurations from project.json
-    - Merges: if file exists, use stored config if available, otherwise create minimal entry
-    - Ignores stored configs for files that no longer exist
+    Returns only datasets that have been explicitly configured and saved.
     """
     settings = request.app.state.settings
     project_path = settings.project_path
     
-    # Get files from file system
-    file_entries = _list_dataset_files(project_path)
-    
-    # Load stored configs from project.json
     config_service = ProjectConfigService(project_path)
     config_data = config_service.read()
     stored_datasets = config_data.get("datasets", [])
     
-    # Create a lookup by ID for stored configs
-    stored_by_id = {d.get("id"): d for d in stored_datasets if d.get("id")}
-    
-    # Merge: use stored config if available, otherwise create minimal entry from file
     result_datasets: list[StoredDatasetConfig] = []
-    
-    for file_entry in file_entries:
-        file_id = file_entry["id"]
-        
-        if file_id in stored_by_id:
-            # Use stored config
-            stored = stored_by_id[file_id]
-            result_datasets.append(StoredDatasetConfig(
-                id=file_id,
-                file_name=stored.get("file_name", file_entry["file_name"]),
-                table_name=stored.get("table_name", file_entry["table_name"]),
-                file_type=stored.get("file_type", file_entry["file_type"]),
-                target_feature=stored.get("target_feature", ""),
-                features_count=stored.get("features_count", 0),
-                observations_count=stored.get("observations_count", 0),
-                features=[StoredFeatureInfo(**f) for f in stored.get("features", [])],
-                data_manager=StoredDataManagerConfig(**stored["data_manager"]) if stored.get("data_manager") else None,
-                preprocessors=[StoredPreprocessorConfig(**p) for p in stored.get("preprocessors", [])],
-            ))
-        else:
-            # Create minimal entry from file info
-            result_datasets.append(StoredDatasetConfig(
-                id=file_id,
-                file_name=file_entry["file_name"],
-                table_name=file_entry["table_name"],
-                file_type=file_entry["file_type"],
-            ))
+    for stored in stored_datasets:
+        if not stored.get("id"):
+            continue
+        result_datasets.append(StoredDatasetConfig(
+            id=stored["id"],
+            file_name=stored.get("file_name", ""),
+            table_name=stored.get("table_name"),
+            file_type=stored.get("file_type", "csv"),
+            target_feature=stored.get("target_feature", ""),
+            features_count=stored.get("features_count", 0),
+            observations_count=stored.get("observations_count", 0),
+            features=[StoredFeatureInfo(**f) for f in stored.get("features", [])],
+            data_manager=StoredDataManagerConfig(**stored["data_manager"]) if stored.get("data_manager") else None,
+            preprocessors=[StoredPreprocessorConfig(**p) for p in stored.get("preprocessors", [])],
+        ))
     
     return StoredDatasetsResponse(datasets=result_datasets)
 

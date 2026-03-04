@@ -118,7 +118,7 @@ export function ViewAlgorithmModal({
                   Default Parameters
                 </span>
                 <div
-                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 rounded space-y-2 sm:space-y-2.5 max-h-[150px] sm:max-h-[180px] overflow-y-auto`}
+                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 space-y-2 sm:space-y-2.5 max-h-[150px] sm:max-h-[180px] overflow-y-auto`}
                 >
                   <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                     {hyperparameterEntries.map(([key, value]) => (
@@ -148,7 +148,7 @@ export function ViewAlgorithmModal({
                   Search Space
                 </span>
                 <div
-                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 rounded space-y-2 sm:space-y-2.5 max-h-[150px] sm:max-h-[180px] overflow-y-auto`}
+                  className={`${STYLES.bgDark} border ${STYLES.border} p-3 sm:p-4 space-y-2 sm:space-y-2.5 max-h-[150px] sm:max-h-[180px] overflow-y-auto`}
                 >
                   <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
                     {searchSpaceEntries.map(([key, values]) => (

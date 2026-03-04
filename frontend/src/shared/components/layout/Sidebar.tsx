@@ -67,7 +67,7 @@ export function Sidebar() {
           "hidden md:flex fixed left-0 top-0 h-screen max-h-screen flex-col z-50",
           "backdrop-blur-[10px] bg-[rgba(24,24,24,0.9)]",
           "w-[64px] md:w-[72px] lg:w-[88px] xl:w-[100px]",
-          "hover:w-[220px] md:hover:w-[240px] lg:hover:w-[260px] xl:hover:w-[300px]",
+          "hover:w-[240px] md:hover:w-[260px] lg:hover:w-[290px] xl:hover:w-[340px]",
           "items-stretch",
           "py-1.5 px-1.5 md:py-2 md:px-2 lg:py-2.5 lg:px-2.5 xl:p-[10px]",
           "gap-0.5 md:gap-1 lg:gap-2 xl:gap-[10px]",
@@ -100,7 +100,7 @@ export function Sidebar() {
             className="flex flex-col gap-1 md:gap-2 lg:gap-3 xl:gap-[32px] shrink-0 w-full items-stretch"
           >
             {/* Divider */}
-            <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[180px] md:group-hover:w-[200px] lg:group-hover:w-[220px] xl:group-hover:w-[250px] transition-all duration-300" />
+            <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-all duration-300" />
 
             {/* Navigation Items */}
             {group.items.map((item) => {
@@ -163,7 +163,7 @@ export function Sidebar() {
                         "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-none whitespace-nowrap overflow-hidden",
                         "transition-[max-width,opacity] duration-300 ease-out",
                         isActive ? "font-bold" : "font-normal",
-                        "max-w-0 opacity-0 group-hover:max-w-[160px] md:group-hover:max-w-[180px] lg:group-hover:max-w-[200px] group-hover:opacity-100",
+                        "max-w-0 opacity-0 group-hover:max-w-[170px] md:group-hover:max-w-[185px] lg:group-hover:max-w-[200px] xl:group-hover:max-w-[240px] group-hover:opacity-100",
                       )}
                     >
                       {isSaveButton && isSaving ? "Saving..." : item.label}
@@ -178,7 +178,7 @@ export function Sidebar() {
         {/* Results section with divider */}
         <div className="shrink-0 w-full flex flex-col gap-1 md:gap-2 lg:gap-3 xl:gap-[32px]">
           {/* Divider above results */}
-          <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[180px] md:group-hover:w-[200px] lg:group-hover:w-[220px] xl:group-hover:w-[250px] transition-all duration-300" />
+          <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-all duration-300" />
 
           {/* Results item */}
           <div className="relative group/item">
@@ -221,7 +221,7 @@ export function Sidebar() {
                   "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-none whitespace-nowrap overflow-hidden",
                   "transition-[max-width,opacity] duration-300 ease-out",
                   pathname === resultsItem.href ? "font-bold" : "font-normal",
-                  "max-w-0 opacity-0 group-hover:max-w-[160px] md:group-hover:max-w-[180px] lg:group-hover:max-w-[200px] group-hover:opacity-100",
+                  "max-w-0 opacity-0 group-hover:max-w-[170px] md:group-hover:max-w-[185px] lg:group-hover:max-w-[200px] xl:group-hover:max-w-[240px] group-hover:opacity-100",
                 )}
               >
                 {resultsItem.label}
@@ -233,7 +233,7 @@ export function Sidebar() {
         {/* Settings section with divider */}
         <div className="shrink-0 w-full flex flex-col gap-1 md:gap-2 lg:gap-3 xl:gap-[32px]">
           {/* Divider above settings */}
-          <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[180px] md:group-hover:w-[200px] lg:group-hover:w-[220px] xl:group-hover:w-[250px] transition-all duration-300" />
+          <div className="h-0 border-t border-white/20 shrink-0 w-8 md:w-10 lg:w-12 xl:w-[60px] group-hover:w-[200px] md:group-hover:w-[220px] lg:group-hover:w-[250px] xl:group-hover:w-[290px] transition-all duration-300" />
 
           {/* Settings item */}
           <div className="relative group/item">
@@ -277,7 +277,7 @@ export function Sidebar() {
                   "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-none whitespace-nowrap overflow-hidden",
                   "transition-[max-width,opacity] duration-300 ease-out",
                   pathname === settingsItem.href ? "font-bold" : "font-normal",
-                  "max-w-0 opacity-0 group-hover:max-w-[160px] md:group-hover:max-w-[180px] lg:group-hover:max-w-[200px] group-hover:opacity-100",
+                  "max-w-0 opacity-0 group-hover:max-w-[170px] md:group-hover:max-w-[185px] lg:group-hover:max-w-[200px] xl:group-hover:max-w-[240px] group-hover:opacity-100",
                 )}
               >
                 {settingsItem.label}
@@ -303,7 +303,7 @@ export function Sidebar() {
                 to={item.href}
                 onClick={(e) => handleItemClick(e, item)}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors flex-shrink-0 min-w-[70px] relative",
+                  "flex flex-col items-center gap-1 p-2 transition-colors flex-shrink-0 min-w-[70px] relative",
                   isActive ? "bg-accent-500/10" : "",
                 )}
               >
@@ -320,7 +320,7 @@ export function Sidebar() {
                   />
                   {/* Pending changes indicator for mobile */}
                   {isSaveButton && hasChanges && (
-                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#1175d5] animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#1175d5] animate-pulse" />
                   )}
                 </div>
                 <span

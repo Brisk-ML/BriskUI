@@ -6,6 +6,7 @@ import { apiClient } from "./client";
 
 export interface ServerStatus {
   project_path: string;
+  cwd: string;
   create_mode: boolean;
   project_initialized: boolean;
   database_exists: boolean;

@@ -15,8 +15,9 @@ export function ProjectInfoStep() {
   useEffect(() => {
     if (mode === "create" && !projectInfo.projectPath) {
       getServerStatus().then((status) => {
-        if (status.project_path && !projectInfo.projectPath) {
-          setProjectInfo({ projectPath: status.project_path });
+        const defaultPath = status.cwd || status.project_path;
+        if (defaultPath && !projectInfo.projectPath) {
+          setProjectInfo({ projectPath: defaultPath });
         }
       }).catch(() => {
         // Ignore errors - path will just be empty

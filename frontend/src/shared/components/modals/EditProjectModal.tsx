@@ -83,7 +83,7 @@ function ColorSwatch({ label, color, onChange }: ColorSwatchProps) {
       <button
         ref={swatchRef}
         type="button"
-        className={`w-8 h-8 sm:w-10 sm:h-10 border-2 ${STYLES.border} cursor-pointer rounded transition-opacity hover:opacity-90`}
+        className={`w-8 h-8 sm:w-10 sm:h-10 border-2 ${STYLES.border} cursor-pointer transition-opacity hover:opacity-90`}
         style={{ backgroundColor: color }}
         onClick={handleSwatchClick}
         aria-label={`Pick color for ${label}`}
@@ -251,7 +251,7 @@ export function EditProjectModal() {
       <Dialog open={showMoveConfirm} onOpenChange={setShowMoveConfirm}>
         <DialogContent
           showCloseButton={false}
-          className={`max-w-[95vw] sm:max-w-[500px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 rounded-none`}
+          className={`max-w-[95vw] sm:max-w-[500px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6`}
         >
           <DialogHeader className="mb-4">
             <div className="flex items-center gap-3">
@@ -266,11 +266,11 @@ export function EditProjectModal() {
           </DialogHeader>
 
           <div className="space-y-4 mb-6">
-            <div className="p-3 bg-[#181818] border border-[#404040] rounded">
+            <div className="p-3 bg-[#181818] border border-[#404040]">
               <p className="text-white/60 text-xs mb-1">From:</p>
               <p className="text-white text-sm font-mono break-all">{projectPath}</p>
             </div>
-            <div className="p-3 bg-[#181818] border border-[#404040] rounded">
+            <div className="p-3 bg-[#181818] border border-[#404040]">
               <p className="text-white/60 text-xs mb-1">To:</p>
               <p className="text-white text-sm font-mono break-all">{localPath}</p>
             </div>
@@ -303,7 +303,7 @@ export function EditProjectModal() {
       <Dialog open={!!moveSuccess} onOpenChange={() => setMoveSuccess(null)}>
         <DialogContent
           showCloseButton={false}
-          className={`max-w-[95vw] sm:max-w-[550px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 rounded-none`}
+          className={`max-w-[95vw] sm:max-w-[550px] border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6`}
         >
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-bold text-green-400 font-display">
@@ -315,17 +315,17 @@ export function EditProjectModal() {
             <p className="text-white/90 text-sm">
               Your project has been moved to:
             </p>
-            <div className="p-3 bg-[#181818] border border-green-600/50 rounded">
+            <div className="p-3 bg-[#181818] border border-green-600/50">
               <p className="text-green-400 text-sm font-mono break-all">{moveSuccess?.newPath}</p>
             </div>
-            <div className="p-4 bg-yellow-600/20 border border-yellow-600/50 rounded">
+            <div className="p-4 bg-yellow-600/20 border border-yellow-600/50">
               <p className="text-yellow-200 text-sm font-medium mb-2">
                 Important: Restart Required
               </p>
               <p className="text-white/70 text-sm">
                 Please restart the UI by running:
               </p>
-              <code className="block mt-2 p-2 bg-[#181818] text-green-400 text-xs font-mono rounded">
+              <code className="block mt-2 p-2 bg-[#181818] text-green-400 text-xs font-mono">
                 brisk ui {moveSuccess?.newPath}
               </code>
             </div>
@@ -352,7 +352,7 @@ export function EditProjectModal() {
       >
         <DialogContent
           showCloseButton={false}
-          className={`max-w-[95vw] sm:max-w-[90vw] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] 2xl:max-w-[1100px] max-h-[90vh] overflow-y-auto border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 md:p-8 rounded-none`}
+          className={`max-w-[95vw] sm:max-w-[90vw] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] 2xl:max-w-[1100px] max-h-[90vh] overflow-y-auto border-[2px] ${STYLES.border} ${STYLES.bgCard} p-4 sm:p-6 md:p-8`}
         >
           <DialogHeader className="mb-4 sm:mb-6">
             <DialogTitle className="h1-underline text-xl sm:text-2xl md:text-3xl font-bold text-[#ebebeb] font-display text-left w-fit">
@@ -371,7 +371,7 @@ export function EditProjectModal() {
                   value={localPath}
                   onChange={(e) => setLocalPath(e.target.value)}
                   placeholder="path/to/project"
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base h-9 sm:h-10 placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50 rounded-none`}
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base h-9 sm:h-10 placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50`}
                 />
                 {pathHasChanged && (
                   <p className="text-yellow-500 text-xs mt-1">
@@ -388,7 +388,7 @@ export function EditProjectModal() {
                   value={localDescription}
                   onChange={(e) => setLocalDescription(e.target.value)}
                   placeholder="This is a classification project training on ..."
-                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base min-h-[80px] sm:min-h-[100px] resize-none placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50 rounded-none`}
+                  className={`${STYLES.bgCardAlt} ${STYLES.border} text-white text-sm sm:text-base min-h-[80px] sm:min-h-[100px] resize-none placeholder:text-white/60 focus-visible:border-white focus-visible:ring-white/50`}
                 />
               </div>
             </div>
@@ -504,7 +504,7 @@ export function EditProjectModal() {
           </div>
 
           {saveError && (
-            <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-md">
+            <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50">
               <p className="text-red-400 text-sm font-display">{saveError}</p>
             </div>
           )}

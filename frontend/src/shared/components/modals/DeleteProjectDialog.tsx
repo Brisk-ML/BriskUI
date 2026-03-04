@@ -90,7 +90,7 @@ export function DeleteProjectDialog() {
           </div>
 
           {deleteError && (
-            <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-md">
+            <div className="p-3 bg-red-500/20 border border-red-500/50">
               <p className="text-red-400 text-sm font-display">{deleteError}</p>
             </div>
           )}

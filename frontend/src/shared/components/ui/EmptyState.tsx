@@ -17,7 +17,7 @@ function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-8 sm:py-12 lg:py-16 px-4 text-center">
       {Icon && (
-        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-bg-tertiary flex items-center justify-center mb-3 sm:mb-4">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-bg-tertiary flex items-center justify-center mb-3 sm:mb-4">
           <Icon className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-text-tertiary" />
         </div>
       )}

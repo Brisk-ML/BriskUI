@@ -12,7 +12,7 @@ export default function Home() {
     experiments: 0,
     datasets: 0,
     algorithms: 0,
-    metrics: 0,
+    workflow_steps: 0,
   });
 
   // Fetch stats on mount and when returning to page
@@ -30,10 +30,10 @@ export default function Home() {
 
   const statsCards = [
     { label: "Experiments", value: stats.experiments, href: "/experiments" },
-    { label: "Groups", value: stats.groups },
+    { label: "Groups", value: stats.groups, href: "/experiments" },
     { label: "Datasets", value: stats.datasets, href: "/datasets" },
     { label: "Algorithms", value: stats.algorithms, href: "/algorithms" },
-    { label: "Metrics", value: stats.metrics },
+    { label: "Workflow Steps", value: stats.workflow_steps, href: "/workflow" },
   ];
 
   return (
@@ -44,14 +44,14 @@ export default function Home() {
           <div className="flex flex-col gap-4 sm:gap-5 md:gap-6 lg:min-w-[400px]">
             <button
               type="button"
-              className="relative group cursor-pointer py-2 -my-2 px-2 -mx-2 rounded-lg w-full text-left bg-transparent border-none"
+              className="relative group cursor-pointer py-2 -my-2 px-2 -mx-2 w-full text-left bg-transparent border-none"
               onClick={() => openEditModal()}
             >
-              <div className="absolute -left-[1px] top-0 bottom-0 w-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
-                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-t from-transparent via-50% via-[#1175d5] to-transparent rounded-l-lg">
+              <div className="absolute -left-[1px] top-0 bottom-0 w-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-t from-transparent via-50% via-[#1175d5] to-transparent">
                   <div className="absolute -left-[3px] top-[20%] bottom-[20%] w-[8px] bg-[#1175d5] blur-[5px]" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,155,252,0.3)] via-[rgba(10,155,252,0.1)] to-transparent rounded-lg" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,155,252,0.3)] via-[rgba(10,155,252,0.1)] to-transparent" />
               </div>
               <h1 className="relative z-10 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[48px] font-bold text-white font-display leading-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.25)]">
                 {projectName}
@@ -59,16 +59,18 @@ export default function Home() {
             </button>
 
             <div className="flex gap-6 sm:gap-8 md:gap-12 lg:gap-[75px] items-center pl-1 sm:pl-2 lg:pl-[13px]">
-              <button
-                type="button"
-                className="relative flex items-center gap-2 sm:gap-3 cursor-pointer py-2 px-2 -my-2 -mx-2 rounded-lg group/link bg-transparent border-none"
+              <a
+                href="https://github.com/Brisk-ML/brisk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex items-center gap-2 sm:gap-3 cursor-pointer py-2 px-2 -my-2 -mx-2 group/link bg-transparent border-none no-underline"
                 title="GitHub"
               >
-                <div className="absolute -left-[1px] top-0 bottom-0 w-full pointer-events-none opacity-0 group-hover/link:opacity-100 transition-opacity duration-300 rounded-lg">
-                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-t from-transparent via-50% via-[#1175d5] to-transparent rounded-l-lg">
+                <div className="absolute -left-[1px] top-0 bottom-0 w-full pointer-events-none opacity-0 group-hover/link:opacity-100 transition-opacity duration-300">
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-t from-transparent via-50% via-[#1175d5] to-transparent">
                     <div className="absolute -left-[3px] top-[20%] bottom-[20%] w-[8px] bg-[#1175d5] blur-[5px]" />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,155,252,0.3)] via-[rgba(10,155,252,0.1)] to-transparent rounded-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,155,252,0.3)] via-[rgba(10,155,252,0.1)] to-transparent" />
                 </div>
                 <img
                   src="/gthub.svg"
@@ -78,17 +80,19 @@ export default function Home() {
                 <span className="relative z-10 text-white text-base sm:text-lg font-display opacity-0 group-hover/link:opacity-100 transition-opacity">
                   GitHub
                 </span>
-              </button>
-              <button
-                type="button"
-                className="relative flex items-center gap-2 sm:gap-3 cursor-pointer py-2 px-2 -my-2 -mx-2 rounded-lg group/link bg-transparent border-none"
+              </a>
+              <a
+                href="https://docs.briskml.org/en/latest/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex items-center gap-2 sm:gap-3 cursor-pointer py-2 px-2 -my-2 -mx-2 group/link bg-transparent border-none no-underline"
                 title="Documentation"
               >
-                <div className="absolute -left-[1px] top-0 bottom-0 w-full pointer-events-none opacity-0 group-hover/link:opacity-100 transition-opacity duration-300 rounded-lg">
-                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-t from-transparent via-50% via-[#1175d5] to-transparent rounded-l-lg">
+                <div className="absolute -left-[1px] top-0 bottom-0 w-full pointer-events-none opacity-0 group-hover/link:opacity-100 transition-opacity duration-300">
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-t from-transparent via-50% via-[#1175d5] to-transparent">
                     <div className="absolute -left-[3px] top-[20%] bottom-[20%] w-[8px] bg-[#1175d5] blur-[5px]" />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,155,252,0.3)] via-[rgba(10,155,252,0.1)] to-transparent rounded-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,155,252,0.3)] via-[rgba(10,155,252,0.1)] to-transparent" />
                 </div>
                 <img
                   src="/documentation.svg"
@@ -98,7 +102,7 @@ export default function Home() {
                 <span className="relative z-10 text-white text-base sm:text-lg font-display opacity-0 group-hover/link:opacity-100 transition-opacity">
                   Documentation
                 </span>
-              </button>
+              </a>
             </div>
           </div>
 

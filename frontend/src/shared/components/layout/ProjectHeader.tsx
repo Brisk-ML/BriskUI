@@ -24,14 +24,14 @@ export function ProjectHeader({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:bg-bg-tertiary transition-colors text-text-tertiary hover:text-text-primary"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-bg-tertiary transition-colors text-text-tertiary hover:text-text-primary"
             title="GitHub Repository"
           >
             <Github size={20} />
           </button>
           <button
             type="button"
-            className="w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:bg-bg-tertiary transition-colors text-text-tertiary hover:text-text-primary"
+            className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-bg-tertiary transition-colors text-text-tertiary hover:text-text-primary"
             title="Files"
           >
             <FileText size={20} />

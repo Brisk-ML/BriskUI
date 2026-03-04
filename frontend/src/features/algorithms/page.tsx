@@ -10,7 +10,7 @@ export default function AlgorithmsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { setAlgorithmWrappers, setProblemType } = usePendingChangesStore();
+  const { setAlgorithmWrappers, setProblemType, markSectionLoaded } = usePendingChangesStore();
   const { projectType } = useProjectStore();
 
   // Load existing algorithms from backend on mount
@@ -37,6 +37,7 @@ export default function AlgorithmsPage() {
         setAlgorithmWrappers(wrappers);
         setProblemType(projectType);
         
+        markSectionLoaded("algorithms");
         // Reset hasChanges since we just loaded from backend
         usePendingChangesStore.setState({ hasChanges: false });
       } catch (err) {

@@ -5,11 +5,13 @@ import {
   writeDataFile,
   writeAlgorithmsFile,
   writeMetricsFile,
-  writeEvaluatorsFile,
   writeSettingsFile,
   writeWorkflowFile,
+  saveDatasets,
   switchToEditMode,
   type CategoricalFeaturesEntry,
+  type StoredDatasetConfig,
+  type StoredPreprocessorConfig,
 } from "@/api";
 import { Button } from "@/shared/components/ui/button";
 import { useProjectWizardStore } from "@/features/project/stores/useProjectWizardStore";
@@ -83,14 +85,6 @@ export function SaveStep() {
         });
       }
       
-      // Write metrics.py based on problem type
-      await writeMetricsFile({
-        problem_type: problemType,
-      });
-      
-      // Write evaluators.py template
-      await writeEvaluatorsFile();
-      
       // Write workflow file (workflows/regression.py or workflows/classification.py)
       if (workflowSteps.length > 0) {
         await writeWorkflowFile({
@@ -102,6 +96,9 @@ export function SaveStep() {
           })),
         });
       }
+
+      // Write default metrics.py based on problem type
+      await writeMetricsFile({ problem_type: problemType });
       
       // Write settings.py with Configuration and experiment groups
       if (experimentGroups.length > 0) {
@@ -215,6 +212,61 @@ export function SaveStep() {
         });
       }
       
+      // Save datasets to project.json for persistence
+      if (datasets.length > 0) {
+        const PREPROCESSOR_ORDER_DS: Array<"missing-data" | "encoding" | "scaling" | "feature-selection"> = [
+          "missing-data", "encoding", "scaling", "feature-selection",
+        ];
+        const PREPROCESSOR_KEYS_DS: Record<string, string> = {
+          "missing-data": "missingData",
+          encoding: "encoding",
+          scaling: "scaling",
+          "feature-selection": "featureSelection",
+        };
+
+        const storedDatasets: StoredDatasetConfig[] = datasets.map((d) => {
+          const dsConfig = datasetConfigs[d.id];
+          const preprocessorsObj = dsConfig?.preprocessors;
+          const configured = dsConfig?.configuredPreprocessors ?? [];
+
+          const storedPreprocessors: StoredPreprocessorConfig[] = [];
+          for (const type of PREPROCESSOR_ORDER_DS) {
+            if (!configured.includes(type)) continue;
+            const key = PREPROCESSOR_KEYS_DS[type];
+            const config = key && preprocessorsObj?.[key];
+            if (config && typeof config === "object") {
+              storedPreprocessors.push({ type, config: config as Record<string, unknown> });
+            }
+          }
+
+          return {
+            id: d.id || d.fileName,
+            file_name: d.fileName,
+            table_name: d.tableName || null,
+            file_type: d.fileType,
+            target_feature: d.targetFeature,
+            features_count: d.featuresCount,
+            observations_count: d.observationsCount,
+            features: d.features.map((f) => ({
+              name: f.name,
+              data_type: f.type,
+              categorical: f.categorical,
+            })),
+            data_manager: dsConfig?.dataManager ? {
+              test_size: dsConfig.dataManager.testSize,
+              n_splits: dsConfig.dataManager.nSplits,
+              split_method: dsConfig.dataManager.splitMethod,
+              group_column: dsConfig.dataManager.groupColumn,
+              stratified: dsConfig.dataManager.stratified,
+              random_state: dsConfig.dataManager.randomState,
+            } : null,
+            preprocessors: storedPreprocessors,
+          };
+        });
+
+        await saveDatasets({ datasets: storedDatasets });
+      }
+
       // Refresh the global project store after sync
       await fetchProjectSettings();
       setSyncSuccess(true);
@@ -255,7 +307,7 @@ export function SaveStep() {
         <div className="flex flex-col items-center gap-6 mb-8">
           {syncSuccess ? (
             <>
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#00a878] flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#00a878] flex items-center justify-center">
                 <Check className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
               <p className="text-white text-xl sm:text-2xl font-display text-center">
@@ -277,7 +329,7 @@ export function SaveStep() {
             </>
           ) : isProjectInfoComplete ? (
             <>
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#00a878] flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#00a878] flex items-center justify-center">
                 <Check className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
               <p className="text-white text-xl sm:text-2xl font-display text-center">
@@ -291,7 +343,7 @@ export function SaveStep() {
             </>
           ) : (
             <>
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-yellow-600 flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-yellow-600 flex items-center justify-center">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
               <p className="text-white text-xl sm:text-2xl font-display text-center">
@@ -306,7 +358,7 @@ export function SaveStep() {
 
         {/* Error Display */}
         {(syncError || localError) && (
-          <div className="mb-8 p-4 bg-red-500/20 border border-red-500/50 rounded-md">
+          <div className="mb-8 p-4 bg-red-500/20 border border-red-500/50">
             <p className="text-red-400 text-sm font-display text-center">
               {syncError || localError}
             </p>
@@ -315,10 +367,10 @@ export function SaveStep() {
 
         {/* Summary */}
         <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display mb-4">
             Project Summary
           </h2>
-          <div className="space-y-2 text-white/80 font-display">
+          <div className="space-y-2 text-white/80 font-display text-base sm:text-lg">
             <p>
               • Project Name:{" "}
               <span className={projectInfo.projectName ? "text-white" : "text-white/40"}>
@@ -351,10 +403,10 @@ export function SaveStep() {
 
         {/* Data Manager Summary */}
         <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display mb-4">
             Data Manager (data.py)
           </h2>
-          <div className="space-y-2 text-white/80 font-display text-sm">
+          <div className="space-y-2 text-white/80 font-display text-base sm:text-lg">
             <p>
               • Test Size: <span className="text-white">{Math.round(baseDataManager.testSize * 100)}%</span>
             </p>
@@ -384,15 +436,15 @@ export function SaveStep() {
 
         {/* Algorithms Summary */}
         <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display mb-4">
             Algorithms (algorithms.py)
           </h2>
           {wrappers.length === 0 ? (
-            <p className="text-white/40 font-display text-sm">
+            <p className="text-white/40 font-display text-base sm:text-lg">
               No algorithms configured. Add algorithms in the Algorithms step.
             </p>
           ) : (
-            <div className="space-y-2 text-white/80 font-display text-sm">
+            <div className="space-y-2 text-white/80 font-display text-base sm:text-lg">
               <p>
                 • Total Algorithms: <span className="text-white">{wrappers.length}</span>
               </p>
@@ -403,7 +455,7 @@ export function SaveStep() {
                     <span className="text-white">{wrapper.displayName}</span>
                     <span className="text-white/40">({wrapper.className})</span>
                     {!wrapper.useDefaults && Object.keys(wrapper.defaultParams).length > 0 && (
-                      <span className="text-yellow-500 text-xs">custom params</span>
+                      <span className="text-yellow-500 text-sm">custom params</span>
                     )}
                   </div>
                 ))}
@@ -412,51 +464,17 @@ export function SaveStep() {
           )}
         </div>
 
-        {/* Metrics Summary */}
-        <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
-            Metrics (metrics.py)
-          </h2>
-          <div className="space-y-2 text-white/80 font-display text-sm">
-            <p>
-              • Using default{" "}
-              <span className="text-white capitalize">{problemType}</span>{" "}
-              metrics from Brisk
-            </p>
-            <p className="text-white/40 text-xs mt-2">
-              {problemType === "classification"
-                ? "Includes: Accuracy, Precision, Recall, F1, ROC AUC, etc."
-                : "Includes: MSE, RMSE, MAE, R², etc."}
-            </p>
-          </div>
-        </div>
-
-        {/* Evaluators Summary */}
-        <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
-            Evaluators (evaluators.py)
-          </h2>
-          <div className="space-y-2 text-white/80 font-display text-sm">
-            <p>
-              • Template file for custom evaluators
-            </p>
-            <p className="text-white/40 text-xs mt-2">
-              You can add custom plot and measure evaluators after project creation.
-            </p>
-          </div>
-        </div>
-
         {/* Workflow Summary */}
         <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display mb-4">
             Workflow (workflows/{problemType}.py)
           </h2>
           {workflowSteps.length === 0 ? (
-            <p className="text-white/40 font-display text-sm">
+            <p className="text-white/40 font-display text-base sm:text-lg">
               No workflow steps configured. Add evaluator steps in the Workflow step.
             </p>
           ) : (
-            <div className="space-y-2 text-white/80 font-display text-sm">
+            <div className="space-y-2 text-white/80 font-display text-base sm:text-lg">
               <p>
                 • Class: <span className="text-white capitalize">{problemType}</span>
               </p>
@@ -469,7 +487,7 @@ export function SaveStep() {
                     <span className="text-white/40">{i + 1}.</span>
                     <span className="text-white">{step.methodName}</span>
                     {step.args.filename != null && (
-                      <span className="text-white/40 text-xs">
+                      <span className="text-white/40 text-sm">
                         ({String(step.args.filename)})
                       </span>
                     )}
@@ -482,15 +500,15 @@ export function SaveStep() {
 
         {/* Experiments Summary */}
         <div className="border border-[#404040] p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-white font-display mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white font-display mb-4">
             Experiments (settings.py)
           </h2>
           {experimentGroups.length === 0 ? (
-            <p className="text-white/40 font-display text-sm">
+            <p className="text-white/40 font-display text-base sm:text-lg">
               No experiment groups configured. Add experiment groups in the Experiments step.
             </p>
           ) : (
-            <div className="space-y-2 text-white/80 font-display text-sm">
+            <div className="space-y-2 text-white/80 font-display text-base sm:text-lg">
               <p>
                 • Workflow: <span className="text-white capitalize">{problemType}</span>
               </p>
@@ -506,14 +524,14 @@ export function SaveStep() {
                     <div className="flex items-center gap-2">
                       <span className="text-white font-medium">{group.name}</span>
                       {!group.useDefaultDataManager && (
-                        <span className="text-yellow-500 text-xs">custom data config</span>
+                        <span className="text-yellow-500 text-sm">custom data config</span>
                       )}
                     </div>
-                    <div className="text-white/40 text-xs">
+                    <div className="text-white/40 text-sm">
                       Dataset: {group.datasetFileName}
                       {group.datasetTableName && ` (${group.datasetTableName})`}
                     </div>
-                    <div className="text-white/40 text-xs">
+                    <div className="text-white/40 text-sm">
                       Algorithms: {group.algorithms.join(", ")}
                     </div>
                   </div>

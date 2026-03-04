@@ -1,4 +1,4 @@
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, GripVertical, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getWorkflowData } from "@/api";
@@ -179,7 +179,7 @@ function EvaluatorModal({
                     triggerClassName={`${STYLES.bgCardAlt} ${STYLES.border} text-white h-9 sm:h-10 text-sm sm:text-base`}
                   />
                 ) : field.type === "metrics" ? (
-                  <div className="flex flex-wrap gap-2 p-2 rounded border border-[#404040] bg-[#181818] max-h-[140px] overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 p-2 border border-[#404040] bg-[#181818] max-h-[140px] overflow-y-auto">
                     {metricsOptions.map((opt) => {
                       const selected = (currentArgs[field.name] as string[] | undefined) ?? [];
                       const checked = selected.includes(opt.value);
@@ -266,7 +266,14 @@ function EvaluatorModal({
             ))}
           </div>
 
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className={`${STYLES.bgCardAlt} border ${STYLES.border} text-white h-10 sm:h-11 md:h-12 px-6 text-base sm:text-lg font-display hover:bg-[#303030] transition-colors`}
+            >
+              Cancel
+            </Button>
             <Button
               type="button"
               onClick={handleSaveClick}
@@ -288,7 +295,8 @@ export default function WorkflowPage() {
     setWorkflowSteps,
     addWorkflowStep,
     removeWorkflowStep,
-    moveWorkflowStep,
+    markChanged,
+    markSectionLoaded,
   } = usePendingChangesStore();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -302,6 +310,17 @@ export default function WorkflowPage() {
   const [selectedEvaluator, setSelectedEvaluator] =
     useState<WorkflowEvaluatorDef | null>(null);
   const [editingStep, setEditingStep] = useState<WorkflowStepState | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const handleDragEnter = (index: number) => {
+    if (dragIndex === null || dragIndex === index) return;
+    const reordered = [...workflowSteps];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(index, 0, moved);
+    setWorkflowSteps(reordered);
+    markChanged();
+    setDragIndex(index);
+  };
 
   // Load existing workflow on mount
   useEffect(() => {
@@ -320,6 +339,7 @@ export default function WorkflowPage() {
         
         setWorkflowSteps(loadedSteps);
         
+        markSectionLoaded("workflow");
         // Reset hasChanges after loading
         usePendingChangesStore.setState({ hasChanges: false });
       } catch (error) {
@@ -439,7 +459,7 @@ export default function WorkflowPage() {
             {workflowSteps.length === 0 ? (
               <div className="flex items-center justify-center h-[200px]">
                 <p className="text-white/60 text-lg sm:text-xl font-display">
-                  Click an evaluator above to add it to the workflow. Order added =
+                  Click an evaluator above to add it to the workflow. Order added is the
                   order executed.
                 </p>
               </div>
@@ -452,12 +472,11 @@ export default function WorkflowPage() {
                       evaluators={evaluators}
                       onRemove={() => removeWorkflowStep(step.id)}
                       onEdit={() => handleEditStep(step)}
-                      onMoveLeft={index > 0 ? () => moveWorkflowStep(step.id, "up") : undefined}
-                      onMoveRight={
-                        index < workflowSteps.length - 1
-                          ? () => moveWorkflowStep(step.id, "down")
-                          : undefined
-                      }
+                      onDragStart={() => setDragIndex(index)}
+                      onDragEnter={() => handleDragEnter(index)}
+                      onDragEnd={() => setDragIndex(null)}
+                      onDragOver={(e) => e.preventDefault()}
+                      isDragging={dragIndex === index}
                     />
                     {index < workflowSteps.length - 1 && (
                       <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/40 flex-shrink-0" />
@@ -488,28 +507,39 @@ function StepCard({
   evaluators,
   onRemove,
   onEdit,
-  onMoveLeft,
-  onMoveRight,
+  onDragStart,
+  onDragEnter,
+  onDragEnd,
+  onDragOver,
+  isDragging,
 }: {
   step: WorkflowStepState;
   evaluators: WorkflowEvaluatorDef[];
   onRemove: () => void;
   onEdit: () => void;
-  onMoveLeft?: () => void;
-  onMoveRight?: () => void;
+  onDragStart: () => void;
+  onDragEnter: () => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  isDragging: boolean;
 }) {
   const def = evaluators.find((e) => e.id === step.evaluatorId);
   const displayName = def?.name ?? step.methodName;
   const filename = step.args.filename != null ? String(step.args.filename) : null;
 
   return (
-    <button
-      type="button"
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnter={onDragEnter}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
       onClick={onEdit}
       className={cn(
-        "card-hover-fade relative border-2 border-[#404040] bg-[#282828] hover:bg-[#303030] transition-colors cursor-pointer",
-        "p-4 sm:p-5 w-[180px] sm:w-[200px] min-h-[100px] sm:min-h-[120px]",
-        "flex flex-col text-left",
+        "card-hover-fade relative border-2 border-[#404040] bg-[#282828] hover:bg-[#303030] transition-colors",
+        "p-4 sm:p-5 w-[220px] sm:w-[260px] min-h-[100px] sm:min-h-[120px]",
+        "flex flex-col text-left cursor-grab active:cursor-grabbing select-none",
+        isDragging && "opacity-50",
       )}
     >
       {/* Delete button */}
@@ -526,78 +556,26 @@ function StepCard({
             onRemove();
           }
         }}
-        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10"
+        className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors z-10"
+        title="Remove step"
       >
-        <X className="w-3.5 h-3.5 text-white" />
+        <X className="w-5 h-5" />
       </div>
 
       {/* Content */}
-      <div className="flex flex-col gap-1 flex-1">
-        <div className="text-white text-base sm:text-lg font-display font-bold pr-6">
-          {displayName}
+      <div className="flex items-start gap-2 flex-1">
+        <GripVertical className="w-4 h-4 text-white/30 mt-1 flex-shrink-0" />
+        <div className="flex flex-col gap-1">
+          <div className="text-white text-base sm:text-lg font-display font-bold pr-6">
+            {displayName}
+          </div>
+          {filename && (
+            <div className="text-white/50 text-sm font-display truncate">
+              {filename}
+            </div>
+          )}
         </div>
-        {filename && (
-          <div className="text-white/50 text-sm font-display truncate">
-            {filename}
-          </div>
-        )}
       </div>
-
-      {/* Move arrows in bottom corners */}
-      <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
-        {onMoveLeft ? (
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveLeft();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.stopPropagation();
-                onMoveLeft();
-              }
-            }}
-            className="p-1 rounded hover:bg-[#1175d5]/20 transition-colors group"
-            title="Move left"
-          >
-            <img 
-              src="/caret-left.svg" 
-              alt="Move left" 
-              className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity [filter:brightness(1)] group-hover:[filter:brightness(1)_invert(40%)_sepia(90%)_saturate(1000%)_hue-rotate(190deg)]"
-            />
-          </div>
-        ) : (
-          <div className="w-7" />
-        )}
-        {onMoveRight ? (
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveRight();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.stopPropagation();
-                onMoveRight();
-              }
-            }}
-            className="p-1 rounded hover:bg-[#1175d5]/20 transition-colors group"
-            title="Move right"
-          >
-            <img 
-              src="/caret-right.svg" 
-              alt="Move right" 
-              className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity [filter:brightness(1)] group-hover:[filter:brightness(1)_invert(40%)_sepia(90%)_saturate(1000%)_hue-rotate(190deg)]"
-            />
-          </div>
-        ) : (
-          <div className="w-7" />
-        )}
-      </div>
-    </button>
+    </div>
   );
 }

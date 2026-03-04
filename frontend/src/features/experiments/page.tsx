@@ -43,6 +43,7 @@ export default function ExperimentsPage() {
     setDefaultAlgorithms,
     setProblemType,
     setDatasets: setStoreDatasets,
+    markSectionLoaded,
   } = usePendingChangesStore();
 
   // Load data on mount
@@ -123,6 +124,7 @@ export default function ExperimentsPage() {
       // Set default algorithms from all configured algorithms
       setDefaultAlgorithms(data.algorithms.map((a) => a.name));
       
+      markSectionLoaded("experiments");
       // Reset hasChanges since we just loaded from backend
       usePendingChangesStore.setState({ hasChanges: false });
     } catch (error) {
@@ -296,7 +298,7 @@ export default function ExperimentsPage() {
                         id={algorithm.name}
                         checked={selectedAlgorithms.includes(algorithm.name)}
                         onCheckedChange={() => handleAlgorithmToggle(algorithm.name)}
-                        className="bg-[#121212] border-[#363636] data-[state=checked]:bg-accent-500 h-4 w-4 sm:h-5 sm:w-5"
+                        className="bg-[#121212] border-[#363636] data-[state=checked]:bg-accent-500 h-4 w-4 sm:h-5 sm:w-5 shrink-0"
                       />
                       <label
                         htmlFor={algorithm.name}
@@ -363,13 +365,13 @@ export default function ExperimentsPage() {
                         e.stopPropagation();
                         handleDeleteGroup(group.name);
                       }}
-                      className="absolute top-2 right-2 text-white/40 hover:text-red-400 transition-colors"
+                      className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors"
                       title="Delete group"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
+                        width="20"
+                        height="20"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"

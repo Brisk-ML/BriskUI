@@ -168,7 +168,7 @@ export function EditDatasetPanel({ className }: EditDatasetPanelProps) {
           />
 
           {/* Features Table */}
-          <div className="border border-[#404040] rounded overflow-hidden">
+          <div className="border border-[#404040] overflow-hidden">
             {/* Table Header */}
             <div className="grid grid-cols-[1fr_80px_40px] sm:grid-cols-[1fr_100px_50px] bg-[#282828] px-2 sm:px-3 py-2 border-b border-[#404040]">
               <span className="text-white text-[14px] sm:text-[16px] font-display">

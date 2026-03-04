@@ -84,7 +84,7 @@ export function PreprocessorPanel({ datasetId }: PreprocessorPanelProps) {
                 onClick={() => handlePreprocessorClick(preprocessor.id)}
                 disabled={isDisabled}
                 className={cn(
-                  "card-hover-fade w-[100px] h-[100px] border-2 flex items-center justify-center relative",
+                  "w-[100px] h-[100px] border-2 flex items-center justify-center relative",
                   "text-white text-[18px] sm:text-[20px] font-display text-center leading-tight",
                   "transition-all duration-300 whitespace-pre-line",
                   isDisabled
@@ -94,7 +94,7 @@ export function PreprocessorPanel({ datasetId }: PreprocessorPanelProps) {
                     ? "bg-[#006b4c] border-[#00a878] ring-2 ring-white ring-offset-2 ring-offset-[#181818]"
                     : !isDisabled && isConfigured
                       ? "bg-[#006b4c] border-[#00a878]"
-                      : !isDisabled && "bg-[#121212] border-[#363636]",
+                      : !isDisabled && "card-hover-fade bg-[#121212] border-[#363636]",
                 )}
               >
                 {preprocessor.label}

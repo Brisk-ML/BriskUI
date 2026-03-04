@@ -186,7 +186,7 @@ export default function ProjectWizardPage() {
           <button
             type="button"
             onClick={prevStep}
-            className="pointer-events-auto flex items-center justify-center bg-[#282828] text-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg hover:bg-[#383838] transition-colors shadow-lg border border-[#404040]"
+            className="pointer-events-auto flex items-center justify-center bg-[#282828] text-white px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-[#383838] transition-colors shadow-lg border border-[#404040]"
           >
             <img
               src="/arrow-right.svg"
@@ -203,7 +203,7 @@ export default function ProjectWizardPage() {
             type="button"
             onClick={canGoNext ? nextStep : undefined}
             disabled={!canGoNext}
-            className={`pointer-events-auto flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg shadow-lg transition-all ${
+            className={`pointer-events-auto flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg transition-all ${
               canGoNext 
                 ? "btn-add-hover bg-[#006b4c] text-white" 
                 : "bg-[#404040] text-white/50 cursor-not-allowed"

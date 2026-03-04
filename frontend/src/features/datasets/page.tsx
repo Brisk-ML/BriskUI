@@ -62,6 +62,7 @@ export default function DatasetsPage() {
     updateDataset,
     removeDataset,
     setBaseDataManager,
+    markSectionLoaded,
   } = usePendingChangesStore();
 
   // Data processing store for preprocessors
@@ -155,6 +156,7 @@ export default function DatasetsPage() {
           }
         }
         
+        markSectionLoaded("datasets");
         // Reset hasChanges after loading initial data
         usePendingChangesStore.setState({ hasChanges: false });
       } catch (error) {
@@ -164,7 +166,7 @@ export default function DatasetsPage() {
       }
     };
     loadData();
-  }, [setDatasets]);
+  }, [setDatasets, markSectionLoaded]);
 
   // Sync selected dataset with data processing store
   useEffect(() => {
@@ -248,8 +250,10 @@ export default function DatasetsPage() {
     addDataset(newDataset);
   };
 
+  const fileNameHasExtension = /\.[^/.]+$/.test(form.fileName);
+
   const handleSaveDatasetChanges = () => {
-    if (!selectedDatasetId) return;
+    if (!selectedDatasetId || !fileNameHasExtension) return;
     
     updateDataset(selectedDatasetId, {
       fileName: form.fileName,
@@ -400,10 +404,13 @@ export default function DatasetsPage() {
                   <Input
                     value={form.fileName}
                     onChange={(e) => updateForm({ fileName: e.target.value })}
-                    placeholder="File name"
+                    placeholder="data.csv"
                     disabled={!selectedDatasetId}
                     className="bg-[#282828] border-[#404040] text-white h-[32px] sm:h-[36px] text-sm sm:text-base placeholder:text-white/60 disabled:opacity-50"
                   />
+                  {form.fileName && !fileNameHasExtension && (
+                    <p className="text-red-400 text-xs mt-1">File extension required (e.g. .csv, .xlsx)</p>
+                  )}
                 </div>
 
                 {/* Table Name */}
@@ -546,17 +553,17 @@ export default function DatasetsPage() {
                 {/* Right - Feature Table */}
                 <div className="flex-1 flex flex-col min-h-[150px] sm:min-h-[200px]">
                   {/* Table Header */}
-                  <div className="bg-[#121212] flex items-center px-3 sm:px-4 h-[32px] sm:h-[36px] border-b border-[#404040]">
-                    <span className="flex-1 text-white text-sm sm:text-base lg:text-lg font-display">
+                  <div className="bg-[#121212] grid grid-cols-[1fr_46px_82px_28px] sm:grid-cols-[1fr_50px_90px_32px] items-center h-[32px] sm:h-[36px] border-b border-[#404040]">
+                    <span className="text-white text-xs sm:text-sm lg:text-base font-display px-3 sm:px-4 border-r border-[#404040]">
                       Name
                     </span>
-                    <span className="w-12 sm:w-16 text-white text-sm sm:text-base lg:text-lg font-display">
+                    <span className="text-white text-xs sm:text-sm lg:text-base font-display px-2 border-r border-[#404040]">
                       Type
                     </span>
-                    <span className="w-10 sm:w-12 text-white text-sm sm:text-base lg:text-lg font-display text-center">
-                      Cat
+                    <span className="text-white text-xs sm:text-sm lg:text-base font-display text-center px-1">
+                      Categorical
                     </span>
-                    <div className="w-6 sm:w-8" />
+                    <div />
                   </div>
 
                   {/* Table Body */}
@@ -565,17 +572,17 @@ export default function DatasetsPage() {
                       <div
                         key={feature.id}
                         className={cn(
-                          "flex items-center px-3 sm:px-4 h-[32px] sm:h-[36px]",
+                          "grid grid-cols-[1fr_38px_32px_28px] sm:grid-cols-[1fr_40px_36px_32px] items-center h-[32px] sm:h-[36px]",
                           index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]"
                         )}
                       >
-                        <span className="flex-1 text-white text-sm sm:text-base font-display truncate">
+                        <span className="text-white text-xs sm:text-sm font-display truncate px-3 sm:px-4 border-r border-[#404040]">
                           {feature.name}
                         </span>
-                        <span className="w-12 sm:w-16 text-white text-sm sm:text-base font-display">
+                        <span className="text-white text-xs sm:text-sm font-display px-2 border-r border-[#404040]">
                           {feature.type}
                         </span>
-                        <span className="w-10 sm:w-12 text-white text-sm sm:text-base font-display text-center">
+                        <span className="text-white text-xs sm:text-sm font-display text-center">
                           {feature.categorical ? "Yes" : "No"}
                         </span>
                         <button
@@ -609,7 +616,8 @@ export default function DatasetsPage() {
                 <div className="mt-4 flex justify-end">
                   <Button
                     onClick={handleSaveDatasetChanges}
-                    className="btn-add-hover bg-[#006b4c] text-white h-10 px-6 text-base font-display border border-[#363636]"
+                    disabled={!fileNameHasExtension}
+                    className="btn-add-hover bg-[#006b4c] text-white h-10 px-6 text-base font-display border border-[#363636] disabled:opacity-50"
                   >
                     Apply Changes
                   </Button>
@@ -640,7 +648,7 @@ export default function DatasetsPage() {
                       onClick={() => handlePreprocessorClick(preprocessor.id)}
                       disabled={isDisabled}
                       className={cn(
-                        "card-hover-fade w-[100px] h-[100px] border-2 flex items-center justify-center relative",
+                        "w-[100px] h-[100px] border-2 flex items-center justify-center relative",
                         "text-white text-[18px] sm:text-[20px] font-display text-center leading-tight",
                         "transition-all duration-300 whitespace-pre-line",
                         isDisabled
@@ -650,7 +658,7 @@ export default function DatasetsPage() {
                           ? "bg-[#006b4c] border-[#00a878] ring-2 ring-white ring-offset-2 ring-offset-[#181818]"
                           : !isDisabled && isConfigured
                             ? "bg-[#006b4c] border-[#00a878]"
-                            : !isDisabled && "bg-[#121212] border-[#363636]"
+                            : !isDisabled && "card-hover-fade bg-[#121212] border-[#363636]"
                       )}
                     >
                       {preprocessor.label}

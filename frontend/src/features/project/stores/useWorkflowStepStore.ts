@@ -18,6 +18,7 @@ export interface WorkflowStepState {
   updateStep: (id: string, updates: Partial<Pick<WorkflowStep, "args">>) => void;
   removeStep: (id: string) => void;
   moveStep: (id: string, direction: "up" | "down") => void;
+  setSteps: (steps: WorkflowStep[]) => void;
 
   reset: () => void;
 }
@@ -55,6 +56,8 @@ export const useWorkflowStepStore = create<WorkflowStepState>((set, get) => ({
     [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
     set({ steps: next });
   },
+
+  setSteps: (steps) => set({ steps }),
 
   reset: () => set({ steps: [] }),
 }));

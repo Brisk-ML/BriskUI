@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import fastapi
 
@@ -31,6 +32,7 @@ async def get_status(request: fastapi.Request):
     
     return {
         "project_path": str(settings.project_path),
+        "cwd": str(pathlib.Path.cwd()),
         "create_mode": create_mode,
         "project_initialized": project_initialized,
         "database_exists": settings.database_path.exists(),
