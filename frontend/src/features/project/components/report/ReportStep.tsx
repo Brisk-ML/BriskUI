@@ -62,7 +62,7 @@ function ColorSwatch({ colorOption, onColorChange }: ColorSwatchProps) {
       <button
         ref={swatchRef}
         type="button"
-        className={`w-10 h-10 sm:w-12 sm:h-12 border-2 ${STYLES.border} cursor-pointer rounded transition-opacity hover:opacity-90`}
+        className={`w-10 h-10 sm:w-12 sm:h-12 border-2 ${STYLES.border} cursor-pointer transition-opacity hover:opacity-90`}
         style={{ backgroundColor: colorOption.color }}
         onClick={handleSwatchClick}
         aria-label={`Pick color for ${colorOption.name}`}

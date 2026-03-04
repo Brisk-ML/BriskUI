@@ -153,8 +153,10 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
     setParseError(null);
   };
 
+  const fileNameHasExtension = /\.[^/.]+$/.test(form.fileName);
+
   const handleSubmit = () => {
-    if (!form.fileName) return;
+    if (!form.fileName || !fileNameHasExtension) return;
 
     onAdd({
       name: form.tableName || form.fileName.replace(/\.[^/.]+$/, ""),
@@ -204,9 +206,12 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
               <Input
                 value={form.fileName}
                 onChange={(e) => setForm((prev) => ({ ...prev, fileName: e.target.value }))}
-                placeholder="File name"
+                placeholder="data.csv"
                 className="bg-[#282828] border-[#404040] text-white h-9 text-sm"
               />
+              {form.fileName && !fileNameHasExtension && (
+                <p className="text-red-400 text-xs mt-1">File extension required (e.g. .csv, .xlsx)</p>
+              )}
             </div>
 
             {/* Table Name */}
@@ -337,11 +342,11 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
             {/* Right - Feature Table */}
             <div className="flex-1 flex flex-col min-h-[180px] max-h-[220px]">
               {/* Table Header */}
-              <div className="bg-[#121212] flex items-center px-3 h-8 border-b border-[#404040]">
-                <span className="flex-1 text-white text-sm font-display">Name</span>
-                <span className="w-12 text-white text-sm font-display">Type</span>
-                <span className="w-10 text-white text-sm font-display text-center">Cat</span>
-                <div className="w-6" />
+              <div className="bg-[#121212] grid grid-cols-[1fr_46px_80px_24px] sm:grid-cols-[1fr_50px_86px_24px] items-center h-8 border-b border-[#404040]">
+                <span className="text-white text-xs sm:text-sm font-display px-3 border-r border-[#404040]">Name</span>
+                <span className="text-white text-xs sm:text-sm font-display px-2 border-r border-[#404040]">Type</span>
+                <span className="text-white text-xs sm:text-sm font-display text-center px-1">Categorical</span>
+                <div />
               </div>
 
               {/* Table Body */}
@@ -350,15 +355,15 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
                   <div
                     key={feature.id}
                     className={cn(
-                      "flex items-center px-3 h-8",
+                      "grid grid-cols-[1fr_38px_32px_24px] items-center h-8",
                       index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]"
                     )}
                   >
-                    <span className="flex-1 text-white text-sm font-display truncate">
+                    <span className="text-white text-xs sm:text-sm font-display truncate px-3 border-r border-[#404040]">
                       {feature.name}
                     </span>
-                    <span className="w-12 text-white text-sm font-display">{feature.type}</span>
-                    <span className="w-10 text-white text-sm font-display text-center">
+                    <span className="text-white text-xs sm:text-sm font-display px-2 border-r border-[#404040]">{feature.type}</span>
+                    <span className="text-white text-xs sm:text-sm font-display text-center">
                       {feature.categorical ? "Yes" : "No"}
                     </span>
                     <button
@@ -403,21 +408,25 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
               onChange={handleFileChange}
               className="hidden"
             />
-            <Button
-              onClick={handleUploadClick}
-              disabled={isParsingFile}
-              className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-10 px-8 text-lg font-display disabled:opacity-50"
-            >
-              {isParsingFile ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin mr-2 inline" />
-                  Parsing...
-                </>
-              ) : (
-                "Upload"
-              )}
-            </Button>
-            <p className="text-white/60 text-sm font-display">CSV or XLSX files</p>
+            <div className="relative inline-flex group/upload">
+              <Button
+                onClick={handleUploadClick}
+                disabled={isParsingFile}
+                className="bg-[#282828] hover:bg-[#383838] text-white border border-[#404040] h-10 px-8 text-lg font-display disabled:opacity-50"
+              >
+                {isParsingFile ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 inline" />
+                    Parsing...
+                  </>
+                ) : (
+                  "Upload"
+                )}
+              </Button>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-5 py-2.5 bg-[#282828] border border-[#404040] text-white/80 text-base sm:text-lg font-display whitespace-nowrap opacity-0 group-hover/upload:opacity-100 transition-opacity">
+                CSV or XLSX
+              </span>
+            </div>
             {parseError && (
               <p className="text-red-400 text-sm font-display">{parseError}</p>
             )}
@@ -431,7 +440,7 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
             onClick={handleReset}
             onMouseEnter={() => setResetHovered(true)}
             onMouseLeave={() => setResetHovered(false)}
-            className="border-2 h-10 px-6 text-base font-display rounded-md transition-colors"
+            className="border-2 h-10 px-6 text-base font-display transition-colors"
             style={{
               borderColor: resetHovered ? "#FF3D29" : "#404040",
               backgroundColor: resetHovered ? "rgba(255, 61, 41, 0.2)" : "#121212",
@@ -442,7 +451,7 @@ export function AddDatasetModal({ open, onClose, onAdd }: AddDatasetModalProps) 
           </button>
           <Button
             onClick={handleSubmit}
-            disabled={!form.fileName}
+            disabled={!form.fileName || !fileNameHasExtension}
             className="btn-add-hover bg-[#006b4c] text-white h-10 px-6 text-base font-display border border-[#363636] disabled:opacity-50"
           >
             Add Dataset

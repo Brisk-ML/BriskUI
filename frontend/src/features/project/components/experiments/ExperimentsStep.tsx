@@ -191,14 +191,14 @@ export function ExperimentsStep() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded">
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50">
             <p className="text-red-400 text-sm font-display">{error}</p>
           </div>
         )}
 
         {/* Empty State Warnings */}
         {datasets.length === 0 && (
-          <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded">
+          <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50">
             <p className="text-yellow-400 text-sm font-display">
               No datasets added. Go back to the Datasets step to add datasets.
             </p>
@@ -206,7 +206,7 @@ export function ExperimentsStep() {
         )}
 
         {algorithms.length === 0 && (
-          <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded">
+          <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50">
             <p className="text-yellow-400 text-sm font-display">
               No algorithms added. Go back to the Algorithms step to add
               algorithms.
@@ -294,20 +294,20 @@ export function ExperimentsStep() {
               No algorithms available
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-1 sm:gap-y-2">
               {algorithms.map((algorithm) => (
                 <label
                   key={algorithm.id}
                   htmlFor={`algorithm-${algorithm.id}`}
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-2 cursor-pointer py-0.5 sm:py-1"
                 >
                   <Checkbox
                     id={`algorithm-${algorithm.id}`}
                     checked={selectedAlgorithms.includes(algorithm.name)}
                     onCheckedChange={() => handleAlgorithmToggle(algorithm.name)}
-                    className={`${STYLES.border} ${STYLES.dataCheckedBgPrimaryLight} ${STYLES.dataCheckedBorderPrimaryLight}`}
+                    className={`${STYLES.border} ${STYLES.dataCheckedBgPrimaryLight} ${STYLES.dataCheckedBorderPrimaryLight} shrink-0`}
                   />
-                  <span className="text-white text-sm sm:text-base lg:text-[18px] font-display truncate">
+                  <span className="text-white text-sm sm:text-base lg:text-[18px] font-display">
                     {algorithm.name}
                   </span>
                 </label>
@@ -375,13 +375,13 @@ export function ExperimentsStep() {
                       e.stopPropagation();
                       handleDeleteGroup(group.id);
                     }}
-                    className="absolute top-2 right-2 text-white/40 hover:text-red-400 transition-colors"
+                    className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors"
                     title="Delete group"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
+                      width="20"
+                      height="20"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"

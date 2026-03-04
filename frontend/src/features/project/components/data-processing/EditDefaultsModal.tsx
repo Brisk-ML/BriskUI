@@ -8,6 +8,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { HoverSelect } from "@/shared/components/ui/hover-select";
+import { TrainTestSlider } from "@/shared/components/ui/train-test-slider";
 import { useDataProcessingStepStore } from "../../stores/useDataProcessingStepStore";
 
 interface EditDefaultsModalProps {
@@ -60,8 +61,6 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
     onClose();
   };
 
-  const trainSizePercent = 100 - (Number.parseInt(testSizePercent, 10) || 0);
-
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-[600px] lg:max-w-[700px] border-2 border-[#404040] bg-[#181818] p-4 sm:p-6 md:p-8 md:max-h-[85vh]">
@@ -79,38 +78,10 @@ export function EditDefaultsModal({ open, onClose }: EditDefaultsModalProps) {
             <Label className="text-white text-base sm:text-lg md:text-[20px] font-display mb-2 block">
               Test Size
             </Label>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex-1">
-                <div className="text-white text-sm sm:text-[16px] mb-1">
-                  Train
-                </div>
-                <Input
-                  value={trainSizePercent.toString()}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const trainNum = Number.parseInt(val, 10) || 0;
-                    setTestSizePercent((100 - trainNum).toString());
-                  }}
-                  className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
-                />
-                <div className="text-white/60 text-xs sm:text-[14px] mt-1">
-                  {trainSizePercent}%
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="text-white text-sm sm:text-[16px] mb-1">
-                  Test
-                </div>
-                <Input
-                  value={testSizePercent}
-                  onChange={(e) => setTestSizePercent(e.target.value)}
-                  className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
-                />
-                <div className="text-white/60 text-xs sm:text-[14px] mt-1">
-                  {testSizePercent}%
-                </div>
-              </div>
-            </div>
+            <TrainTestSlider
+              testSize={(Number.parseInt(testSizePercent, 10) || 20) / 100}
+              onChange={(v) => setTestSizePercent(Math.round(v * 100).toString())}
+            />
           </div>
 
           {/* Group Column */}

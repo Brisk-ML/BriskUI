@@ -114,8 +114,10 @@ export function DatasetsStep() {
     setParseError(null);
   };
 
+  const fileNameHasExtension = /\.[^/.]+$/.test(form.fileName);
+
   const handleAddOrUpdateDataset = () => {
-    if (!form.fileName) return;
+    if (!form.fileName || !fileNameHasExtension) return;
 
     if (selectedDatasetId) {
       // Update existing dataset
@@ -157,9 +159,12 @@ export function DatasetsStep() {
               <Input
                 value={form.fileName}
                 onChange={(e) => setForm({ fileName: e.target.value })}
-                placeholder="File name"
+                placeholder="data.csv"
                 className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px] placeholder:text-white/60"
               />
+              {form.fileName && !fileNameHasExtension && (
+                <p className="text-red-400 text-xs mt-1">File extension required (e.g. .csv, .xlsx)</p>
+              )}
             </div>
 
             {/* Table Name */}
@@ -292,17 +297,17 @@ export function DatasetsStep() {
             {/* Table Section */}
             <div className="flex-1 bg-[#181818] overflow-hidden flex flex-col min-h-[240px] lg:min-h-0">
               {/* Table Header */}
-              <div className="bg-[#121212] flex items-center px-4 h-[40px] border-b border-[#404040]">
-                <span className="flex-1 text-white text-lg sm:text-xl lg:text-[24px] font-display">
+              <div className="bg-[#121212] grid grid-cols-[1fr_50px_90px_32px] sm:grid-cols-[1fr_54px_100px_32px] items-center h-[40px] border-b border-[#404040]">
+                <span className="text-white text-sm sm:text-base lg:text-lg font-display px-4 border-r border-[#404040]">
                   Name
                 </span>
-                <span className="w-16 sm:w-20 text-white text-lg sm:text-xl lg:text-[24px] font-display">
+                <span className="text-white text-sm sm:text-base lg:text-lg font-display px-2 border-r border-[#404040]">
                   Type
                 </span>
-                <span className="w-12 sm:w-16 text-white text-lg sm:text-xl lg:text-[24px] font-display text-center">
-                  Cat
+                <span className="text-white text-sm sm:text-base lg:text-lg font-display text-center px-1">
+                  Categorical
                 </span>
-                <div className="w-8" />
+                <div />
               </div>
 
               {/* Table Body */}
@@ -311,17 +316,17 @@ export function DatasetsStep() {
                   <div
                     key={feature.id}
                     className={cn(
-                      "flex items-center px-4 h-[40px]",
+                      "grid grid-cols-[1fr_40px_36px_32px] items-center h-[40px]",
                       index % 2 === 0 ? "bg-[#181818]" : "bg-[#282828]",
                     )}
                   >
-                    <span className="flex-1 text-white text-base sm:text-[18px] font-display truncate">
+                    <span className="text-white text-sm sm:text-base font-display truncate px-4 border-r border-[#404040]">
                       {feature.name}
                     </span>
-                    <span className="w-16 sm:w-20 text-white text-base sm:text-[18px] font-display">
+                    <span className="text-white text-sm sm:text-base font-display px-2 border-r border-[#404040]">
                       {feature.type}
                     </span>
-                    <span className="w-12 sm:w-16 text-white text-base sm:text-[18px] font-display text-center">
+                    <span className="text-white text-sm sm:text-base font-display text-center">
                       {feature.categorical ? "Yes" : "No"}
                     </span>
                     <button
@@ -372,7 +377,7 @@ export function DatasetsStep() {
         {/* Action Buttons */}
         <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6 justify-between items-center flex-wrap">
           {/* Left side - Upload button with note */}
-          <div className="flex items-center gap-3">
+          <div className="relative group/upload inline-flex">
             <Button
               onClick={handleUploadClick}
               disabled={isParsingFile}
@@ -387,7 +392,7 @@ export function DatasetsStep() {
                 "Upload"
               )}
             </Button>
-            <span className="text-white/60 text-sm sm:text-base lg:text-lg font-display">
+            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-5 py-2.5 bg-[#282828] border border-[#404040] text-white/80 text-base sm:text-lg font-display whitespace-nowrap opacity-0 group-hover/upload:opacity-100 transition-opacity">
               CSV or XLSX
             </span>
           </div>
@@ -399,7 +404,7 @@ export function DatasetsStep() {
               onClick={handleReset}
               onMouseEnter={() => setResetHovered(true)}
               onMouseLeave={() => setResetHovered(false)}
-              className="border-2 h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display rounded-md transition-colors"
+              className="border-2 h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display transition-colors"
               style={{
                 borderColor: resetHovered ? "#FF3D29" : "#404040",
                 backgroundColor: resetHovered
@@ -412,7 +417,8 @@ export function DatasetsStep() {
             </button>
             <Button
               onClick={handleAddOrUpdateDataset}
-              className="btn-add-hover bg-[#006b4c] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display border border-[#363636]"
+              disabled={!form.fileName || !fileNameHasExtension}
+              className="btn-add-hover bg-[#006b4c] text-white h-[44px] sm:h-[50px] px-4 sm:px-6 text-lg sm:text-xl lg:text-[24px] font-display border border-[#363636] disabled:opacity-50"
             >
               {selectedDatasetId ? "Update Dataset" : "Add Dataset"}
             </Button>

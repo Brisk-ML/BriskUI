@@ -466,14 +466,14 @@ export function EditDataProcessingPanel() {
                   type="button"
                   onClick={() => setActivePreprocessor(preprocessor.id)}
                   className={cn(
-                    "card-hover-fade w-[100px] h-[100px] border-2 flex items-center justify-center relative",
+                    "w-[100px] h-[100px] border-2 flex items-center justify-center relative",
                     "text-white text-[16px] sm:text-[18px] font-display text-center leading-tight",
                     "transition-all duration-300 cursor-pointer whitespace-pre-line",
                     isActive
                       ? "bg-[#006b4c] border-[#00a878] ring-2 ring-white ring-offset-2 ring-offset-[#282828]"
                       : isConfigured
                         ? "bg-[#006b4c] border-[#00a878]"
-                        : "bg-[#121212] border-[#363636]",
+                        : "card-hover-fade bg-[#121212] border-[#363636]",
                   )}
                 >
                   {preprocessor.label}

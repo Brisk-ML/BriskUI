@@ -87,7 +87,7 @@ export function SearchSpaceForm({
               <button
                 type="button"
                 onClick={handleAddValue}
-                className="h-[36px] sm:h-[40px] px-4 bg-[#006b4c] hover:bg-[#007d59] text-white text-sm font-display rounded"
+                className="h-[36px] sm:h-[40px] px-4 bg-[#006b4c] hover:bg-[#007d59] text-white text-sm font-display"
               >
                 Add
               </button>
@@ -98,7 +98,7 @@ export function SearchSpaceForm({
                 {(value as number[]).map((val) => (
                   <span
                     key={val}
-                    className="inline-flex items-center gap-1 bg-[#1175d5] text-white px-2 py-1 rounded text-sm"
+                    className="inline-flex items-center gap-1 bg-[#1175d5] text-white px-2 py-1 text-sm"
                   >
                     {val}
                     <button
@@ -173,7 +173,7 @@ export function SearchSpaceForm({
               <button
                 type="button"
                 onClick={handleAddValue}
-                className="h-[36px] sm:h-[40px] px-4 bg-[#006b4c] hover:bg-[#007d59] text-white text-sm font-display rounded"
+                className="h-[36px] sm:h-[40px] px-4 bg-[#006b4c] hover:bg-[#007d59] text-white text-sm font-display"
               >
                 Add
               </button>
@@ -184,7 +184,7 @@ export function SearchSpaceForm({
                 {(value as string[]).map((val) => (
                   <span
                     key={val}
-                    className="inline-flex items-center gap-1 bg-[#1175d5] text-white px-2 py-1 rounded text-sm"
+                    className="inline-flex items-center gap-1 bg-[#1175d5] text-white px-2 py-1 text-sm"
                   >
                     {val}
                     <button

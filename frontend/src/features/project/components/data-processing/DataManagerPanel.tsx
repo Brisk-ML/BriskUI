@@ -1,6 +1,7 @@
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { HoverSelect } from "@/shared/components/ui/hover-select";
+import { TrainTestSlider } from "@/shared/components/ui/train-test-slider";
 import { useDataProcessingStepStore } from "../../stores/useDataProcessingStepStore";
 
 interface DataManagerPanelProps {
@@ -11,16 +12,6 @@ interface DataManagerPanelProps {
 export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanelProps) {
   const { getEffectiveDataManager, updateDatasetDataManager } = useDataProcessingStepStore();
   const dataManager = getEffectiveDataManager(datasetId);
-
-  // Convert test_size (0-1) to percentages for display
-  const testSizePercent = Math.round(dataManager.testSize * 100);
-
-  const handleTestSizeChange = (value: string) => {
-    const percent = Number.parseInt(value, 10);
-    if (!Number.isNaN(percent) && percent >= 1 && percent <= 99) {
-      updateDatasetDataManager(datasetId, { testSize: percent / 100 });
-    }
-  };
 
   const handleNSplitsChange = (value: string) => {
     const num = Number.parseInt(value, 10);
@@ -48,24 +39,10 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
           <Label className="text-white text-lg sm:text-xl lg:text-[20px] font-display mb-2 block">
             Test Size
           </Label>
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <div className="text-white/60 text-[14px] mb-1">Train</div>
-              <Input
-                value={100 - testSizePercent}
-                onChange={(e) => handleTestSizeChange((100 - Number.parseInt(e.target.value, 10) || 0).toString())}
-                className="bg-[#282828] border-[#404040] text-white h-9 text-[16px]"
-              />
-            </div>
-            <div className="flex-1">
-              <div className="text-white/60 text-[14px] mb-1">Test</div>
-              <Input
-                value={testSizePercent}
-                onChange={(e) => handleTestSizeChange(e.target.value)}
-                className="bg-[#282828] border-[#404040] text-white h-9 text-[16px]"
-              />
-            </div>
-          </div>
+          <TrainTestSlider
+            testSize={dataManager.testSize}
+            onChange={(v) => updateDatasetDataManager(datasetId, { testSize: v })}
+          />
         </div>
 
         {/* Group Column */}

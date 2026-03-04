@@ -14,6 +14,7 @@ import {
   type StoredDatasetConfig,
   type StoredPreprocessorConfig,
   type WorkflowStepConfig,
+  type PreviewFilesRequest,
 } from "@/api";
 import type { Feature } from "@/types";
 import { useDataProcessingStepStore, type DatasetPreprocessors } from "@/features/project/stores/useDataProcessingStepStore";
@@ -78,6 +79,8 @@ export interface WorkflowStepState {
   args: Record<string, unknown>;
 }
 
+type LoadedSection = "experiments" | "algorithms" | "datasets" | "workflow";
+
 interface PendingChangesState {
   // Pending experiment groups to save
   experimentGroups: ExperimentGroupState[];
@@ -95,6 +98,9 @@ interface PendingChangesState {
   
   // Pending workflow steps to save
   workflowSteps: WorkflowStepState[];
+
+  // Tracks which sections have been populated from the backend
+  loadedSections: Set<LoadedSection>;
   
   // Track if there are unsaved changes
   hasChanges: boolean;
@@ -135,6 +141,10 @@ interface PendingChangesState {
   moveWorkflowStep: (id: string, direction: "up" | "down") => void;
   
   markChanged: () => void;
+  markSectionLoaded: (section: LoadedSection) => void;
+  
+  // Build the payload for the preview endpoint (same data shape as saveAll sends)
+  buildPreviewPayload: () => PreviewFilesRequest;
   
   // Save all pending changes
   saveAll: () => Promise<void>;
@@ -160,6 +170,7 @@ const initialState = {
   datasets: [] as DatasetState[],
   baseDataManager: { ...DEFAULT_BASE_DATA_MANAGER },
   workflowSteps: [] as WorkflowStepState[],
+  loadedSections: new Set<LoadedSection>(),
   hasChanges: false,
   isSaving: false,
   saveError: null,
@@ -347,6 +358,146 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
 
   markChanged: () => {
     set({ hasChanges: true });
+  },
+
+  markSectionLoaded: (section) => {
+    set((state) => {
+      const next = new Set(state.loadedSections);
+      next.add(section);
+      return { loadedSections: next };
+    });
+  },
+
+  buildPreviewPayload: () => {
+    const state = get();
+    const { datasetConfigs } = useDataProcessingStepStore.getState();
+
+    const PREPROCESSOR_ORDER: Array<"missing-data" | "encoding" | "scaling" | "feature-selection"> = [
+      "missing-data", "encoding", "scaling", "feature-selection",
+    ];
+    const PREPROCESSOR_KEYS: Record<string, keyof DatasetPreprocessors> = {
+      "missing-data": "missingData",
+      encoding: "encoding",
+      scaling: "scaling",
+      "feature-selection": "featureSelection",
+    };
+
+    const getDatasetIdFromFileName = (fileName: string): string => {
+      const dataset = state.datasets.find(d => {
+        if (d.fileType === "sqlite" && d.tableName) {
+          return d.id === `${d.fileName}:${d.tableName}` || d.fileName === fileName;
+        }
+        if (d.id === fileName || d.fileName === fileName) return true;
+        const fileNameWithoutExt = d.fileName.replace(/\.[^/.]+$/, "");
+        return fileNameWithoutExt === fileName;
+      });
+      return dataset?.id || fileName;
+    };
+
+    const baseDataManagerConfig: ApiDataManagerConfig = {
+      test_size: state.baseDataManager.testSize,
+      n_splits: state.baseDataManager.nSplits,
+      split_method: state.baseDataManager.splitMethod,
+      group_column: state.baseDataManager.groupColumn,
+      stratified: state.baseDataManager.stratified,
+      random_state: state.baseDataManager.randomState,
+    };
+
+    const algorithmConfigs: AlgorithmWrapperConfig[] = state.algorithmWrappers.map((w) => ({
+      name: w.name,
+      display_name: w.displayName,
+      class_name: w.className,
+      class_module: w.classModule,
+      default_params: w.defaultParams as Record<string, string | number | boolean | null>,
+      search_space: w.searchSpace || {},
+      use_defaults: w.useDefaults,
+    }));
+
+    const experimentGroupConfigs: ExperimentGroupConfig[] = state.experimentGroups.map((g) => {
+      const datasetFileName = g.datasets[0] || "";
+      const datasetId = getDatasetIdFromFileName(datasetFileName);
+      const datasetConfig = datasetConfigs[datasetId];
+      const dm = datasetConfig?.dataManager;
+      const preprocessorsObj = datasetConfig?.preprocessors;
+      const configured = datasetConfig?.configuredPreprocessors ?? [];
+      const preprocessors: PreprocessorEntry[] = [];
+      for (const type of PREPROCESSOR_ORDER) {
+        if (!configured.includes(type)) continue;
+        const key = PREPROCESSOR_KEYS[type];
+        const config = key && preprocessorsObj?.[key];
+        if (config && typeof config === "object") {
+          preprocessors.push({ type, config: config as Record<string, unknown> });
+        }
+      }
+      const hasDcParams = dm && (dm.testSize !== undefined || dm.nSplits !== undefined ||
+        dm.splitMethod !== undefined || dm.groupColumn !== undefined ||
+        dm.stratified !== undefined || dm.randomState !== undefined);
+      const useDefaultDataManager = !hasDcParams && preprocessors.length === 0;
+      return {
+        name: g.name,
+        description: g.description || undefined,
+        dataset_file_name: datasetFileName,
+        dataset_table_name: null,
+        algorithms: g.algorithms,
+        use_default_data_manager: useDefaultDataManager,
+        data_config: hasDcParams || preprocessors.length > 0
+          ? {
+              ...(hasDcParams && dm ? {
+                test_size: dm.testSize, n_splits: dm.nSplits,
+                split_method: dm.splitMethod, group_column: dm.groupColumn,
+                stratified: dm.stratified, random_state: dm.randomState,
+              } : {}),
+              ...(preprocessors.length > 0 ? { preprocessors } : {}),
+            }
+          : undefined,
+      };
+    });
+
+    const categoricalFeatures: CategoricalFeaturesEntry[] = state.datasets
+      .filter((d) => d.features.some((f) => f.categorical))
+      .map((d) => ({
+        dataset_file_name: d.fileName,
+        table_name: d.fileType === "sqlite" && d.tableName ? d.tableName : null,
+        features: d.features.filter((f) => f.categorical).map((f) => f.name),
+      }));
+
+    const algorithmNames = state.algorithmWrappers.map((w) => w.name);
+
+    const workflowStepConfigs: WorkflowStepConfig[] = state.workflowSteps.map((s) => ({
+      evaluator_id: s.evaluatorId,
+      method_name: s.methodName,
+      args: s.args,
+    }));
+
+    const loaded = state.loadedSections;
+    const payload: PreviewFilesRequest = {};
+
+    if (loaded.has("datasets")) {
+      payload.data_file = { base_data_manager: baseDataManagerConfig };
+    }
+
+    if (loaded.has("experiments")) {
+      payload.settings_file = {
+        problem_type: state.problemType,
+        default_algorithms: algorithmNames.length > 0 ? algorithmNames : state.defaultAlgorithms,
+        experiment_groups: experimentGroupConfigs,
+        categorical_features: categoricalFeatures.length > 0 ? categoricalFeatures : undefined,
+      };
+      payload.metrics_file = { problem_type: state.problemType };
+    }
+
+    if (loaded.has("algorithms") && state.algorithmWrappers.length > 0) {
+      payload.algorithms_file = { wrappers: algorithmConfigs };
+    }
+
+    if (loaded.has("workflow") && state.workflowSteps.length > 0) {
+      payload.workflow_file = {
+        problem_type: state.problemType,
+        steps: workflowStepConfigs,
+      };
+    }
+
+    return payload;
   },
 
   saveAll: async () => {

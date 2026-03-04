@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/shared/components/ui/dialo
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { HoverSelect } from "@/shared/components/ui/hover-select";
+import { TrainTestSlider } from "@/shared/components/ui/train-test-slider";
 import { Button } from "@/shared/components/ui/button";
 import { STYLES } from "@/shared/constants/colors";
 
@@ -49,15 +50,6 @@ export function DataManagerModal({
       setLocalConfig(config);
     }
   }, [open, config]);
-
-  const testSizePercent = Math.round(localConfig.testSize * 100);
-
-  const handleTestSizeChange = (value: string) => {
-    const percent = Number.parseInt(value, 10);
-    if (!Number.isNaN(percent) && percent >= 1 && percent <= 99) {
-      setLocalConfig((prev) => ({ ...prev, testSize: percent / 100 }));
-    }
-  };
 
   const handleNSplitsChange = (value: string) => {
     const num = Number.parseInt(value, 10);
@@ -112,26 +104,10 @@ export function DataManagerModal({
             <Label className="text-white text-base sm:text-lg font-display mb-2 block">
               Test Size
             </Label>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="text-white/60 text-sm mb-1">Train</div>
-                <Input
-                  value={100 - testSizePercent}
-                  onChange={(e) =>
-                    handleTestSizeChange((100 - Number.parseInt(e.target.value, 10) || 0).toString())
-                  }
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-base"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="text-white/60 text-sm mb-1">Test</div>
-                <Input
-                  value={testSizePercent}
-                  onChange={(e) => handleTestSizeChange(e.target.value)}
-                  className="bg-[#282828] border-[#404040] text-white h-9 text-base"
-                />
-              </div>
-            </div>
+            <TrainTestSlider
+              testSize={localConfig.testSize}
+              onChange={(v) => setLocalConfig((prev) => ({ ...prev, testSize: v }))}
+            />
           </div>
 
           {/* Group Column */}

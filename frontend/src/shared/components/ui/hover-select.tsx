@@ -1,5 +1,6 @@
 import { ChevronDownIcon, CheckIcon } from "lucide-react";
 import { useState, useRef, useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 export interface HoverSelectOption {
@@ -36,12 +37,16 @@ export function HoverSelect({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  const handleMouseEnter = () => {
-    if (disabled) return;
+  const clearCloseTimeout = () => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
+  };
+
+  const handleMouseEnter = () => {
+    if (disabled) return;
+    clearCloseTimeout();
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setPosition({
@@ -53,54 +58,49 @@ export function HoverSelect({
     setIsOpen(true);
   };
 
-  const handleMouseLeave = () => {
-    // Small delay to allow moving to dropdown
-    closeTimeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-    }, 150);
-  };
-
-  const handleDropdownEnter = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-  };
-
-  const handleDropdownLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-    }, 100);
-  };
-
   const handleSelect = (optionValue: string) => {
     onValueChange(optionValue);
     setIsOpen(false);
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
-    };
+    return () => clearCloseTimeout();
   }, []);
 
-  // Close on scroll or resize
+  // Track pointer position to manage open/close — works reliably across portals and overlays
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleScrollOrResize = () => {
-      setIsOpen(false);
+    const isPointInRect = (x: number, y: number, rect: DOMRect, pad: number) =>
+      x >= rect.left - pad && x <= rect.right + pad &&
+      y >= rect.top - pad && y <= rect.bottom + pad;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const triggerRect = triggerRef.current?.getBoundingClientRect();
+      const dropdownRect = dropdownRef.current?.getBoundingClientRect();
+      const pad = 4;
+
+      const overTrigger = triggerRect && isPointInRect(e.clientX, e.clientY, triggerRect, pad);
+      const overDropdown = dropdownRect && isPointInRect(e.clientX, e.clientY, dropdownRect, pad);
+
+      if (!overTrigger && !overDropdown) {
+        if (!closeTimeoutRef.current) {
+          closeTimeoutRef.current = setTimeout(() => setIsOpen(false), 120);
+        }
+      } else {
+        clearCloseTimeout();
+      }
     };
 
-    window.addEventListener("scroll", handleScrollOrResize, true);
+    const handleScrollOrResize = () => setIsOpen(false);
+
+    document.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("resize", handleScrollOrResize);
 
     return () => {
-      window.removeEventListener("scroll", handleScrollOrResize, true);
+      document.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("resize", handleScrollOrResize);
+      clearCloseTimeout();
     };
   }, [isOpen]);
 
@@ -111,9 +111,8 @@ export function HoverSelect({
         type="button"
         disabled={disabled}
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm",
+          "flex w-full items-center justify-between gap-2 border px-3 py-2 text-sm",
           "transition-colors outline-none",
           "disabled:cursor-not-allowed disabled:opacity-50",
           triggerClassName,
@@ -130,12 +129,10 @@ export function HoverSelect({
         />
       </button>
 
-      {isOpen && position && (
+      {isOpen && position && createPortal(
         <div
           ref={dropdownRef}
-          onMouseEnter={handleDropdownEnter}
-          onMouseLeave={handleDropdownLeave}
-          className="fixed z-50 overflow-hidden rounded-md border border-[#404040] bg-[#282828] shadow-lg animate-in fade-in-0 zoom-in-95 duration-100"
+          className="fixed z-[100] overflow-hidden border border-[#404040] bg-[#282828] shadow-lg animate-in fade-in-0 zoom-in-95 duration-100 pointer-events-auto"
           style={{
             top: position.top,
             left: position.left,
@@ -143,35 +140,35 @@ export function HoverSelect({
           }}
         >
           <div className="max-h-[300px] overflow-y-auto p-1">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                disabled={option.disabled}
-                onClick={() => !option.disabled && handleSelect(option.value)}
-                className={cn(
-                  "relative flex w-full items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm text-white outline-none select-none",
-                  "transition-all duration-200",
-                  option.disabled
-                    ? "pointer-events-none opacity-50"
-                    : "cursor-pointer hover-select-item",
-                  value === option.value && "font-medium",
-                )}
-              >
-                {/* Blue gradient hover effect - fades in from right */}
-                <span className="hover-select-gradient absolute inset-0 rounded-sm opacity-0 transition-opacity duration-200" />
-                
-                <span className="relative z-10 truncate">{option.label}</span>
-                
-                {value === option.value && (
-                  <span className="absolute right-2 z-10">
-                    <CheckIcon className="size-4 text-[#1175d5]" />
-                  </span>
-                )}
-              </button>
-            ))}
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled={option.disabled}
+                  onClick={() => !option.disabled && handleSelect(option.value)}
+                  className={cn(
+                    "relative flex w-full items-center gap-2 py-1.5 pr-8 pl-2 text-sm text-white outline-none select-none",
+                    "transition-all duration-200",
+                    option.disabled
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer hover-select-item",
+                    value === option.value && "font-medium",
+                  )}
+                >
+                  <span className="hover-select-gradient absolute inset-0 opacity-0 transition-opacity duration-200" />
+                  
+                  <span className="relative z-10 truncate">{option.label}</span>
+                  
+                  {value === option.value && (
+                    <span className="absolute right-2 z-10">
+                      <CheckIcon className="size-4 text-[#1175d5]" />
+                    </span>
+                  )}
+                </button>
+              ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

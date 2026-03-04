@@ -46,7 +46,7 @@ export interface ProjectStats {
   experiments: number;
   datasets: number;
   algorithms: number;
-  metrics: number;
+  workflow_steps: number;
 }
 
 export interface DataManagerConfig {
@@ -281,6 +281,31 @@ export async function writeWorkflowFile(
   data: WriteWorkflowFileRequest
 ): Promise<WriteWorkflowFileResponse> {
   return apiClient.post<WriteWorkflowFileResponse>("/project/workflow-file", data);
+}
+
+// ============================================================================
+// Preview Files API
+// ============================================================================
+
+export interface PreviewFilesRequest {
+  data_file?: WriteDataFileRequest;
+  algorithms_file?: WriteAlgorithmsFileRequest;
+  metrics_file?: WriteMetricsFileRequest;
+  settings_file?: WriteSettingsFileRequest;
+  workflow_file?: WriteWorkflowFileRequest;
+}
+
+export interface PreviewFilesResponse {
+  files: Record<string, string>;
+}
+
+/**
+ * Generate file contents without writing to disk (preview).
+ */
+export async function previewFiles(
+  data: PreviewFilesRequest
+): Promise<PreviewFilesResponse> {
+  return apiClient.post<PreviewFilesResponse>("/project/preview-files", data);
 }
 
 // ============================================================================
