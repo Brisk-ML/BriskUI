@@ -15,6 +15,7 @@ class Settings(pydantic_settings.BaseSettings):
     port: int = 8050
 
     dev_mode: bool = False
+    create_mode: bool = False
     cors_origins: list[str] = pydantic.Field(default_factory=list)
 
     database_name: str = "brisk.sqlite"

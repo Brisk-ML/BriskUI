@@ -1,27 +1,37 @@
 [project]
 name = "briskui"
 version = "0.1.0"
-description = "GUI for the Brisk package."
+description = "GUI for the Brisk ML framework."
+readme = "README.md"
 authors = [
-    {name = "Braeden Fieguth",email = "bfieguth@uoguelph.ca"},
-    {name = "Zheqi Tao",email = "ztao02@uoguelph.ca"}
+    {name = "Braeden Fieguth", email = "bfieguth@uoguelph.ca"},
+    {name = "Zheqi Tao", email = "ztao02@uoguelph.ca"}
 ]
 license = {text = "MIT"}
-requires-python = ">3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "brisk-ml @ file:///home/braeden/Documents/Python%20Projects/brisk"
+    "brisk-ml>=1.1.0",
+    "uvicorn[standard]>=0.30.0",
+    "fastapi>=0.115.0",
+    "pydantic-settings>=2.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Brisk-ML/brisk-ui"
+Documentation = "https://docs.briskml.org"
+
 [tool.poetry]
-packages = [
-    { include = "brisk_ui" },
-    { include = "dev" }
+packages = [{ include = "brisk_ui" }]
+include = [
+    { path = "brisk_ui/static/**/*", format = ["sdist", "wheel"] },
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
 brisk-ml = {develop = true}
 uvicorn = {extras = ["standard"], version = "*"}
+fastapi = "*"
+pydantic-settings = "*"
 
 [tool.poetry.scripts]
 brisk-ui-dev = "dev.run_dev:main"
