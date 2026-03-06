@@ -120,11 +120,25 @@ export default function DatasetsPage() {
         
         setDatasets(loadedDatasets);
         
-        // Also restore preprocessor configs if stored
-        const { datasetConfigs } = useDataProcessingStepStore.getState();
+        // Restore base_data_manager from project.json if available
+        if (response.base_data_manager) {
+          const bdm = response.base_data_manager;
+          const restoredBase = {
+            testSize: bdm.test_size ?? 0.2,
+            nSplits: bdm.n_splits ?? 5,
+            splitMethod: (bdm.split_method as "shuffle" | "kfold") ?? "shuffle",
+            groupColumn: bdm.group_column ?? null,
+            stratified: bdm.stratified ?? false,
+            randomState: bdm.random_state ?? null,
+          };
+          usePendingChangesStore.setState({ baseDataManager: restoredBase });
+          useDataProcessingStepStore.getState().updateBaseDataManager(restoredBase);
+        }
+        
+        // Restore preprocessor and data manager configs per dataset
+        const loadedDataManagers: Record<string, DataManagerConfig> = {};
         for (const d of response.datasets) {
           if (d.preprocessors && d.preprocessors.length > 0) {
-            // Restore preprocessor configs
             for (const p of d.preprocessors) {
               const preprocessorKey = {
                 "missing-data": "missingData",
@@ -145,16 +159,28 @@ export default function DatasetsPage() {
           
           // Restore data manager config if stored
           if (d.data_manager) {
-            useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, {
+            const dmConfig = {
               testSize: d.data_manager.test_size,
               nSplits: d.data_manager.n_splits,
               splitMethod: d.data_manager.split_method as "shuffle" | "kfold" | undefined,
               groupColumn: d.data_manager.group_column,
               stratified: d.data_manager.stratified,
               randomState: d.data_manager.random_state,
-            });
+            };
+            useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, dmConfig);
+            
+            // Also populate local datasetDataManagers for the modal
+            loadedDataManagers[d.id] = {
+              testSize: d.data_manager.test_size ?? 0.2,
+              nSplits: d.data_manager.n_splits ?? 5,
+              splitMethod: (d.data_manager.split_method as "shuffle" | "kfold") ?? "shuffle",
+              groupColumn: d.data_manager.group_column ?? null,
+              stratified: d.data_manager.stratified ?? false,
+              randomState: d.data_manager.random_state ?? null,
+            };
           }
         }
+        setDatasetDataManagers(loadedDataManagers);
         
         markSectionLoaded("datasets");
         // Reset hasChanges after loading initial data
@@ -718,7 +744,16 @@ export default function DatasetsPage() {
                             : "bg-[#121212] border-[#363636] hover:bg-[#181818]"
                         )}
                       >
-                        <div className="text-white text-base sm:text-lg lg:text-xl font-display truncate">
+                        <div
+                          className={cn(
+                            "text-white font-display pr-5 overflow-hidden whitespace-nowrap text-ellipsis",
+                            (dataset.name || dataset.fileName || "Dataset").length > 20
+                              ? "text-xs sm:text-sm lg:text-base"
+                              : (dataset.name || dataset.fileName || "Dataset").length > 14
+                                ? "text-sm sm:text-base lg:text-lg"
+                                : "text-base sm:text-lg lg:text-xl",
+                          )}
+                        >
                           {dataset.name || dataset.fileName || "Dataset"}
                         </div>
                         <div className="h-[1px] bg-white/40 w-full" />

@@ -38,6 +38,7 @@ export function EditDatasetPanel({ className }: EditDatasetPanelProps) {
         id: crypto.randomUUID(),
         name: newFeatureName.trim(),
         type: "str",
+        categorical: false,
       };
       addFeature(newFeature);
       setNewFeatureName("");

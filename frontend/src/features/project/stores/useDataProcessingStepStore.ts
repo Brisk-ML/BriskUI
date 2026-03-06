@@ -263,17 +263,14 @@ export const useDataProcessingStepStore = create<DataProcessingStepState>(
       const datasetConfig = datasetConfigs[datasetId];
       if (!datasetConfig) return baseDataManager;
 
+      const dm = datasetConfig.dataManager;
       return {
-        testSize: datasetConfig.dataManager.testSize ?? baseDataManager.testSize,
-        nSplits: datasetConfig.dataManager.nSplits ?? baseDataManager.nSplits,
-        splitMethod:
-          datasetConfig.dataManager.splitMethod ?? baseDataManager.splitMethod,
-        groupColumn:
-          datasetConfig.dataManager.groupColumn ?? baseDataManager.groupColumn,
-        stratified:
-          datasetConfig.dataManager.stratified ?? baseDataManager.stratified,
-        randomState:
-          datasetConfig.dataManager.randomState ?? baseDataManager.randomState,
+        testSize: dm.testSize !== undefined ? dm.testSize : baseDataManager.testSize,
+        nSplits: dm.nSplits !== undefined ? dm.nSplits : baseDataManager.nSplits,
+        splitMethod: dm.splitMethod !== undefined ? dm.splitMethod : baseDataManager.splitMethod,
+        groupColumn: "groupColumn" in dm ? (dm.groupColumn ?? null) : baseDataManager.groupColumn,
+        stratified: dm.stratified !== undefined ? dm.stratified : baseDataManager.stratified,
+        randomState: "randomState" in dm ? (dm.randomState ?? null) : baseDataManager.randomState,
       };
     },
 

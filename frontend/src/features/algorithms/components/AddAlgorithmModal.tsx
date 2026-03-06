@@ -31,7 +31,7 @@ import { SearchSpaceForm } from "./SearchSpaceForm";
 
 export type AddAlgorithmMode = "wizard" | "standalone";
 
-type TabType = "custom" | "search";
+type TabType = "custom" | "search" | "defaults";
 
 interface AddAlgorithmModalProps {
   open: boolean;

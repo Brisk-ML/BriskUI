@@ -94,10 +94,23 @@ export default function ExperimentsPage() {
         })),
       })));
       
+      // Restore base_data_manager from project.json if available
+      if (storedDatasetsResponse.base_data_manager) {
+        const bdm = storedDatasetsResponse.base_data_manager;
+        const restoredBase = {
+          testSize: bdm.test_size ?? 0.2,
+          nSplits: bdm.n_splits ?? 5,
+          splitMethod: (bdm.split_method as "shuffle" | "kfold") ?? "shuffle",
+          groupColumn: bdm.group_column ?? null,
+          stratified: bdm.stratified ?? false,
+          randomState: bdm.random_state ?? null,
+        };
+        usePendingChangesStore.setState({ baseDataManager: restoredBase });
+        useDataProcessingStepStore.getState().updateBaseDataManager(restoredBase);
+      }
+      
       // Restore preprocessor and data manager configs from stored datasets
-      // This ensures save works correctly even if user never visits datasets page
       for (const d of storedDatasetsResponse.datasets) {
-        // Restore preprocessor configs
         if (d.preprocessors && d.preprocessors.length > 0) {
           for (const p of d.preprocessors) {
             useDataProcessingStepStore.getState().addPreprocessorConfig(
@@ -108,7 +121,6 @@ export default function ExperimentsPage() {
           }
         }
         
-        // Restore data manager config
         if (d.data_manager) {
           useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, {
             testSize: d.data_manager.test_size,
@@ -279,9 +291,30 @@ export default function ExperimentsPage() {
 
           {/* Algorithms Section */}
           <div className="mb-4 sm:mb-6">
-            <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display block mb-1 sm:mb-2">
-              Algorithms <span className="text-red-400">*</span>
-            </Label>
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <Label className="text-white text-base sm:text-lg lg:text-xl xl:text-[24px] font-normal font-display">
+                Algorithms <span className="text-red-400">*</span>
+              </Label>
+              {algorithms.length > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAlgorithms(algorithms.map((a) => a.name))}
+                    className="text-[#00a878] text-sm font-display hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-white/40">|</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAlgorithms([])}
+                    className="text-white/60 text-sm font-display hover:underline"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="bg-[#282828] border-2 border-[#404040] p-2 sm:p-3 lg:p-4 max-h-[200px] sm:max-h-[240px] lg:max-h-[284px] overflow-y-auto">
               {algorithms.length === 0 ? (
                 <p className="text-white/50 text-sm sm:text-base font-display py-4 text-center">
@@ -304,7 +337,7 @@ export default function ExperimentsPage() {
                         htmlFor={algorithm.name}
                         className="text-white text-sm sm:text-base lg:text-lg font-normal font-display cursor-pointer"
                       >
-                        {algorithm.display_name}
+                        {algorithm.name}
                       </label>
                     </div>
                   ))}

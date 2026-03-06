@@ -641,7 +641,9 @@ def _format_params_dict(params: dict[str, str | int | float | bool | None]) -> s
     
     parts = []
     for key, value in params.items():
-        if isinstance(value, str):
+        if isinstance(value, str) and value.lower() == "none":
+            parts.append(f'"{key}": None')
+        elif isinstance(value, str):
             parts.append(f'"{key}": "{value}"')
         elif isinstance(value, bool):
             parts.append(f'"{key}": {value}')
@@ -829,6 +831,10 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
             return default
         return str(v)
 
+    if method == "fit_model":
+        X = get_data_var("X", "X_train")
+        y = get_data_var("y", "y_train")
+        return f'        self.model.fit({X}, {y})'
     if method == "evaluate_model":
         X = get_data_var("X", "X_test")
         y = get_data_var("y", "y_test")
@@ -879,7 +885,7 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
         metric = args.get("metric") or "neg_mean_absolute_error"
         num_rep = args.get("num_rep")
         num_rep_val = int(num_rep) if num_rep is not None and str(num_rep).strip() != "" else 5
-        return f'        self.plot_feature_importance(self.model, {X}, {y}, {thresh_val}, feature_names, "{filename}", "{metric}", {num_rep_val})'
+        return f'        self.plot_feature_importance(self.model, {X}, {y}, {thresh_val}, feature_names, "{filename}", metric="{metric}", num_rep={num_rep_val})'
     if method == "plot_residuals":
         X = get_data_var("X", "X_test")
         y = get_data_var("y", "y_test")
@@ -900,7 +906,7 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
         n_jobs_val = int(n_jobs) if n_jobs is not None and str(n_jobs).strip() != "" else -1
         plot_res = args.get("plot_results")
         plot_res_val = "True" if plot_res else "False"
-        return f'        self.hyperparameter_tuning(self.model, "{method_type}", {X_train}, {y_train}, "{scorer}", {kf_val}, {num_rep_val}, {n_jobs_val}, plot_results={plot_res_val})'
+        return f'        self.model = self.hyperparameter_tuning(self.model, "{method_type}", {X_train}, {y_train}, "{scorer}", {kf_val}, {num_rep_val}, {n_jobs_val}, plot_results={plot_res_val})'
     if method == "confusion_matrix":
         X = get_data_var("X", "X_test")
         y = get_data_var("y", "y_test")
@@ -1018,6 +1024,28 @@ def _parse_workflow_step(line: str) -> WorkflowStepInfo | None:
     
     # Match method calls on self
     line = line.strip()
+
+    # Handle self.model.fit(X, y)
+    if line.startswith("self.model.fit("):
+        args: dict = {}
+        if "X_train" in line:
+            args["X"] = "X_train"
+        elif "X_test" in line:
+            args["X"] = "X_test"
+        if "y_train" in line:
+            args["y"] = "y_train"
+        elif "y_test" in line:
+            args["y"] = "y_test"
+        return WorkflowStepInfo(
+            evaluator_id="fit_model",
+            method_name="fit_model",
+            args=args,
+        )
+
+    # Handle self.model = self.hyperparameter_tuning(...)
+    if line.startswith("self.model") and "self.hyperparameter_tuning(" in line:
+        line = line.replace("self.model", "", 1).lstrip().lstrip("=").strip()
+
     if not line.startswith("self."):
         return None
     
@@ -1034,6 +1062,7 @@ def _parse_workflow_step(line: str) -> WorkflowStepInfo | None:
         "plot_learning_curve", "plot_feature_importance", "plot_residuals",
         "hyperparameter_tuning", "confusion_matrix", "plot_confusion_heatmap",
         "plot_roc_curve", "plot_precision_recall_curve",
+        "save_model", "plot_shapley_values",
     }
     if method_name not in known_methods:
         return None
@@ -1080,10 +1109,10 @@ def _parse_workflow_step(line: str) -> WorkflowStepInfo | None:
     if n_jobs_match:
         args["n_jobs"] = int(n_jobs_match.group(1))
     
-    # Look for num_repeats/num_rep parameter
-    num_rep_match = re.search(r'num_rep(?:eats)?=(\d+)', line)
+    # Look for num_repeats/num_rep parameter (preserve original key name)
+    num_rep_match = re.search(r'(num_rep(?:eats)?)=(\d+)', line)
     if num_rep_match:
-        args["num_repeats"] = int(num_rep_match.group(1))
+        args[num_rep_match.group(1)] = int(num_rep_match.group(2))
     
     # Look for metric parameter (for learning curve, feature importance)
     metric_match = re.search(r'metric="([^"]+)"', line)
@@ -2493,11 +2522,13 @@ class StoredDatasetConfig(pydantic.BaseModel):
 class StoredDatasetsResponse(pydantic.BaseModel):
     """Response containing stored datasets merged with file system."""
     datasets: list[StoredDatasetConfig]
+    base_data_manager: StoredDataManagerConfig | None = None
 
 
 class SaveDatasetsRequest(pydantic.BaseModel):
     """Request to save datasets configuration to project.json."""
     datasets: list[StoredDatasetConfig]
+    base_data_manager: StoredDataManagerConfig | None = None
 
 
 class SaveDatasetsResponse(pydantic.BaseModel):
@@ -2595,7 +2626,10 @@ async def get_datasets(request: fastapi.Request):
             preprocessors=[StoredPreprocessorConfig(**p) for p in stored.get("preprocessors", [])],
         ))
     
-    return StoredDatasetsResponse(datasets=result_datasets)
+    stored_base_dm = config_data.get("base_data_manager")
+    base_dm = StoredDataManagerConfig(**stored_base_dm) if stored_base_dm else None
+    
+    return StoredDatasetsResponse(datasets=result_datasets, base_data_manager=base_dm)
 
 
 @router.patch("/datasets", response_model=SaveDatasetsResponse)
@@ -2636,6 +2670,10 @@ async def save_datasets(
         datasets_to_store.append(ds_dict)
     
     config_data["datasets"] = datasets_to_store
+    
+    if data.base_data_manager:
+        config_data["base_data_manager"] = data.base_data_manager.model_dump(exclude_none=True)
+    
     config_service.write(config_data)
     
     return SaveDatasetsResponse(

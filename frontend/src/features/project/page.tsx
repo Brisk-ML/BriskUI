@@ -21,7 +21,7 @@ import { useWorkflowStepStore } from "./stores/useWorkflowStepStore";
 export default function ProjectWizardPage() {
   const { currentStep, nextStep, prevStep, totalSteps, mode, loadFromBackend, projectInfo, problemType } =
     useProjectWizardStore();
-  const { projectName, projectPath, projectDescription } = useProjectStore();
+  const { projectName, projectPath, projectDescription, projectType } = useProjectStore();
   
   // Subscribe to stores for reactive validation
   const datasets = useDatasetsStepStore((s) => s.datasets);
@@ -48,9 +48,10 @@ export default function ProjectWizardPage() {
         project_name: projectName,
         project_path: projectPath,
         project_description: projectDescription,
+        project_type: projectType,
       });
     }
-  }, [mode, projectName, projectPath, projectDescription, loadFromBackend]);
+  }, [mode, projectName, projectPath, projectDescription, projectType, loadFromBackend]);
 
   // Step validation function
   const isStepValid = (step: number): boolean => {

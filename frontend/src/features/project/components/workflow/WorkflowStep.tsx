@@ -17,6 +17,7 @@ import {
   getWorkflowEvaluatorsForProblemType,
   REGRESSION_METRICS_OPTIONS,
   CLASSIFICATION_METRICS_OPTIONS,
+  FIT_MODEL_EVALUATOR,
   type WorkflowEvaluatorDef,
   type WorkflowArgField,
 } from "@/features/project/constants/workflowEvaluators";
@@ -53,39 +54,70 @@ function expandDataArgs(args: Record<string, unknown>): Record<string, unknown> 
   return out;
 }
 
-interface AddEvaluatorModalProps {
+/** Convert backend X/y vars back to "train" or "test" for form display */
+function collapseDataArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...args };
+  const X = out.X;
+  if (X === "X_train") {
+    out.data = "train";
+  } else if (X === "X_test") {
+    out.data = "test";
+  }
+  delete out.X;
+  delete out.y;
+  return out;
+}
+
+interface EvaluatorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   evaluator: WorkflowEvaluatorDef | null;
   problemType: "classification" | "regression";
-  onAdd: (args: Record<string, unknown>) => void;
+  onSave: (args: Record<string, unknown>) => void;
+  initialArgs?: Record<string, unknown>;
+  isEditing?: boolean;
 }
 
-function AddEvaluatorModal({
+function EvaluatorModal({
   open,
   onOpenChange,
   evaluator,
   problemType,
-  onAdd,
-}: AddEvaluatorModalProps) {
+  onSave,
+  initialArgs,
+  isEditing = false,
+}: EvaluatorModalProps) {
   const [formArgs, setFormArgs] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     if (open && evaluator) {
-      const initial = buildInitialArgs(evaluator.argFields);
-      const metricsField = evaluator.argFields.find((f) => f.type === "metrics");
-      if (metricsField) {
-        const defaultMetrics =
-          problemType === "classification"
-            ? [CLASSIFICATION_METRICS_OPTIONS[0]?.value ?? "accuracy"]
-            : [REGRESSION_METRICS_OPTIONS[0]?.value ?? "MAE"];
-        initial[metricsField.name] = Array.isArray(initial[metricsField.name])
-          ? initial[metricsField.name]
-          : defaultMetrics;
+      if (isEditing && initialArgs) {
+        const collapsed = collapseDataArgs(initialArgs);
+        setFormArgs({ ...buildInitialArgs(evaluator.argFields), ...collapsed });
+      } else {
+        const initial = buildInitialArgs(evaluator.argFields);
+        const metricsField = evaluator.argFields.find((f) => f.type === "metrics");
+        if (metricsField) {
+          const defaultMetrics =
+            problemType === "classification"
+              ? [CLASSIFICATION_METRICS_OPTIONS[0]?.value ?? "accuracy"]
+              : [REGRESSION_METRICS_OPTIONS[0]?.value ?? "MAE"];
+          initial[metricsField.name] = Array.isArray(initial[metricsField.name])
+            ? initial[metricsField.name]
+            : defaultMetrics;
+        }
+        for (const field of evaluator.argFields) {
+          if (field.type === "metric_single") {
+            initial[field.name] =
+              problemType === "classification"
+                ? CLASSIFICATION_METRICS_OPTIONS[0]?.value ?? "accuracy"
+                : REGRESSION_METRICS_OPTIONS[0]?.value ?? "MAE";
+          }
+        }
+        setFormArgs(initial);
       }
-      setFormArgs(initial);
     }
-  }, [open, evaluator, problemType]);
+  }, [open, evaluator, problemType, isEditing, initialArgs]);
 
   const resetForm = () => {
     if (evaluator) {
@@ -102,10 +134,10 @@ function AddEvaluatorModal({
     onOpenChange(next);
   };
 
-  const handleAdd = () => {
+  const handleSaveClick = () => {
     if (!evaluator) return;
     const expanded = expandDataArgs(formArgs);
-    onAdd(expanded);
+    onSave(expanded);
     handleOpenChange(false);
   };
 
@@ -130,7 +162,7 @@ function AddEvaluatorModal({
         >
           <DialogHeader className="mb-2 sm:mb-4">
             <DialogTitle className="text-lg sm:text-xl md:text-2xl font-display">
-              Add {evaluator.name}
+              {isEditing ? "Edit" : "Add"} {evaluator.name}
             </DialogTitle>
           </DialogHeader>
 
@@ -249,10 +281,10 @@ function AddEvaluatorModal({
             </Button>
             <Button
               type="button"
-              onClick={handleAdd}
+              onClick={handleSaveClick}
               className={`btn-add-hover ${STYLES.bgPrimary} text-white h-10 sm:h-11 md:h-12 px-6 text-base sm:text-lg font-display`}
             >
-              Add
+              {isEditing ? "Update" : "Add"}
             </Button>
           </div>
         </DialogContent>
@@ -260,6 +292,13 @@ function AddEvaluatorModal({
     </Dialog>
   );
 }
+
+const FIT_MODEL_STEP: WorkflowStepType = {
+  id: "fit-model-fixed",
+  evaluatorId: FIT_MODEL_EVALUATOR.id,
+  methodName: FIT_MODEL_EVALUATOR.methodName,
+  args: { X: "X_train", y: "y_train" },
+};
 
 export function WorkflowStep() {
   const { problemType } = useProjectWizardStore();
@@ -270,13 +309,21 @@ export function WorkflowStep() {
     [problemType]
   );
 
-  const [showAddModal, setShowAddModal] = useState(false);
+  useEffect(() => {
+    if (steps.length === 0 || steps[0].evaluatorId !== "fit_model") {
+      setSteps([FIT_MODEL_STEP, ...steps.filter((s) => s.evaluatorId !== "fit_model")]);
+    }
+  }, []);
+
+  const [showModal, setShowModal] = useState(false);
   const [selectedEvaluator, setSelectedEvaluator] =
     useState<WorkflowEvaluatorDef | null>(null);
+  const [editingStep, setEditingStep] = useState<WorkflowStepType | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const handleDragEnter = (index: number) => {
     if (dragIndex === null || dragIndex === index) return;
+    if (index === 0 || dragIndex === 0) return;
     const reordered = [...steps];
     const [moved] = reordered.splice(dragIndex, 1);
     reordered.splice(index, 0, moved);
@@ -285,19 +332,49 @@ export function WorkflowStep() {
   };
 
   const handleCardClick = (evaluator: WorkflowEvaluatorDef) => {
+    setEditingStep(null);
     setSelectedEvaluator(evaluator);
-    setShowAddModal(true);
+    setShowModal(true);
   };
 
-  const handleAddStep = (args: Record<string, unknown>) => {
-    if (!selectedEvaluator) return;
-    addStep({
-      evaluatorId: selectedEvaluator.id,
-      methodName: selectedEvaluator.methodName,
-      args,
-    });
-    setSelectedEvaluator(null);
+  const handleEditStep = (step: WorkflowStepType) => {
+    if (step.evaluatorId === "fit_model") return;
+    const evaluator = evaluators.find((e) => e.id === step.evaluatorId);
+    if (evaluator) {
+      setEditingStep(step);
+      setSelectedEvaluator(evaluator);
+      setShowModal(true);
+    }
   };
+
+  const handleSaveStep = (args: Record<string, unknown>) => {
+    if (!selectedEvaluator) return;
+
+    if (editingStep) {
+      const stepIndex = steps.findIndex((s) => s.id === editingStep.id);
+      if (stepIndex >= 0) {
+        removeStep(editingStep.id);
+        const newSteps = [...steps.filter((s) => s.id !== editingStep.id)];
+        newSteps.splice(stepIndex, 0, {
+          id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          evaluatorId: selectedEvaluator.id,
+          methodName: selectedEvaluator.methodName,
+          args,
+        });
+        setSteps(newSteps);
+      }
+    } else {
+      addStep({
+        evaluatorId: selectedEvaluator.id,
+        methodName: selectedEvaluator.methodName,
+        args,
+      });
+    }
+    setSelectedEvaluator(null);
+    setEditingStep(null);
+  };
+
+  const userSteps = steps.filter((s) => s.evaluatorId !== "fit_model");
 
   return (
     <div className="w-full max-w-[1055px] px-4 xl:px-0 flex flex-col gap-4 sm:gap-6 mx-auto">
@@ -339,45 +416,43 @@ export function WorkflowStep() {
           Workflow
         </h2>
 
-        {steps.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[200px] gap-2">
-            <p className="text-white/60 text-lg sm:text-xl font-display text-center">
-              Click an evaluator above to add it to the workflow. Order added is the
-              order executed.
-            </p>
-            <p className="text-red-400/80 text-sm sm:text-base font-display">
-              At least one evaluator is required to continue
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
-            {steps.map((step, index) => (
-              <Fragment key={step.id}>
-                <StepCard
-                  step={step}
-                  evaluators={evaluators}
-                  onRemove={() => removeStep(step.id)}
-                  onDragStart={() => setDragIndex(index)}
-                  onDragEnter={() => handleDragEnter(index)}
-                  onDragEnd={() => setDragIndex(null)}
-                  onDragOver={(e) => e.preventDefault()}
-                  isDragging={dragIndex === index}
-                />
-                {index < steps.length - 1 && (
-                  <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/40 flex-shrink-0" />
-                )}
-              </Fragment>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
+          {steps.map((step, index) => (
+            <Fragment key={step.id}>
+              <StepCard
+                step={step}
+                evaluators={evaluators}
+                locked={step.evaluatorId === "fit_model"}
+                onRemove={() => removeStep(step.id)}
+                onEdit={() => handleEditStep(step)}
+                onDragStart={() => setDragIndex(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragEnd={() => setDragIndex(null)}
+                onDragOver={(e) => e.preventDefault()}
+                isDragging={dragIndex === index}
+              />
+              {index < steps.length - 1 && (
+                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/40 flex-shrink-0" />
+              )}
+            </Fragment>
+          ))}
+        </div>
+
+        {userSteps.length === 0 && (
+          <p className="text-red-400/80 text-sm sm:text-base font-display mt-4">
+            Add at least one evaluator step after Fit Model
+          </p>
         )}
       </div>
 
-      <AddEvaluatorModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
+      <EvaluatorModal
+        open={showModal}
+        onOpenChange={setShowModal}
         evaluator={selectedEvaluator}
         problemType={problemType}
-        onAdd={handleAddStep}
+        onSave={handleSaveStep}
+        initialArgs={editingStep?.args}
+        isEditing={!!editingStep}
       />
     </div>
   );
@@ -386,7 +461,9 @@ export function WorkflowStep() {
 function StepCard({
   step,
   evaluators,
+  locked = false,
   onRemove,
+  onEdit,
   onDragStart,
   onDragEnter,
   onDragEnd,
@@ -395,47 +472,70 @@ function StepCard({
 }: {
   step: WorkflowStepType;
   evaluators: WorkflowEvaluatorDef[];
+  locked?: boolean;
   onRemove: () => void;
+  onEdit: () => void;
   onDragStart: () => void;
   onDragEnter: () => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
   isDragging: boolean;
 }) {
-  const def = evaluators.find((e) => e.id === step.evaluatorId);
+  const def = evaluators.find((e) => e.id === step.evaluatorId)
+    ?? (step.evaluatorId === "fit_model" ? FIT_MODEL_EVALUATOR : undefined);
   const displayName = def?.name ?? step.methodName;
   const filename = step.args.filename != null ? String(step.args.filename) : null;
 
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnter={onDragEnter}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
+      draggable={!locked}
+      onDragStart={locked ? undefined : onDragStart}
+      onDragEnter={locked ? undefined : onDragEnter}
+      onDragEnd={locked ? undefined : onDragEnd}
+      onDragOver={locked ? undefined : onDragOver}
+      onClick={locked ? undefined : onEdit}
       className={cn(
-        "card-hover-fade relative border-2 border-[#404040] bg-[#282828] p-3 sm:p-4 w-[200px] sm:w-[240px]",
-        "cursor-grab active:cursor-grabbing select-none",
+        "relative border-2 transition-colors",
+        "p-4 sm:p-5 w-[220px] sm:w-[260px] min-h-[100px] sm:min-h-[120px]",
+        "flex flex-col text-left select-none",
+        locked
+          ? "border-[#505050] bg-[#1a1a1a] cursor-default opacity-80"
+          : "card-hover-fade border-[#404040] bg-[#282828] hover:bg-[#303030] cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50",
       )}
     >
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors z-10"
-        title="Remove step"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {!locked && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation();
+              onRemove();
+            }
+          }}
+          className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors z-10"
+          title="Remove step"
+        >
+          <X className="w-5 h-5" />
+        </div>
+      )}
 
-      <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-white/30 mt-0.5 flex-shrink-0" />
+      <div className="flex items-start gap-2 flex-1">
+        {!locked && <GripVertical className="w-4 h-4 text-white/30 mt-1 flex-shrink-0" />}
         <div className="flex flex-col gap-1">
-          <div className="text-white text-sm sm:text-base font-display font-bold pr-6">
+          <div className="text-white text-base sm:text-lg font-display font-bold pr-6">
             {displayName}
           </div>
+          {locked && (
+            <div className="text-white/40 text-xs font-display">Train data</div>
+          )}
           {filename && (
-            <div className="text-white/50 text-xs font-display truncate">
+            <div className="text-white/50 text-sm font-display truncate">
               {filename}
             </div>
           )}

@@ -21,6 +21,7 @@ export function DatasetsStep() {
     removeFeature,
     addDataset,
     updateDataset,
+    removeDataset,
     toggleDataset,
     resetForm,
   } = useDatasetsStepStore();
@@ -454,7 +455,28 @@ export function DatasetsStep() {
                       : "bg-[#121212] border-[#363636] hover:bg-[#181818]",
                   )}
                 >
-                  <div className="text-white text-xl sm:text-[28px] font-display leading-normal min-h-[30px] sm:h-[40px] flex items-center text-left truncate">
+                  {/* Delete button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeDataset(dataset.id);
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-white/60 hover:text-red-500 transition-colors z-10"
+                    title="Delete dataset"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div
+                    className={cn(
+                      "text-white font-display leading-normal min-h-[30px] sm:h-[40px] flex items-center text-left pr-6 overflow-hidden whitespace-nowrap text-ellipsis",
+                      (dataset.name || "Dataset Name").length > 24
+                        ? "text-sm sm:text-base"
+                        : (dataset.name || "Dataset Name").length > 16
+                          ? "text-base sm:text-lg"
+                          : "text-xl sm:text-[28px]",
+                    )}
+                  >
                     {dataset.name || "Dataset Name"}
                   </div>
                   <div className="h-[2px] bg-white w-full max-w-[225px]" />

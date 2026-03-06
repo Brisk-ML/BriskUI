@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { HoverSelect } from "@/shared/components/ui/hover-select";
@@ -13,14 +14,33 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
   const { getEffectiveDataManager, updateDatasetDataManager } = useDataProcessingStepStore();
   const dataManager = getEffectiveDataManager(datasetId);
 
+  const [nSplitsStr, setNSplitsStr] = useState(dataManager.nSplits.toString());
+  const [groupColumnStr, setGroupColumnStr] = useState(dataManager.groupColumn || "");
+  const [randomStateStr, setRandomStateStr] = useState(
+    dataManager.randomState != null ? dataManager.randomState.toString() : ""
+  );
+
+  useEffect(() => {
+    setNSplitsStr(dataManager.nSplits.toString());
+    setGroupColumnStr(dataManager.groupColumn || "");
+    setRandomStateStr(dataManager.randomState != null ? dataManager.randomState.toString() : "");
+  }, [datasetId]);
+
   const handleNSplitsChange = (value: string) => {
+    setNSplitsStr(value);
     const num = Number.parseInt(value, 10);
     if (!Number.isNaN(num) && num >= 1) {
       updateDatasetDataManager(datasetId, { nSplits: num });
     }
   };
 
+  const handleGroupColumnChange = (value: string) => {
+    setGroupColumnStr(value);
+    updateDatasetDataManager(datasetId, { groupColumn: value.trim() || null });
+  };
+
   const handleRandomStateChange = (value: string) => {
+    setRandomStateStr(value);
     if (value.trim() === "") {
       updateDatasetDataManager(datasetId, { randomState: null });
     } else {
@@ -51,10 +71,8 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
             Group Column
           </Label>
           <Input
-            value={dataManager.groupColumn || ""}
-            onChange={(e) => updateDatasetDataManager(datasetId, { 
-              groupColumn: e.target.value.trim() || null 
-            })}
+            value={groupColumnStr}
+            onChange={(e) => handleGroupColumnChange(e.target.value)}
             placeholder="Optional"
             className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px]"
           />
@@ -84,8 +102,9 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
             Number of Splits
           </Label>
           <Input
-            value={dataManager.nSplits}
+            value={nSplitsStr}
             onChange={(e) => handleNSplitsChange(e.target.value)}
+            placeholder="5"
             className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px]"
           />
         </div>
@@ -114,7 +133,7 @@ export function DataManagerPanel({ datasetId, onEditDefaults }: DataManagerPanel
             Random State
           </Label>
           <Input
-            value={dataManager.randomState ?? ""}
+            value={randomStateStr}
             onChange={(e) => handleRandomStateChange(e.target.value)}
             placeholder="Optional (e.g., 42)"
             className="bg-[#282828] border-[#404040] text-white h-10 sm:h-[40px] text-base sm:text-[18px]"

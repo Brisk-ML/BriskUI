@@ -426,7 +426,7 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
         const key = PREPROCESSOR_KEYS[type];
         const config = key && preprocessorsObj?.[key];
         if (config && typeof config === "object") {
-          preprocessors.push({ type, config: config as Record<string, unknown> });
+          preprocessors.push({ type, config: config as unknown as Record<string, unknown> });
         }
       }
       const hasDcParams = dm && (dm.testSize !== undefined || dm.nSplits !== undefined ||
@@ -510,19 +510,23 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
     set({ isSaving: true, saveError: null });
 
     try {
-      // Write data.py with BASE_DATA_MANAGER config
-      const baseDataManagerConfig: ApiDataManagerConfig = {
-        test_size: state.baseDataManager.testSize,
-        n_splits: state.baseDataManager.nSplits,
-        split_method: state.baseDataManager.splitMethod,
-        group_column: state.baseDataManager.groupColumn,
-        stratified: state.baseDataManager.stratified,
-        random_state: state.baseDataManager.randomState,
-      };
-      await writeDataFile({ base_data_manager: baseDataManagerConfig });
+      const loaded = state.loadedSections;
 
-      // Write algorithms.py if there are algorithm wrappers
-      if (state.algorithmWrappers.length > 0) {
+      // Write data.py only if datasets section was loaded
+      if (loaded.has("datasets")) {
+        const baseDataManagerConfig: ApiDataManagerConfig = {
+          test_size: state.baseDataManager.testSize,
+          n_splits: state.baseDataManager.nSplits,
+          split_method: state.baseDataManager.splitMethod,
+          group_column: state.baseDataManager.groupColumn,
+          stratified: state.baseDataManager.stratified,
+          random_state: state.baseDataManager.randomState,
+        };
+        await writeDataFile({ base_data_manager: baseDataManagerConfig });
+      }
+
+      // Write algorithms.py if algorithms section was loaded and there are wrappers
+      if (loaded.has("algorithms") && state.algorithmWrappers.length > 0) {
         const algorithmConfigs: AlgorithmWrapperConfig[] = state.algorithmWrappers.map((w) => ({
           name: w.name,
           display_name: w.displayName,
@@ -599,7 +603,7 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
           if (config && typeof config === "object") {
             preprocessors.push({
               type,
-              config: config as Record<string, unknown>,
+              config: config as unknown as Record<string, unknown>,
             });
           }
         }
@@ -650,19 +654,20 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
           features: d.features.filter((f) => f.categorical).map((f) => f.name),
         }));
 
-      // Write settings file with experiment groups
-      // Use algorithm names from pending wrappers as default_algorithms
-      const algorithmNames = state.algorithmWrappers.map((w) => w.name);
-      
-      await writeSettingsFile({
-        problem_type: state.problemType,
-        default_algorithms: algorithmNames.length > 0 ? algorithmNames : state.defaultAlgorithms,
-        experiment_groups: experimentGroupConfigs,
-        categorical_features: categoricalFeatures.length > 0 ? categoricalFeatures : undefined,
-      });
+      // Write settings file only if experiments section was loaded
+      if (loaded.has("experiments")) {
+        const algorithmNames = state.algorithmWrappers.map((w) => w.name);
+        
+        await writeSettingsFile({
+          problem_type: state.problemType,
+          default_algorithms: algorithmNames.length > 0 ? algorithmNames : state.defaultAlgorithms,
+          experiment_groups: experimentGroupConfigs,
+          categorical_features: categoricalFeatures.length > 0 ? categoricalFeatures : undefined,
+        });
+      }
 
-      // Save datasets to project.json for persistence across sessions
-      if (state.datasets.length > 0) {
+      // Save datasets to project.json only if datasets section was loaded
+      if (loaded.has("datasets") && state.datasets.length > 0) {
         const storedDatasets: StoredDatasetConfig[] = state.datasets.map((d) => {
           // Get preprocessor configs from data processing store
           const datasetConfig = datasetConfigs[d.id];
@@ -678,7 +683,7 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
             if (config && typeof config === "object") {
               storedPreprocessors.push({
                 type,
-                config: config as Record<string, unknown>,
+                config: config as unknown as Record<string, unknown>,
               });
             }
           }
@@ -708,11 +713,21 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
           };
         });
 
-        await saveDatasets({ datasets: storedDatasets });
+        await saveDatasets({
+          datasets: storedDatasets,
+          base_data_manager: {
+            test_size: state.baseDataManager.testSize,
+            n_splits: state.baseDataManager.nSplits,
+            split_method: state.baseDataManager.splitMethod,
+            group_column: state.baseDataManager.groupColumn,
+            stratified: state.baseDataManager.stratified,
+            random_state: state.baseDataManager.randomState,
+          },
+        });
       }
 
-      // Write workflow file if there are workflow steps
-      if (state.workflowSteps.length > 0) {
+      // Write workflow file only if workflow section was loaded and there are steps
+      if (loaded.has("workflow") && state.workflowSteps.length > 0) {
         const workflowStepConfigs: WorkflowStepConfig[] = state.workflowSteps.map((s) => ({
           evaluator_id: s.evaluatorId,
           method_name: s.methodName,

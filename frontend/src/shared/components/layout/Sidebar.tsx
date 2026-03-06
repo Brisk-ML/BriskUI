@@ -157,7 +157,7 @@ export function Sidebar() {
                     </div>
                     <span
                       className={cn(
-                        "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-none whitespace-nowrap overflow-hidden",
+                        "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-tight whitespace-nowrap overflow-hidden",
                         "transition-[max-width,opacity] duration-300 ease-out",
                         isActive ? "font-bold" : "font-normal",
                         "max-w-0 opacity-0 group-hover:max-w-[170px] md:group-hover:max-w-[185px] lg:group-hover:max-w-[200px] xl:group-hover:max-w-[240px] group-hover:opacity-100",
@@ -215,7 +215,7 @@ export function Sidebar() {
               </div>
               <span
                 className={cn(
-                  "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-none whitespace-nowrap overflow-hidden",
+                  "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-tight whitespace-nowrap overflow-hidden",
                   "transition-[max-width,opacity] duration-300 ease-out",
                   pathname === resultsItem.href ? "font-bold" : "font-normal",
                   "max-w-0 opacity-0 group-hover:max-w-[170px] md:group-hover:max-w-[185px] lg:group-hover:max-w-[200px] xl:group-hover:max-w-[240px] group-hover:opacity-100",
@@ -271,7 +271,7 @@ export function Sidebar() {
               </div>
               <span
                 className={cn(
-                  "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-none whitespace-nowrap overflow-hidden",
+                  "text-white text-sm md:text-base lg:text-lg xl:text-[28px] font-display leading-tight whitespace-nowrap overflow-hidden",
                   "transition-[max-width,opacity] duration-300 ease-out",
                   pathname === settingsItem.href ? "font-bold" : "font-normal",
                   "max-w-0 opacity-0 group-hover:max-w-[170px] md:group-hover:max-w-[185px] lg:group-hover:max-w-[200px] xl:group-hover:max-w-[240px] group-hover:opacity-100",

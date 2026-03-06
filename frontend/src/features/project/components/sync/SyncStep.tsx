@@ -15,7 +15,7 @@ import {
 } from "@/api";
 import { Button } from "@/shared/components/ui/button";
 import { useProjectWizardStore } from "@/features/project/stores/useProjectWizardStore";
-import { useDataProcessingStepStore } from "@/features/project/stores/useDataProcessingStepStore";
+import { useDataProcessingStepStore, type DatasetPreprocessors } from "@/features/project/stores/useDataProcessingStepStore";
 import { useAlgorithmsStepStore } from "@/features/project/stores/useAlgorithmsStepStore";
 import { useDatasetsStepStore } from "@/features/project/stores/useDatasetsStepStore";
 import { useExperimentsStepStore } from "@/features/project/stores/useExperimentsStepStore";
@@ -109,7 +109,7 @@ export function SaveStep() {
           "scaling",
           "feature-selection",
         ];
-        const PREPROCESSOR_KEYS: Record<string, string> = {
+        const PREPROCESSOR_KEYS: Record<string, keyof DatasetPreprocessors> = {
           "missing-data": "missingData",
           encoding: "encoding",
           scaling: "scaling",
@@ -168,7 +168,7 @@ export function SaveStep() {
               if (config && typeof config === "object") {
                 preprocessors.push({
                   type,
-                  config: config as Record<string, unknown>,
+                  config: config as unknown as Record<string, unknown>,
                 });
               }
             }
@@ -217,7 +217,7 @@ export function SaveStep() {
         const PREPROCESSOR_ORDER_DS: Array<"missing-data" | "encoding" | "scaling" | "feature-selection"> = [
           "missing-data", "encoding", "scaling", "feature-selection",
         ];
-        const PREPROCESSOR_KEYS_DS: Record<string, string> = {
+        const PREPROCESSOR_KEYS_DS: Record<string, keyof DatasetPreprocessors> = {
           "missing-data": "missingData",
           encoding: "encoding",
           scaling: "scaling",
@@ -235,7 +235,7 @@ export function SaveStep() {
             const key = PREPROCESSOR_KEYS_DS[type];
             const config = key && preprocessorsObj?.[key];
             if (config && typeof config === "object") {
-              storedPreprocessors.push({ type, config: config as Record<string, unknown> });
+              storedPreprocessors.push({ type, config: config as unknown as Record<string, unknown> });
             }
           }
 
@@ -264,7 +264,17 @@ export function SaveStep() {
           };
         });
 
-        await saveDatasets({ datasets: storedDatasets });
+        await saveDatasets({
+          datasets: storedDatasets,
+          base_data_manager: {
+            test_size: baseDataManager.testSize,
+            n_splits: baseDataManager.nSplits,
+            split_method: baseDataManager.splitMethod,
+            group_column: baseDataManager.groupColumn,
+            stratified: baseDataManager.stratified,
+            random_state: baseDataManager.randomState,
+          },
+        });
       }
 
       // Refresh the global project store after sync

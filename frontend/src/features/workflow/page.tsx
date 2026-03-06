@@ -18,6 +18,7 @@ import {
   getWorkflowEvaluatorsForProblemType,
   REGRESSION_METRICS_OPTIONS,
   CLASSIFICATION_METRICS_OPTIONS,
+  FIT_MODEL_EVALUATOR,
   type WorkflowEvaluatorDef,
   type WorkflowArgField,
 } from "@/features/project/constants/workflowEvaluators";
@@ -108,6 +109,14 @@ function EvaluatorModal({
           initial[metricsField.name] = Array.isArray(initial[metricsField.name])
             ? initial[metricsField.name]
             : defaultMetrics;
+        }
+        for (const field of evaluator.argFields) {
+          if (field.type === "metric_single") {
+            initial[field.name] =
+              problemType === "classification"
+                ? CLASSIFICATION_METRICS_OPTIONS[0]?.value ?? "accuracy"
+                : REGRESSION_METRICS_OPTIONS[0]?.value ?? "MAE";
+          }
         }
         setFormArgs(initial);
       }
@@ -288,6 +297,18 @@ function EvaluatorModal({
   );
 }
 
+const FIT_MODEL_STEP: WorkflowStepState = {
+  id: "fit-model-fixed",
+  evaluatorId: FIT_MODEL_EVALUATOR.id,
+  methodName: FIT_MODEL_EVALUATOR.methodName,
+  args: { X: "X_train", y: "y_train" },
+};
+
+function ensureFitModelFirst(steps: WorkflowStepState[]): WorkflowStepState[] {
+  if (steps.length > 0 && steps[0].evaluatorId === "fit_model") return steps;
+  return [FIT_MODEL_STEP, ...steps.filter((s) => s.evaluatorId !== "fit_model")];
+}
+
 export default function WorkflowPage() {
   const { projectType } = useProjectStore();
   const {
@@ -314,6 +335,7 @@ export default function WorkflowPage() {
 
   const handleDragEnter = (index: number) => {
     if (dragIndex === null || dragIndex === index) return;
+    if (index === 0 || dragIndex === 0) return;
     const reordered = [...workflowSteps];
     const [moved] = reordered.splice(dragIndex, 1);
     reordered.splice(index, 0, moved);
@@ -337,10 +359,9 @@ export default function WorkflowPage() {
           args: step.args,
         }));
         
-        setWorkflowSteps(loadedSteps);
+        setWorkflowSteps(ensureFitModelFirst(loadedSteps));
         
         markSectionLoaded("workflow");
-        // Reset hasChanges after loading
         usePendingChangesStore.setState({ hasChanges: false });
       } catch (error) {
         console.error("Failed to load workflow:", error);
@@ -357,6 +378,7 @@ export default function WorkflowPage() {
   };
 
   const handleEditStep = (step: WorkflowStepState) => {
+    if (step.evaluatorId === "fit_model") return;
     const evaluator = evaluators.find((e) => e.id === step.evaluatorId);
     if (evaluator) {
       setEditingStep(step);
@@ -369,12 +391,9 @@ export default function WorkflowPage() {
     if (!selectedEvaluator) return;
     
     if (editingStep) {
-      // Update existing step - remove old and add new with same position
       const stepIndex = workflowSteps.findIndex((s) => s.id === editingStep.id);
       if (stepIndex >= 0) {
-        // Remove old step
         removeWorkflowStep(editingStep.id);
-        // Add new step (it will be added at the end, but we need to reorder)
         const newId = `step-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         const newSteps = [...workflowSteps.filter((s) => s.id !== editingStep.id)];
         newSteps.splice(stepIndex, 0, {
@@ -387,7 +406,6 @@ export default function WorkflowPage() {
         usePendingChangesStore.setState({ hasChanges: true });
       }
     } else {
-      // Add new step
       addWorkflowStep({
         evaluatorId: selectedEvaluator.id,
         methodName: selectedEvaluator.methodName,
@@ -397,6 +415,8 @@ export default function WorkflowPage() {
     setSelectedEvaluator(null);
     setEditingStep(null);
   };
+
+  const userSteps = workflowSteps.filter((s) => s.evaluatorId !== "fit_model");
 
   if (isLoading) {
     return (
@@ -456,34 +476,32 @@ export default function WorkflowPage() {
               Workflow Pipeline
             </h2>
 
-            {workflowSteps.length === 0 ? (
-              <div className="flex items-center justify-center h-[200px]">
-                <p className="text-white/60 text-lg sm:text-xl font-display">
-                  Click an evaluator above to add it to the workflow. Order added is the
-                  order executed.
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
-                {workflowSteps.map((step, index) => (
-                  <Fragment key={step.id}>
-                    <StepCard
-                      step={step}
-                      evaluators={evaluators}
-                      onRemove={() => removeWorkflowStep(step.id)}
-                      onEdit={() => handleEditStep(step)}
-                      onDragStart={() => setDragIndex(index)}
-                      onDragEnter={() => handleDragEnter(index)}
-                      onDragEnd={() => setDragIndex(null)}
-                      onDragOver={(e) => e.preventDefault()}
-                      isDragging={dragIndex === index}
-                    />
-                    {index < workflowSteps.length - 1 && (
-                      <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/40 flex-shrink-0" />
-                    )}
-                  </Fragment>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
+              {workflowSteps.map((step, index) => (
+                <Fragment key={step.id}>
+                  <StepCard
+                    step={step}
+                    evaluators={evaluators}
+                    locked={step.evaluatorId === "fit_model"}
+                    onRemove={() => removeWorkflowStep(step.id)}
+                    onEdit={() => handleEditStep(step)}
+                    onDragStart={() => setDragIndex(index)}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragEnd={() => setDragIndex(null)}
+                    onDragOver={(e) => e.preventDefault()}
+                    isDragging={dragIndex === index}
+                  />
+                  {index < workflowSteps.length - 1 && (
+                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/40 flex-shrink-0" />
+                  )}
+                </Fragment>
+              ))}
+            </div>
+
+            {userSteps.length === 0 && (
+              <p className="text-white/60 text-base font-display mt-4">
+                Click an evaluator above to add steps after Fit Model.
+              </p>
             )}
           </div>
         </div>
@@ -505,6 +523,7 @@ export default function WorkflowPage() {
 function StepCard({
   step,
   evaluators,
+  locked = false,
   onRemove,
   onEdit,
   onDragStart,
@@ -515,6 +534,7 @@ function StepCard({
 }: {
   step: WorkflowStepState;
   evaluators: WorkflowEvaluatorDef[];
+  locked?: boolean;
   onRemove: () => void;
   onEdit: () => void;
   onDragStart: () => void;
@@ -523,52 +543,59 @@ function StepCard({
   onDragOver: (e: React.DragEvent) => void;
   isDragging: boolean;
 }) {
-  const def = evaluators.find((e) => e.id === step.evaluatorId);
+  const def = evaluators.find((e) => e.id === step.evaluatorId)
+    ?? (step.evaluatorId === "fit_model" ? FIT_MODEL_EVALUATOR : undefined);
   const displayName = def?.name ?? step.methodName;
   const filename = step.args.filename != null ? String(step.args.filename) : null;
 
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnter={onDragEnter}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onClick={onEdit}
+      draggable={!locked}
+      onDragStart={locked ? undefined : onDragStart}
+      onDragEnter={locked ? undefined : onDragEnter}
+      onDragEnd={locked ? undefined : onDragEnd}
+      onDragOver={locked ? undefined : onDragOver}
+      onClick={locked ? undefined : onEdit}
       className={cn(
-        "card-hover-fade relative border-2 border-[#404040] bg-[#282828] hover:bg-[#303030] transition-colors",
+        "relative border-2 transition-colors",
         "p-4 sm:p-5 w-[220px] sm:w-[260px] min-h-[100px] sm:min-h-[120px]",
-        "flex flex-col text-left cursor-grab active:cursor-grabbing select-none",
+        "flex flex-col text-left select-none",
+        locked
+          ? "border-[#505050] bg-[#1a1a1a] cursor-default opacity-80"
+          : "card-hover-fade border-[#404040] bg-[#282828] hover:bg-[#303030] cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50",
       )}
     >
-      {/* Delete button */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+      {!locked && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
             e.stopPropagation();
             onRemove();
-          }
-        }}
-        className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors z-10"
-        title="Remove step"
-      >
-        <X className="w-5 h-5" />
-      </div>
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation();
+              onRemove();
+            }
+          }}
+          className="absolute top-2 right-2 text-white/60 hover:text-red-500 transition-colors z-10"
+          title="Remove step"
+        >
+          <X className="w-5 h-5" />
+        </div>
+      )}
 
-      {/* Content */}
       <div className="flex items-start gap-2 flex-1">
-        <GripVertical className="w-4 h-4 text-white/30 mt-1 flex-shrink-0" />
+        {!locked && <GripVertical className="w-4 h-4 text-white/30 mt-1 flex-shrink-0" />}
         <div className="flex flex-col gap-1">
           <div className="text-white text-base sm:text-lg font-display font-bold pr-6">
             {displayName}
           </div>
+          {locked && (
+            <div className="text-white/40 text-xs font-display">Train data</div>
+          )}
           {filename && (
             <div className="text-white/50 text-sm font-display truncate">
               {filename}

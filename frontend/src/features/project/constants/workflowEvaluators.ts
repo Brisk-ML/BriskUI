@@ -34,24 +34,48 @@ const DATA_OPTIONS = [
   { value: "test", label: "Test" },
 ];
 
-/** Package defaults for regression (metrics.py uses *brisk.REGRESSION_METRICS). */
+/** Brisk regression metrics for evaluate_model / evaluate_model_cv (names & abbreviations). */
 export const REGRESSION_METRICS_OPTIONS = [
   { value: "MAE", label: "MAE" },
   { value: "MSE", label: "MSE" },
   { value: "RMSE", label: "RMSE" },
   { value: "R2", label: "R²" },
-  { value: "neg_mean_absolute_error", label: "neg_mean_absolute_error" },
-  { value: "neg_mean_squared_error", label: "neg_mean_squared_error" },
+  { value: "MAPE", label: "MAPE" },
+  { value: "CCC", label: "CCC" },
+  { value: "AdjR2", label: "Adj R²" },
+  { value: "NegMAE", label: "Neg MAE" },
+  { value: "explained_variance_score", label: "Explained Variance" },
+  { value: "max_error", label: "Max Error" },
+  { value: "mean_pinball_loss", label: "Mean Pinball Loss" },
+  { value: "mean_squared_log_error", label: "Mean Squared Log Error" },
+  { value: "median_absolute_error", label: "Median Absolute Error" },
+  { value: "root_mean_squared_log_error", label: "Root Mean Squared Log Error" },
 ];
 
-/** Package defaults for classification (metrics.py uses *brisk.CLASSIFICATION_METRICS). */
+/** Brisk classification metrics for evaluate_model / evaluate_model_cv (names & abbreviations). */
 export const CLASSIFICATION_METRICS_OPTIONS = [
   { value: "accuracy", label: "Accuracy" },
   { value: "precision", label: "Precision" },
   { value: "recall", label: "Recall" },
   { value: "f1_score", label: "F1 Score" },
+  { value: "balanced_accuracy", label: "Balanced Accuracy" },
+  { value: "top_k_accuracy", label: "Top-k Accuracy" },
+  { value: "log_loss", label: "Log Loss" },
   { value: "roc_auc", label: "ROC AUC" },
+  { value: "brier", label: "Brier Score" },
 ];
+
+/** The fixed first step: must always be present and cannot be moved/deleted. */
+export const FIT_MODEL_EVALUATOR: WorkflowEvaluatorDef = {
+  id: "fit_model",
+  name: "Fit Model",
+  problemType: "both",
+  methodName: "fit_model",
+  callType: "evaluate",
+  argFields: [
+    { name: "data", label: "Data", type: "data", default: "train", options: DATA_OPTIONS },
+  ],
+};
 
 export const WORKFLOW_EVALUATORS: WorkflowEvaluatorDef[] = [
   // --- Common (both) ---

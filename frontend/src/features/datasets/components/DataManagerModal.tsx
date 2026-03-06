@@ -44,18 +44,30 @@ export function DataManagerModal({
   onSave,
 }: DataManagerModalProps) {
   const [localConfig, setLocalConfig] = useState<DataManagerConfig>(config);
+  const [nSplitsStr, setNSplitsStr] = useState(config.nSplits.toString());
+  const [groupColumnStr, setGroupColumnStr] = useState(config.groupColumn || "");
 
   useEffect(() => {
     if (open) {
       setLocalConfig(config);
+      setNSplitsStr(config.nSplits.toString());
+      setGroupColumnStr(config.groupColumn || "");
     }
-  }, [open, config]);
+  // Only re-initialize when dialog opens, not on every config reference change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleNSplitsChange = (value: string) => {
+    setNSplitsStr(value);
     const num = Number.parseInt(value, 10);
     if (!Number.isNaN(num) && num >= 1) {
       setLocalConfig((prev) => ({ ...prev, nSplits: num }));
     }
+  };
+
+  const handleGroupColumnChange = (value: string) => {
+    setGroupColumnStr(value);
+    setLocalConfig((prev) => ({ ...prev, groupColumn: value.trim() || null }));
   };
 
   const handleRandomStateChange = (value: string) => {
@@ -70,7 +82,10 @@ export function DataManagerModal({
   };
 
   const handleSave = () => {
-    onSave(localConfig);
+    onSave({
+      ...localConfig,
+      nSplits: localConfig.nSplits || 1,
+    });
     onClose();
   };
 
@@ -116,13 +131,8 @@ export function DataManagerModal({
               Group Column
             </Label>
             <Input
-              value={localConfig.groupColumn || ""}
-              onChange={(e) =>
-                setLocalConfig((prev) => ({
-                  ...prev,
-                  groupColumn: e.target.value.trim() || null,
-                }))
-              }
+              value={groupColumnStr}
+              onChange={(e) => handleGroupColumnChange(e.target.value)}
               placeholder="Optional"
               className="bg-[#282828] border-[#404040] text-white h-10 text-base"
             />
@@ -152,8 +162,9 @@ export function DataManagerModal({
               Number of Splits
             </Label>
             <Input
-              value={localConfig.nSplits}
+              value={nSplitsStr}
               onChange={(e) => handleNSplitsChange(e.target.value)}
+              placeholder="5"
               className="bg-[#282828] border-[#404040] text-white h-10 text-base"
             />
           </div>

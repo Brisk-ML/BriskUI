@@ -429,6 +429,7 @@ export interface AlgorithmInfo {
   class_name: string;
   class_module: string;
   default_params: Record<string, unknown>;
+  search_space?: Record<string, (string | number | boolean)[]>;
   use_defaults: boolean;
 }
 
@@ -535,10 +536,12 @@ export interface StoredDatasetConfig {
 
 export interface StoredDatasetsResponse {
   datasets: StoredDatasetConfig[];
+  base_data_manager?: StoredDataManagerConfig | null;
 }
 
 export interface SaveDatasetsRequest {
   datasets: StoredDatasetConfig[];
+  base_data_manager?: StoredDataManagerConfig | null;
 }
 
 export interface SaveDatasetsResponse {

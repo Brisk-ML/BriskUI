@@ -25,12 +25,13 @@ export default function AlgorithmsPage() {
         // Convert backend algorithms to AlgorithmWrapperState format
         const wrappers: AlgorithmWrapperState[] = data.algorithms.map((alg, index) => ({
           id: `wrapper-loaded-${index}-${Date.now()}`,
-          algorithmId: alg.name, // Use name as algorithmId for loaded algorithms
+          algorithmId: alg.name,
           name: alg.name,
           displayName: alg.display_name,
           className: alg.class_name,
           classModule: alg.class_module || SKLEARN_CLASS_MODULES[alg.class_name] || "sklearn",
           defaultParams: alg.default_params || {},
+          searchSpace: alg.search_space || {},
           useDefaults: alg.use_defaults,
         }));
         

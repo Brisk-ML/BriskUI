@@ -131,7 +131,7 @@ export default function Home() {
 
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] font-normal text-white font-display leading-none text-center">
-                  Coming Soon...
+                  Coming in Brisk v1.3.0
                 </p>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function Home() {
 
               <div className="flex-1 flex items-center justify-center text-center">
                 <p className="text-lg sm:text-xl md:text-2xl lg:text-[28px] font-normal text-white font-display leading-none">
-                  Coming Soon...
+                  Coming in Brisk v1.3.0
                 </p>
               </div>
             </div>
