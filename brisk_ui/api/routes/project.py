@@ -592,9 +592,9 @@ def _generate_algorithms_content(data: WriteAlgorithmsFileRequest) -> str:
             params_dict_str = _format_params_dict(wrapper.default_params)
             params_parts.append(f'        default_params={params_dict_str}')
         if wrapper.search_space:
-            search_space_str = _format_search_space_dict(wrapper.search_space)
+            search_space_str = _format_search_space_dict(wrapper.search_space, indent=12)
             if search_space_str != "{}":
-                params_parts.append(f'        hyperparameters={search_space_str}')
+                params_parts.append(f'        hyperparam_grid={search_space_str}')
         params_str = ",\n".join(params_parts)
         wrapper_strs.append(f"    AlgorithmWrapper(\n{params_str},\n    )")
 
@@ -655,21 +655,19 @@ def _format_params_dict(params: dict[str, str | int | float | bool | None]) -> s
     return "{" + ", ".join(parts) + "}"
 
 
-def _format_search_space_dict(search_space: dict[str, list[str | int | float | bool]]) -> str:
-    """Format a search space dict as a Python dict literal with lists.
-    
-    The search space values are arrays that define the hyperparameter search space
-    for sklearn GridSearchCV or similar hyperparameter tuning.
-    """
+def _format_search_space_dict(
+    search_space: dict[str, list[str | int | float | bool]],
+    indent: int = 0,
+) -> str:
+    """Format a search space dict as a multi-line Python dict literal with lists."""
     if not search_space:
         return "{}"
     
     parts = []
     for key, values in search_space.items():
-        if not values:  # Skip empty lists
+        if not values:
             continue
         
-        # Format the list values
         formatted_values = []
         for v in values:
             if isinstance(v, str):
@@ -685,7 +683,10 @@ def _format_search_space_dict(search_space: dict[str, list[str | int | float | b
     if not parts:
         return "{}"
     
-    return "{" + ", ".join(parts) + "}"
+    inner_indent = " " * indent
+    closing_indent = " " * (indent - 4) if indent >= 4 else ""
+    entries = (",\n" + inner_indent).join(parts)
+    return "{\n" + inner_indent + entries + "\n" + closing_indent + "}"
 
 
 def _get_project_dir(settings, create_mode: bool = False):
@@ -874,7 +875,7 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
         num_repeats_val = int(num_repeats) if num_repeats is not None and str(num_repeats).strip() != "" else 1
         n_jobs = args.get("n_jobs")
         n_jobs_val = int(n_jobs) if n_jobs is not None and str(n_jobs).strip() != "" else -1
-        metric = args.get("metric") or "neg_mean_absolute_error"
+        metric = args.get("metric") or "MAE"
         return f'        self.plot_learning_curve(self.model, {X_train}, {y_train}, filename="{filename}", cv={cv_val}, num_repeats={num_repeats_val}, n_jobs={n_jobs_val}, metric="{metric}")'
     if method == "plot_feature_importance":
         X = get_data_var("X", "X_train")
@@ -882,7 +883,7 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
         threshold = args.get("threshold")
         thresh_val = int(threshold) if threshold is not None and str(threshold).strip() != "" else 10
         filename = args.get("filename") or "feature_importance"
-        metric = args.get("metric") or "neg_mean_absolute_error"
+        metric = args.get("metric") or "MAE"
         num_rep = args.get("num_rep")
         num_rep_val = int(num_rep) if num_rep is not None and str(num_rep).strip() != "" else 5
         return f'        self.plot_feature_importance(self.model, {X}, {y}, {thresh_val}, feature_names, "{filename}", metric="{metric}", num_rep={num_rep_val})'
@@ -897,7 +898,7 @@ def _format_workflow_step_call(step: WorkflowStepConfig, problem_type: str) -> s
         X_train = get_data_var("X", "X_train")
         y_train = get_data_var("y", "y_train")
         method_type = args.get("method") or "grid"
-        scorer = args.get("scorer") or "neg_mean_absolute_error"
+        scorer = args.get("scorer") or "MAE"
         kf = args.get("kf")
         kf_val = int(kf) if kf is not None and str(kf).strip() != "" else 5
         num_rep = args.get("num_rep")
@@ -1136,11 +1137,14 @@ def _parse_workflow_step(line: str) -> WorkflowStepInfo | None:
     if method_name == "hyperparameter_tuning" and method_type_match:
         args["method"] = method_type_match.group(1)
     
-    # Look for scorer parameter
+    # Look for scorer parameter (named or positional)
     scorer_match = re.search(r'scorer="([^"]+)"', line)
-    if not scorer_match:
-        scorer_match = re.search(r'"(neg_[^"]+)"', line)
-    if scorer_match:
+    if not scorer_match and method_name == "hyperparameter_tuning":
+        # Scorer is the 2nd quoted string (after method type "grid"/"random")
+        all_quoted = re.findall(r'"([^"]+)"', line)
+        if len(all_quoted) >= 2:
+            args["scorer"] = all_quoted[1]
+    elif scorer_match:
         args["scorer"] = scorer_match.group(1)
     
     return WorkflowStepInfo(
@@ -1502,9 +1506,8 @@ def _generate_settings_content(data: WriteSettingsFileRequest) -> str:
         plot_settings_var = f"\n    plot_settings = PlotSettings({kwargs_str})\n"
         config_plot_arg = ",\n        plot_settings=plot_settings"
 
-    categorical_features_arg = ""
+    cat_entries = []
     if data.categorical_features:
-        cat_entries = []
         for entry in data.categorical_features:
             if not entry.features:
                 continue
@@ -1513,8 +1516,10 @@ def _generate_settings_content(data: WriteSettingsFileRequest) -> str:
                 cat_entries.append(f'            ("{entry.dataset_file_name}", "{entry.table_name}"): [{features_str}]')
             else:
                 cat_entries.append(f'            "{entry.dataset_file_name}": [{features_str}]')
-        if cat_entries:
-            categorical_features_arg = ",\n        categorical_features={\n" + ",\n".join(cat_entries) + "\n        }"
+    if cat_entries:
+        categorical_features_arg = ",\n        categorical_features={\n" + ",\n".join(cat_entries) + ",\n        }"
+    else:
+        categorical_features_arg = ",\n        categorical_features={}"
 
     return f'''# settings.py
 from brisk.configuration.configuration import Configuration
@@ -2053,6 +2058,7 @@ class AlgorithmInfo(pydantic.BaseModel):
     class_name: str  # Python class name (e.g., "Ridge")
     class_module: str  # Python module (e.g., "sklearn.linear_model")
     default_params: dict = {}  # Default parameters
+    search_space: dict[str, list] = {}  # Hyperparameter grid
     use_defaults: bool = True  # Whether using catalog defaults
 
 
@@ -2141,6 +2147,38 @@ def _parse_algorithms_from_file(content: str) -> list[AlgorithmInfo]:
                     except ValueError:
                         default_params[param_name] = param_value
         
+        # Extract hyperparam_grid (or legacy hyperparameters) if present
+        search_space: dict[str, list] = {}
+        grid_match = re.search(r'(?:hyperparam_grid|hyperparameters)\s*=\s*\{', wrapper_content)
+        if grid_match:
+            brace_start = grid_match.end() - 1
+            depth = 0
+            i = brace_start
+            while i < len(wrapper_content):
+                ch = wrapper_content[i]
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                i += 1
+            grid_str = wrapper_content[brace_start + 1:i]
+            grid_entries = re.findall(r'["\']([^"\']+)["\']\s*:\s*\[([^\]]*)\]', grid_str)
+            for param_name, values_str in grid_entries:
+                values: list = []
+                for v in re.findall(r'[^,\s]+', values_str):
+                    v = v.strip().strip('"\'')
+                    try:
+                        if '.' in v or 'e' in v.lower():
+                            values.append(float(v))
+                        else:
+                            values.append(int(v))
+                    except ValueError:
+                        values.append(v)
+                if values:
+                    search_space[param_name] = values
+
         # If default_params is empty, assume using defaults
         use_defaults = len(default_params) == 0
         
@@ -2151,6 +2189,7 @@ def _parse_algorithms_from_file(content: str) -> list[AlgorithmInfo]:
                 class_name=class_name,
                 class_module=class_module,
                 default_params=default_params,
+                search_space=search_space,
                 use_defaults=use_defaults,
             ))
     
@@ -2388,22 +2427,21 @@ async def _parse_csv_file(file: fastapi.UploadFile) -> ParsedDatasetInfo:
         if len(sample_rows) < 100:
             sample_rows.append(row)
     
-    # Infer types for each column
+    target_feature = header[-1].strip() if header else ""
+    
+    # Infer types for each column, excluding the target (last) column
     features: list[FeatureInfo] = []
-    for col_idx, col_name in enumerate(header):
+    for col_idx, col_name in enumerate(header[:-1]):
         col_values = [row[col_idx] for row in sample_rows if col_idx < len(row)]
         dtype = _infer_dtype(col_values)
         features.append(FeatureInfo(name=col_name.strip(), data_type=dtype))
     
-    target_feature = header[-1].strip() if header else ""
-    
-    # feature_count excludes the target column
     return ParsedDatasetInfo(
         file_name=file.filename or "unknown.csv",
         file_type="csv",
         features=features,
         target_feature=target_feature,
-        feature_count=len(features) - 1,
+        feature_count=len(features),
         row_count=row_count,
     )
 
@@ -2454,22 +2492,21 @@ async def _parse_xlsx_file(file: fastapi.UploadFile) -> ParsedDatasetInfo:
     
     wb.close()
     
-    # Infer types for each column
+    target_feature = header[-1] if header else ""
+    
+    # Infer types for each column, excluding the target (last) column
     features: list[FeatureInfo] = []
-    for col_idx, col_name in enumerate(header):
+    for col_idx, col_name in enumerate(header[:-1]):
         col_values = [row[col_idx] for row in sample_rows if col_idx < len(row)]
         dtype = _infer_dtype(col_values)
         features.append(FeatureInfo(name=col_name, data_type=dtype))
     
-    target_feature = header[-1] if header else ""
-    
-    # feature_count excludes the target column
     return ParsedDatasetInfo(
         file_name=file.filename or "unknown.xlsx",
         file_type="xlsx",
         features=features,
         target_feature=target_feature,
-        feature_count=len(features) - 1,
+        feature_count=len(features),
         row_count=row_count,
     )
 

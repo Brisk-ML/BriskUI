@@ -116,7 +116,7 @@ export const WORKFLOW_EVALUATORS: WorkflowEvaluatorDef[] = [
       { name: "cv", label: "CV folds", type: "number", default: 5, placeholder: "5" },
       { name: "num_repeats", label: "Num repeats", type: "number", default: 1, placeholder: "1" },
       { name: "n_jobs", label: "n_jobs", type: "number", default: -1, placeholder: "-1" },
-      { name: "metric", label: "Metric", type: "metric_single", default: "neg_mean_absolute_error" },
+      { name: "metric", label: "Metric", type: "metric_single", default: "MAE" },
     ],
   },
   {
@@ -129,7 +129,7 @@ export const WORKFLOW_EVALUATORS: WorkflowEvaluatorDef[] = [
       { name: "data", label: "Data", type: "data", default: "train", options: DATA_OPTIONS },
       { name: "threshold", label: "Threshold (top N or min value)", type: "number", default: 10, placeholder: "10" },
       { name: "filename", label: "Filename", type: "filename", default: "feature_importance", placeholder: "feature_importance" },
-      { name: "metric", label: "Metric", type: "metric_single", default: "neg_mean_absolute_error" },
+      { name: "metric", label: "Metric", type: "metric_single", default: "MAE" },
       { name: "num_rep", label: "Num repetitions", type: "number", default: 5, placeholder: "5" },
     ],
   },
@@ -142,7 +142,7 @@ export const WORKFLOW_EVALUATORS: WorkflowEvaluatorDef[] = [
     argFields: [
       { name: "data", label: "Data", type: "data", default: "train", options: DATA_OPTIONS },
       { name: "method", label: "Method", type: "select", default: "grid", options: [{ value: "grid", label: "Grid" }, { value: "random", label: "Random" }] },
-      { name: "scorer", label: "Scorer", type: "metric_single", default: "neg_mean_absolute_error" },
+      { name: "scorer", label: "Scorer", type: "metric_single", default: "MAE" },
       { name: "kf", label: "CV folds", type: "number", default: 5, placeholder: "5" },
       { name: "num_rep", label: "Num repeats", type: "number", default: 3, placeholder: "3" },
       { name: "n_jobs", label: "n_jobs", type: "number", default: -1, placeholder: "-1" },

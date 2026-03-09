@@ -396,18 +396,6 @@ export const ALGORITHMS_CATALOG: AlgorithmCatalogItem[] = [
         placeholder: "Ex. 10000",
       },
       {
-        name: "penalty",
-        label: "Penalty",
-        type: "select",
-        defaultValue: "l2",
-        options: [
-          { label: "None", value: "none" },
-          { label: "L2", value: "l2" },
-          { label: "L1", value: "l1" },
-          { label: "ElasticNet", value: "elasticnet" },
-        ],
-      },
-      {
         name: "l1_ratio",
         label: "L1 Ratio",
         type: "number",

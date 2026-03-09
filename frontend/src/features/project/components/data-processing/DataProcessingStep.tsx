@@ -86,7 +86,16 @@ export function DataProcessingStep() {
                       : "bg-[#121212] border-[#363636] hover:bg-[#181818]",
                   )}
                 >
-                  <div className="text-white text-[24px] sm:text-[28px] font-display leading-normal h-[40px] flex items-center text-left truncate">
+                  <div
+                    className={cn(
+                      "text-white font-display leading-normal h-[40px] flex items-center text-left pr-6 overflow-hidden whitespace-nowrap text-ellipsis",
+                      (dataset.name || dataset.fileName || "Dataset").length > 24
+                        ? "text-sm sm:text-base"
+                        : (dataset.name || dataset.fileName || "Dataset").length > 16
+                          ? "text-base sm:text-lg"
+                          : "text-xl sm:text-[28px]",
+                    )}
+                  >
                     {dataset.name || dataset.fileName}
                   </div>
                   <div className="h-[2px] bg-white w-[225px]" />

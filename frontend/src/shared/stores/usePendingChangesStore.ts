@@ -5,6 +5,7 @@ import {
   writeDataFile,
   writeWorkflowFile,
   saveDatasets,
+  getExperimentsData,
   type ExperimentGroupConfig,
   type AlgorithmWrapperConfig,
   type ProblemType,
@@ -654,7 +655,6 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
           features: d.features.filter((f) => f.categorical).map((f) => f.name),
         }));
 
-      // Write settings file only if experiments section was loaded
       if (loaded.has("experiments")) {
         const algorithmNames = state.algorithmWrappers.map((w) => w.name);
         
@@ -664,6 +664,64 @@ export const usePendingChangesStore = create<PendingChangesState>()((set, get) =
           experiment_groups: experimentGroupConfigs,
           categorical_features: categoricalFeatures.length > 0 ? categoricalFeatures : undefined,
         });
+      } else if (loaded.has("datasets")) {
+        // Experiments weren't loaded in this session but dataset configs changed
+        // (e.g. preprocessors added). Fetch experiment groups from backend so
+        // settings.py reflects the updated preprocessors.
+        try {
+          const expData = await getExperimentsData();
+          if (expData.experiment_groups.length > 0) {
+            const backendGroups: ExperimentGroupConfig[] = expData.experiment_groups.map((g) => {
+              const datasetFileName = g.datasets[0] || "";
+              const datasetId = getDatasetIdFromFileName(datasetFileName);
+              const dsCfg = datasetConfigs[datasetId];
+              const preprocessorsObj = dsCfg?.preprocessors;
+              const configured = dsCfg?.configuredPreprocessors ?? [];
+
+              const preprocessors: PreprocessorEntry[] = [];
+              for (const type of PREPROCESSOR_ORDER) {
+                if (!configured.includes(type)) continue;
+                const key = PREPROCESSOR_KEYS[type];
+                const config = key && preprocessorsObj?.[key];
+                if (config && typeof config === "object") {
+                  preprocessors.push({ type, config: config as unknown as Record<string, unknown> });
+                }
+              }
+
+              const dm = dsCfg?.dataManager;
+              const hasDcParams = dm && (dm.testSize !== undefined || dm.nSplits !== undefined || dm.splitMethod !== undefined || dm.groupColumn !== undefined || dm.stratified !== undefined || dm.randomState !== undefined);
+              const useDefaultDataManager = !hasDcParams && preprocessors.length === 0;
+
+              return {
+                name: g.name,
+                description: g.description || undefined,
+                dataset_file_name: datasetFileName,
+                dataset_table_name: null,
+                algorithms: g.algorithms,
+                use_default_data_manager: useDefaultDataManager,
+                data_config: hasDcParams || preprocessors.length > 0
+                  ? {
+                      ...(hasDcParams && dm ? {
+                        test_size: dm.testSize, n_splits: dm.nSplits,
+                        split_method: dm.splitMethod, group_column: dm.groupColumn,
+                        stratified: dm.stratified, random_state: dm.randomState,
+                      } : {}),
+                      ...(preprocessors.length > 0 ? { preprocessors } : {}),
+                    }
+                  : undefined,
+              };
+            });
+
+            await writeSettingsFile({
+              problem_type: state.problemType,
+              default_algorithms: expData.algorithms.map((a) => a.name),
+              experiment_groups: backendGroups,
+              categorical_features: categoricalFeatures.length > 0 ? categoricalFeatures : undefined,
+            });
+          }
+        } catch {
+          // Settings.py will be updated next time experiments page is visited
+        }
       }
 
       // Save datasets to project.json only if datasets section was loaded
