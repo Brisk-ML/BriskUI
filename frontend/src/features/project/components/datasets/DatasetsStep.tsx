@@ -469,11 +469,11 @@ export function DatasetsStep() {
                   </button>
                   <div
                     className={cn(
-                      "text-white font-display leading-normal min-h-[30px] sm:h-[40px] flex items-center text-left pr-6 overflow-hidden whitespace-nowrap text-ellipsis",
+                      "text-white font-display text-left pr-6 overflow-hidden whitespace-nowrap text-ellipsis",
                       (dataset.name || "Dataset Name").length > 24
-                        ? "text-sm sm:text-base"
+                        ? "text-xs sm:text-sm"
                         : (dataset.name || "Dataset Name").length > 16
-                          ? "text-base sm:text-lg"
+                          ? "text-sm sm:text-base"
                           : "text-xl sm:text-[28px]",
                     )}
                   >

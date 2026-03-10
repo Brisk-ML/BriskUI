@@ -33,20 +33,15 @@ export function HoverSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  const clearCloseTimeout = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-  };
-
-  const handleMouseEnter = () => {
+  const handleToggle = () => {
     if (disabled) return;
-    clearCloseTimeout();
+    if (isOpen) {
+      setIsOpen(false);
+      return;
+    }
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setPosition({
@@ -64,43 +59,25 @@ export function HoverSelect({
   };
 
   useEffect(() => {
-    return () => clearCloseTimeout();
-  }, []);
-
-  // Track pointer position to manage open/close — works reliably across portals and overlays
-  useEffect(() => {
     if (!isOpen) return;
 
-    const isPointInRect = (x: number, y: number, rect: DOMRect, pad: number) =>
-      x >= rect.left - pad && x <= rect.right + pad &&
-      y >= rect.top - pad && y <= rect.bottom + pad;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      const triggerRect = triggerRef.current?.getBoundingClientRect();
-      const dropdownRect = dropdownRef.current?.getBoundingClientRect();
-      const pad = 4;
-
-      const overTrigger = triggerRect && isPointInRect(e.clientX, e.clientY, triggerRect, pad);
-      const overDropdown = dropdownRect && isPointInRect(e.clientX, e.clientY, dropdownRect, pad);
-
-      if (!overTrigger && !overDropdown) {
-        if (!closeTimeoutRef.current) {
-          closeTimeoutRef.current = setTimeout(() => setIsOpen(false), 120);
-        }
-      } else {
-        clearCloseTimeout();
-      }
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) return;
+      setIsOpen(false);
     };
 
     const handleScrollOrResize = () => setIsOpen(false);
 
-    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("resize", handleScrollOrResize);
 
     return () => {
-      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("resize", handleScrollOrResize);
-      clearCloseTimeout();
     };
   }, [isOpen]);
 
@@ -110,7 +87,7 @@ export function HoverSelect({
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        onMouseEnter={handleMouseEnter}
+        onClick={handleToggle}
         className={cn(
           "flex w-full items-center justify-between gap-2 border px-3 py-2 text-sm",
           "transition-colors outline-none",

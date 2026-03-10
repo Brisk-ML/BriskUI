@@ -111,7 +111,7 @@ export const useDatasetsStepStore = create<DatasetsStepState>((set, get) => ({
 
     const newDataset: Dataset = {
       id: crypto.randomUUID(),
-      name: form.fileName,
+      name: form.tableName || form.fileName.replace(/\.[^/.]+$/, ""),
       fileName: form.fileName,
       tableName: form.tableName,
       fileType: form.fileType,
@@ -141,7 +141,7 @@ export const useDatasetsStepStore = create<DatasetsStepState>((set, get) => ({
         d.id === id
           ? {
               ...d,
-              name: form.fileName,
+              name: form.tableName || form.fileName.replace(/\.[^/.]+$/, ""),
               fileName: form.fileName,
               tableName: form.tableName,
               fileType: form.fileType,

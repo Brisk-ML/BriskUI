@@ -46,7 +46,7 @@ export default function ExperimentsPage() {
     markSectionLoaded,
   } = usePendingChangesStore();
 
-  // Load data on mount
+  // Load data on mount (skip store overwrite if already cached)
   useEffect(() => {
     loadData();
   }, []);
@@ -59,7 +59,41 @@ export default function ExperimentsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Fetch experiment data and stored datasets in parallel
+      const storeState = usePendingChangesStore.getState();
+      const experimentsLoaded = storeState.loadedSections.has("experiments");
+      const datasetsLoaded = storeState.loadedSections.has("datasets");
+
+      if (experimentsLoaded) {
+        // Section already cached — populate local UI state from the store
+        // instead of fetching from backend, to avoid overwriting unsaved changes.
+        setDatasets(storeState.datasets.map((d) => ({
+          name: d.name,
+          filename: d.fileName,
+          file_type: d.fileType,
+        })));
+
+        // Derive algorithm list from store wrappers if available,
+        // otherwise fetch from backend for the checkbox UI
+        if (storeState.loadedSections.has("algorithms") || storeState.algorithmWrappers.length > 0) {
+          setAlgorithms(storeState.algorithmWrappers.map((w) => ({
+            name: w.name,
+            display_name: w.displayName,
+            class_name: w.className,
+            class_module: w.classModule,
+            default_params: w.defaultParams as Record<string, string | number | boolean | null>,
+            search_space: w.searchSpace,
+            use_defaults: w.useDefaults,
+          })));
+        } else {
+          const data = await getExperimentsData();
+          setAlgorithms(data.algorithms);
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // First load — fetch from backend
       const [data, storedDatasetsResponse] = await Promise.all([
         getExperimentsData(),
         getStoredDatasets(),
@@ -68,7 +102,7 @@ export default function ExperimentsPage() {
       setDatasets(data.datasets);
       setAlgorithms(data.algorithms);
       
-      // Initialize pending changes store with existing data
+      // Initialize experiment groups from backend
       setExperimentGroups(data.experiment_groups.map((g) => ({
         name: g.name,
         description: g.description,
@@ -76,69 +110,69 @@ export default function ExperimentsPage() {
         algorithms: g.algorithms,
       })));
       
-      // Use stored datasets with file-based IDs for consistency
-      setStoreDatasets(storedDatasetsResponse.datasets.map((d: StoredDatasetConfig) => ({
-        id: d.id, // File-based ID
-        name: d.file_name.replace(/\.[^/.]+$/, ""),
-        fileName: d.file_name,
-        tableName: d.table_name || "",
-        fileType: d.file_type as "csv" | "xlsx" | "sqlite",
-        targetFeature: d.target_feature || "",
-        featuresCount: d.features_count || 0,
-        observationsCount: d.observations_count || 0,
-        features: d.features.map((f) => ({
-          id: crypto.randomUUID(),
-          name: f.name,
-          type: f.data_type as "str" | "int" | "float",
-          categorical: f.categorical,
-        })),
-      })));
-      
-      // Restore base_data_manager from project.json if available
-      if (storedDatasetsResponse.base_data_manager) {
-        const bdm = storedDatasetsResponse.base_data_manager;
-        const restoredBase = {
-          testSize: bdm.test_size ?? 0.2,
-          nSplits: bdm.n_splits ?? 5,
-          splitMethod: (bdm.split_method as "shuffle" | "kfold") ?? "shuffle",
-          groupColumn: bdm.group_column ?? null,
-          stratified: bdm.stratified ?? false,
-          randomState: bdm.random_state ?? null,
-        };
-        usePendingChangesStore.setState({ baseDataManager: restoredBase });
-        useDataProcessingStepStore.getState().updateBaseDataManager(restoredBase);
-      }
-      
-      // Restore preprocessor and data manager configs from stored datasets
-      for (const d of storedDatasetsResponse.datasets) {
-        if (d.preprocessors && d.preprocessors.length > 0) {
-          for (const p of d.preprocessors) {
-            useDataProcessingStepStore.getState().addPreprocessorConfig(
-              d.id,
-              p.type as "missing-data" | "scaling" | "encoding" | "feature-selection",
-              p.config as any
-            );
-          }
+      // Only overwrite datasets store if they haven't been loaded independently
+      if (!datasetsLoaded) {
+        setStoreDatasets(storedDatasetsResponse.datasets.map((d: StoredDatasetConfig) => ({
+          id: d.id,
+          name: d.file_name.replace(/\.[^/.]+$/, ""),
+          fileName: d.file_name,
+          tableName: d.table_name || "",
+          fileType: d.file_type as "csv" | "xlsx" | "sqlite",
+          targetFeature: d.target_feature || "",
+          featuresCount: d.features_count || 0,
+          observationsCount: d.observations_count || 0,
+          features: d.features.map((f) => ({
+            id: crypto.randomUUID(),
+            name: f.name,
+            type: f.data_type as "str" | "int" | "float",
+            categorical: f.categorical,
+          })),
+        })));
+        
+        if (storedDatasetsResponse.base_data_manager) {
+          const bdm = storedDatasetsResponse.base_data_manager;
+          const restoredBase = {
+            testSize: bdm.test_size ?? 0.2,
+            nSplits: bdm.n_splits ?? 5,
+            splitMethod: (bdm.split_method as "shuffle" | "kfold") ?? "shuffle",
+            groupColumn: bdm.group_column ?? null,
+            stratified: bdm.stratified ?? false,
+            randomState: bdm.random_state ?? null,
+          };
+          usePendingChangesStore.setState({ baseDataManager: restoredBase });
+          useDataProcessingStepStore.getState().updateBaseDataManager(restoredBase);
         }
         
-        if (d.data_manager) {
-          useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, {
-            testSize: d.data_manager.test_size,
-            nSplits: d.data_manager.n_splits,
-            splitMethod: d.data_manager.split_method as "shuffle" | "kfold" | undefined,
-            groupColumn: d.data_manager.group_column,
-            stratified: d.data_manager.stratified,
-            randomState: d.data_manager.random_state,
-          });
+        for (const d of storedDatasetsResponse.datasets) {
+          if (d.preprocessors && d.preprocessors.length > 0) {
+            for (const p of d.preprocessors) {
+              useDataProcessingStepStore.getState().addPreprocessorConfig(
+                d.id,
+                p.type as "missing-data" | "scaling" | "encoding" | "feature-selection",
+                p.config as any
+              );
+            }
+          }
+          
+          if (d.data_manager) {
+            useDataProcessingStepStore.getState().updateDatasetDataManager(d.id, {
+              testSize: d.data_manager.test_size,
+              nSplits: d.data_manager.n_splits,
+              splitMethod: d.data_manager.split_method as "shuffle" | "kfold" | undefined,
+              groupColumn: d.data_manager.group_column,
+              stratified: d.data_manager.stratified,
+              randomState: d.data_manager.random_state,
+            });
+          }
         }
       }
       
-      // Set default algorithms from all configured algorithms
       setDefaultAlgorithms(data.algorithms.map((a) => a.name));
       
       markSectionLoaded("experiments");
-      // Reset hasChanges since we just loaded from backend
-      usePendingChangesStore.setState({ hasChanges: false });
+      if (!storeState.hasChanges) {
+        usePendingChangesStore.setState({ hasChanges: false });
+      }
     } catch (error) {
       console.error("Failed to load experiments data:", error);
     }

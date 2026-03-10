@@ -61,6 +61,7 @@ export function EncodingConfig({ datasetId }: EncodingConfigProps) {
           <HoverSelect
             value={method}
             onValueChange={(v) => setMethod(v as EncodingPreprocessorConfig["method"])}
+            disabled={isConfigured}
             placeholder="Select"
             options={[
               { value: "onehot", label: "One-Hot" },
@@ -80,6 +81,7 @@ export function EncodingConfig({ datasetId }: EncodingConfigProps) {
           <HoverSelect
             value={handleUnknown}
             onValueChange={(v) => setHandleUnknown(v as "error" | "ignore")}
+            disabled={isConfigured}
             placeholder="Select"
             options={[
               { value: "error", label: "Error" },

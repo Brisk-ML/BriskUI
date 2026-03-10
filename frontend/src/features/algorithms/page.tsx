@@ -13,9 +13,16 @@ export default function AlgorithmsPage() {
   const { setAlgorithmWrappers, setProblemType, markSectionLoaded } = usePendingChangesStore();
   const { projectType } = useProjectStore();
 
-  // Load existing algorithms from backend on mount
+  // Load existing algorithms from backend on mount (skip if already cached)
   useEffect(() => {
     const loadAlgorithms = async () => {
+      const { loadedSections, hasChanges: priorHasChanges } = usePendingChangesStore.getState();
+      if (loadedSections.has("algorithms")) {
+        setProblemType(projectType);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
@@ -39,8 +46,9 @@ export default function AlgorithmsPage() {
         setProblemType(projectType);
         
         markSectionLoaded("algorithms");
-        // Reset hasChanges since we just loaded from backend
-        usePendingChangesStore.setState({ hasChanges: false });
+        if (!priorHasChanges) {
+          usePendingChangesStore.setState({ hasChanges: false });
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load algorithms");
       } finally {

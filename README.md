@@ -181,20 +181,3 @@ brisk-ui/
 │   └── backend-dev/           # Test project directory
 └── tests/
 ```
-
-## Testing the Integration
-
-The dashboard includes a test integration component that demonstrates frontend-backend communication:
-
-1. Start the app in either dev or test mode
-2. Navigate to the dashboard (home page)
-3. In the "Result Summary" section, enter text in the input field
-4. Click "Transform" to send the text to the backend
-5. The backend splits the text into individual characters, capitalizes each, and returns them
-6. The frontend displays each letter in a styled badge
-
-This test confirms:
-- Frontend can reach the backend API
-- CORS is configured correctly (in dev mode)
-- Request/response serialization works
-- The build process works (in test mode)

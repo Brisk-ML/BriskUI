@@ -57,6 +57,7 @@ export function ScalingConfig({ datasetId }: ScalingConfigProps) {
           <HoverSelect
             value={method}
             onValueChange={(v) => setMethod(v as ScalingPreprocessorConfig["method"])}
+            disabled={isConfigured}
             placeholder="Select"
             options={[
               { value: "standard", label: "Standard" },

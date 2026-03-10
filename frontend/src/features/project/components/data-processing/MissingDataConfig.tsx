@@ -71,6 +71,7 @@ export function MissingDataConfig({ datasetId }: MissingDataConfigProps) {
             onValueChange={(v) =>
               setStrategy(v as MissingDataPreprocessorConfig["strategy"])
             }
+            disabled={isConfigured}
             placeholder="Select"
             options={[
               { value: "mean", label: "Mean" },
@@ -92,6 +93,7 @@ export function MissingDataConfig({ datasetId }: MissingDataConfigProps) {
             <Input
               value={fillValue}
               onChange={(e) => setFillValue(e.target.value)}
+              disabled={isConfigured}
               placeholder="Value to fill"
               className="bg-[#282828] border-[#404040] text-white h-9 sm:h-10 md:h-[40px] text-sm sm:text-base md:text-[18px]"
             />

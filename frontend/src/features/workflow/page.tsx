@@ -344,9 +344,15 @@ export default function WorkflowPage() {
     setDragIndex(index);
   };
 
-  // Load existing workflow on mount
+  // Load existing workflow on mount (skip if already cached)
   useEffect(() => {
     const loadWorkflow = async () => {
+      const { loadedSections, hasChanges: priorHasChanges } = usePendingChangesStore.getState();
+      if (loadedSections.has("workflow")) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const response = await getWorkflowData();
@@ -362,7 +368,9 @@ export default function WorkflowPage() {
         setWorkflowSteps(ensureFitModelFirst(loadedSteps));
         
         markSectionLoaded("workflow");
-        usePendingChangesStore.setState({ hasChanges: false });
+        if (!priorHasChanges) {
+          usePendingChangesStore.setState({ hasChanges: false });
+        }
       } catch (error) {
         console.error("Failed to load workflow:", error);
       }

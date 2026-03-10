@@ -1,6 +1,6 @@
 [project]
 name = "briskui"
-version = "0.1.0"
+version = "1.0.0"
 description = "GUI for the Brisk ML framework."
 readme = "README.md"
 authors = [
@@ -10,10 +10,11 @@ authors = [
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
-    "brisk-ml>=1.1.0",
+    "brisk-ml>=1.2.0",
     "uvicorn[standard]>=0.30.0",
     "fastapi>=0.115.0",
     "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.urls]
@@ -28,14 +29,24 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
-brisk-ml = {develop = true}
-uvicorn = {extras = ["standard"], version = "*"}
-fastapi = "*"
-pydantic-settings = "*"
+brisk-ml = {version = ">=1.2.0", source = "testpypi"}
+uvicorn = {extras = ["standard"], version = ">=0.30.0"}
+fastapi = ">=0.115.0"
+pydantic-settings = ">=2.0.0"
+python-multipart = ">=0.0.9"
+
+[[tool.poetry.source]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+priority = "supplemental"
 
 [tool.poetry.scripts]
 brisk-ui-dev = "dev.run_dev:main"
 build-frontend = "dev.build_frontend:main"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0"
+httpx = ">=0.28"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

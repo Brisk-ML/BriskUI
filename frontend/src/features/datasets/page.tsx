@@ -92,9 +92,34 @@ export default function DatasetsPage() {
   const [isCategorical, setIsCategorical] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load data from backend on mount
+  // Load data from backend on mount (skip if already cached)
   useEffect(() => {
     const loadData = async () => {
+      const { loadedSections, hasChanges: priorHasChanges } = usePendingChangesStore.getState();
+
+      if (loadedSections.has("datasets")) {
+        // Restore local datasetDataManagers from the data processing store
+        // so the DataManagerModal shows per-dataset configs correctly
+        const { datasetConfigs } = useDataProcessingStepStore.getState();
+        const restoredManagers: Record<string, DataManagerConfig> = {};
+        for (const [id, config] of Object.entries(datasetConfigs)) {
+          const dm = config.dataManager;
+          if (dm && Object.keys(dm).length > 0) {
+            restoredManagers[id] = {
+              testSize: dm.testSize ?? 0.2,
+              nSplits: dm.nSplits ?? 5,
+              splitMethod: dm.splitMethod ?? "shuffle",
+              groupColumn: dm.groupColumn ?? null,
+              stratified: dm.stratified ?? false,
+              randomState: dm.randomState ?? null,
+            };
+          }
+        }
+        setDatasetDataManagers(restoredManagers);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const response = await getStoredDatasets();
@@ -183,8 +208,9 @@ export default function DatasetsPage() {
         setDatasetDataManagers(loadedDataManagers);
         
         markSectionLoaded("datasets");
-        // Reset hasChanges after loading initial data
-        usePendingChangesStore.setState({ hasChanges: false });
+        if (!priorHasChanges) {
+          usePendingChangesStore.setState({ hasChanges: false });
+        }
       } catch (error) {
         console.error("Failed to load datasets:", error);
       } finally {
