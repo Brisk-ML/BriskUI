@@ -396,13 +396,6 @@ export const ALGORITHMS_CATALOG: AlgorithmCatalogItem[] = [
         placeholder: "Ex. 10000",
       },
       {
-        name: "l1_ratio",
-        label: "L1 Ratio",
-        type: "number",
-        defaultValue: 0.5,
-        placeholder: "Ex. 0.5",
-      },
-      {
         name: "C",
         label: "C (Inverse Regularization)",
         type: "number",
